@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA harness — BEACON OSAS</title>
+</head>
+<body>
+<script>
+/* QA helper: plants a demo session then navigates to the requested page so
+   the authenticated module screens can be exercised in headless checks. */
+var params = new URLSearchParams(window.location.search);
+var target = params.get('page') || 'dashboard.html';
+var userIndex = params.get('user') || '1';
+var seedKey = 'beacon.osas.portal.v4';
+var sessionKey = 'beacon.osas.session';
+
+try {
+  if (!window.localStorage.getItem(seedKey)) {
+    /* store will reseed on first module load; nothing to do here */
+  }
+  var seedUsers = [
+    'USR-1001', 'USR-1002', 'USR-1003', 'USR-1004', 'USR-1005'
+  ];
+  var userId = seedUsers[parseInt(userIndex, 10) - 1] || 'USR-1001';
+  var payload = JSON.stringify({ userId: userId, role: 'Administrator', signedInAt: '2026-09-16T08:00:00' });
+  window.sessionStorage.setItem(sessionKey, payload);
+  window.localStorage.setItem(sessionKey, payload);
+} catch (err) {
+  document.body.setAttribute('data-qa-error', String(err));
+}
+document.body.setAttribute('data-qa-session', 'ready');
+window.location.replace('../' + target);
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA UI test — BEACON OSAS</title>
+<style>
+  body { font: 13px/1.45 Consolas, monospace; margin: 16px; }
+  iframe { width: 1440px; height: 900px; border: 1px solid #ccc; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>BEACON OSAS — UI interaction test</h1>
+<pre id="out">RUNNING…</pre>
+<iframe id="frame" title="qa"></iframe>
+<script>
+(function () {
+  var lines = [], passed = 0, failed = 0, warns = 0;
+  var frame = document.getElementById('frame');
+  var out = document.getElementById('out');
+  var W = null, D = null, errors = [];
+
+  function check(label, ok, detail) {
+    if (ok) { passed++; lines.push('PASS  ' + label + (detail ? '  [' + detail + ']' : '')); }
+    else { failed++; lines.push('FAIL  ' + label + (detail ? '  [' + detail + ']' : '')); }
+  }
+  function warn(label, detail) { warns++; lines.push('WARN  ' + label + (detail ? '  [' + detail + ']' : '')); }
+  function section(title) { lines.push(''); lines.push('=== ' + title + ' ==='); flush(); }
+  function flush() { out.textContent = lines.join('\n'); }
+
+  function q(sel, root) { return (root || D).querySelector(sel); }
+  function qa(sel, root) { return Array.prototype.slice.call((root || D).querySelectorAll(sel)); }
+  function rows() { return qa('#page-content table.data tbody tr'); }
+  function rowTexts() { return rows().map(function (r) { return r.textContent.replace(/\s+/g, ' ').trim(); }); }
+  function modal() { return q('#modal-root .modal'); }
+  function modalClose() { return q('#modal-root .modal__close'); }
+  function store() { return W.OSAS.store; }
+  function text(el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; }
+
+  function fire(el, type) {
+    el.dispatchEvent(new W.Event(type, { bubbles: true, cancelable: true }));
+  }
+  function type(el, value) {
+    if (!el) { return false; }
+    el.value = value;
+    fire(el, el.tagName === 'SELECT' ? 'change' : 'input');
+    return true;
+  }
+  function click(el) { if (!el) { return false; } el.click(); return true; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms || 40); }); }
+
+  function openPage(path) {
+    errors = [];
+    return new Promise(function (resolve, reject) {
+      frame.onload = function () {
+        W = frame.contentWindow;
+        D = frame.contentDocument;
+        W.addEventListener('error', function (e) { errors.push(String(e.message).split('\n')[0]); });
+        wait(120).then(function () { resolve(path); }, reject);
+      };
+      frame.src = path;
+    });
+  }
+  function noErrors(label) {
+    check(label + ' produced no runtime errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+  }
+  function closeModal() {
+    var btn = modalClose();
+    if (btn) { click(btn); }
+    return wait(60);
+  }
+
+  window.QA = {
+    check: check, warn: warn, section: section, q: q, qa: qa, rows: rows, rowTexts: rowTexts,
+    modal: modal, store: store, text: text, type: type, click: click, wait: wait,
+    openPage: openPage, noErrors: noErrors, closeModal: closeModal, flush: flush,
+    errors: function () { return errors; },
+    finish: function () {
+      lines.push('');
+      lines.push('UI TEST passed=' + passed + ' failed=' + failed + ' warnings=' + warns);
+      flush();
+      document.title = failed === 0 ? 'UI TEST OK' : 'UI TEST FAIL';
+      document.body.setAttribute('data-summary', 'UI TEST passed=' + passed + ' failed=' + failed + ' warns=' + warns);
+      document.body.setAttribute('data-failures', lines.filter(function (l) {
+        return l.indexOf('FAIL') === 0;
+      }).join(' ~ '));
+    }
+  };
+
+  /* plant an authenticated administrator session before any page loads */
+  window.sessionStorage.setItem('beacon.osas.session', JSON.stringify({
+    userId: 'USR-1001', role: 'Administrator', signedInAt: '2026-09-16T08:00:00'
+  }));
+
+  /* @@UI-SUITES@@ */
+})();
+</script>
+</body>
+</html>

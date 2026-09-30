@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA self-test — BEACON OSAS</title>
+</head>
+<body>
+<h1>BEACON OSAS — functional self-test</h1>
+<pre id="out">RUNNING…</pre>
+<script src="/assets/js/seed.js"></script>
+<script src="/assets/js/core.js"></script>
+<script>
+(function () {
+  var lines = [], passed = 0, failed = 0;
+
+  function check(label, condition, detail) {
+    if (condition) { passed++; lines.push('PASS  ' + label + (detail ? '  [' + detail + ']' : '')); }
+    else { failed++; lines.push('FAIL  ' + label + (detail ? '  [' + detail + ']' : '')); }
+  }
+  function section(title) { lines.push(''); lines.push('--- ' + title + ' ---'); }
+
+  function run() {
+    var store = OSAS.store, auth = OSAS.auth, stats = OSAS.analytics;
+
+    section('Seeding');
+    var counts = {};
+    store.RESOURCES.forEach(function (name) { counts[name] = store.all(name).length; });
+    check('seed data loaded without parse error', typeof OSAS_SEED === 'object' && !OSAS_SEED._partial,
+      'partial=' + OSAS_SEED._partial);
+    check('users seeded', counts.users >= 20, 'users=' + counts.users);
+    check('announcements seeded', counts.announcements >= 10, 'n=' + counts.announcements);
+    check('regulations seeded', counts.regulations >= 8, 'n=' + counts.regulations);
+    check('orientation modules seeded', counts.modules >= 6, 'n=' + counts.modules);
+    check('events seeded', counts.events >= 8, 'n=' + counts.events);
+    check('tickets seeded', counts.tickets >= 8, 'n=' + counts.tickets);
+    check('broadcasts seeded', counts.broadcasts >= 6, 'n=' + counts.broadcasts);
+    check('reports seeded', counts.reports >= 6, 'n=' + counts.reports);
+    check('tracking seeded', counts.tracking >= 8, 'n=' + counts.tracking);
+    check('audit log seeded', counts.auditLog >= 5, 'n=' + counts.auditLog);
+    check('schema version is 5', store.meta().schemaVersion === 5, 'v=' + store.meta().schemaVersion);
+    check('metrics present', typeof store.metrics().totalPortalViews === 'number',
+      'portalViews=' + store.metrics().totalPortalViews);
+    check('options present', store.options().departments.length > 0,
+      'departments=' + store.options().departments.length);
+
+    section('Formatters');
+    check('fmt.date renders a long date', /2026/.test(OSAS.fmt.date('2026-09-16T08:00:00')),
+      OSAS.fmt.date('2026-09-16T08:00:00'));
+    check('fmt.number groups thousands', OSAS.fmt.number(1234567) === '1,234,567', OSAS.fmt.number(1234567));
+    check('fmt.time renders am/pm', /[AP]M/.test(OSAS.fmt.time('2026-09-16T14:05:00')), OSAS.fmt.time('2026-09-16T14:05:00'));
+    check('fmt.range handles same-day range', OSAS.fmt.range('2026-09-16T08:00:00', '2026-09-16T11:00:00').length > 8,
+      OSAS.fmt.range('2026-09-16T08:00:00', '2026-09-16T11:00:00'));
+    check('fmt.hoursAgo returns label', OSAS.fmt.hoursAgo('2026-09-16T08:00:00').length > 2, OSAS.fmt.hoursAgo('2026-09-16T08:00:00'));
+    check('fmt.initials builds initials', OSAS.fmt.initials('Josefina', 'Reyes') === 'JR', OSAS.fmt.initials('Josefina', 'Reyes'));
+    check('fmt guards empty values', OSAS.fmt.date(null) === '—' && OSAS.fmt.time('') === '—');
+
+    section('Auth');
+    var admin = null;
+    store.all('users').forEach(function (row) { if (!admin && String(row.role) === 'Administrator') { admin = row; } });
+    check('an administrator account exists', !!admin, admin ? admin.email : 'none');
+    var bad = auth.login('nobody@uc.edu.ph', OSAS.CONFIG.demoPassword, false);
+    check('unknown email is rejected', bad.ok === false, bad.message);
+    var wrongPw = auth.login(admin.email, 'wrong-password', false);
+    check('wrong password is rejected', wrongPw.ok === false, wrongPw.message);
+    var okLogin = auth.login(admin.email, OSAS.CONFIG.demoPassword, true);
+    check('valid credentials sign in', okLogin.ok === true, okLogin.user ? admin.email : 'no user');
+    check('session is readable', !!auth.current() && auth.current().user.id === admin.id,
+      auth.current() ? auth.current().user.id : 'null');
+    check('requireAuth keeps the session', !!auth.requireAuth());
+    var logins = store.all('auditLog').filter(function (r) { return r.title === 'Portal Sign-In'; }).length;
+    check('sign-in writes an audit entry', logins >= 1, 'entries=' + logins);
+
+    section('CRUD — announcements');
+    var before = store.all('announcements').length;
+    var newId = store.nextId('announcements', 'ANN', 3);
+    check('nextId formats a padded identifier', /^ANN-\d{3}$/.test(newId), newId);
+    store.insert('announcements', { id: newId, title: 'QA probe announcement', status: 'Draft',
+      audience: 'All Students', category: 'Advisory', publishedAt: OSAS.util.now(), views: 0 });
+    check('insert adds a row at the top', store.all('announcements')[0].id === newId &&
+      store.all('announcements').length === before + 1, 'n=' + store.all('announcements').length);
+    check('find returns the new row', !!store.find('announcements', newId));
+    var patched = store.update('announcements', newId, { status: 'Published', views: 42 });
+    check('update patches fields', patched && patched.status === 'Published' && patched.views === 42);
+    check('update persists to storage',
+      JSON.parse(window.localStorage.getItem(OSAS.CONFIG.storageKey)).announcements[0].status === 'Published');
+    check('remove deletes the row', store.remove('announcements', newId) === true &&
+      store.all('announcements').length === before);
+    check('removing a missing row is safe', store.remove('announcements', 'ANN-99999') === false);
+    check('update on a missing row returns null', store.update('announcements', 'ANN-99999', { x: 1 }) === null);
+
+    section('Activity log');
+    var logBefore = store.all('auditLog').length;
+    store.logActivity({ title: 'QA probe', text: 'written by self-test', tone: 'brand', icon: 'info' });
+    check('logActivity prepends an entry', store.all('auditLog').length === logBefore + 1 &&
+      store.all('auditLog')[0].title === 'QA probe');
+
+    section('Aggregates');
+    var dash = stats.dashboard();
+    check('dashboard aggregate exposes KPIs', typeof dash.totalStudents === 'number' &&
+      dash.totalStudents > 0 && typeof dash.orientationRate === 'number' && dash.audit.length > 0,
+      'students=' + dash.totalStudents + ' rate=' + dash.orientationRate + ' queue=' + dash.queue.length);
+    check('dashboard traffic series available', !!dash.traffic && (dash.traffic.weekly || dash.traffic.days || dash.traffic.labels || dash.traffic.length) !== undefined);
+    var cont = stats.content(store.all('announcements'));
+    check('content counters consistent', cont.total === store.all('announcements').length &&
+      cont.published <= cont.total, 'pub=' + cont.published + '/' + cont.total);
+    var mods = stats.modules(store.all('modules'));
+    check('orientation modules aggregate works', mods.total === store.all('modules').length &&
+      typeof mods.completionRate === 'number', 'rate=' + mods.completionRate);
+    var track = stats.tracking(store.all('tracking'));
+    check('tracking totals views', track.views > 0 && track.total === store.all('tracking').length,
+      'views=' + track.views + ' rows=' + track.total);
+    check('tracking exposes a top item', !!track.topItem, track.topItem ? String(track.topItem.title).slice(0, 40) : '');
+    var tix = stats.tickets(store.all('tickets'));
+    check('ticket counters add up', tix.total === tix.open + tix.inProgress + tix.resolved + tix.closed,
+      JSON.stringify({ t: tix.total, o: tix.open, p: tix.inProgress, r: tix.resolved, c: tix.closed }));
+    var ev = stats.events(store.all('events'));
+    check('event utilisation is a percentage', ev.utilization >= 0 && ev.utilization <= 100, 'util=' + ev.utilization);
+    var bc = stats.broadcasts(store.all('broadcasts'));
+    check('broadcast open rate bounded', bc.openRate >= 0 && bc.openRate <= 100, 'rate=' + bc.openRate);
+    var usr = stats.users(store.all('users'));
+    check('user counters populated', usr.directoryTotal === store.all('users').length && usr.registeredStudents > 0,
+      'dir=' + usr.directoryTotal + ' students=' + usr.registeredStudents);
+    var rep = stats.reports(store.all('reports'));
+    check('reports expose latest', !!rep.latest && rep.total === store.all('reports').length);
+    check('priority queue sorts high first', (function () {
+      var q = stats.priorityQueue(store.all('tickets'));
+      return q.length > 1 && q[0].priority === 'High';
+    })());
+
+    section('Utilities');
+    check('util.esc escapes markup', OSAS.util.esc('<b>&"x"') === '&lt;b&gt;&amp;&quot;x&quot;', OSAS.util.esc('<b>&"x"'));
+    check('util.search matches fields', OSAS.util.search(store.all('announcements'), 'enrollment', ['title']).length > 0,
+      'hits=' + OSAS.util.search(store.all('announcements'), 'enrollment', ['title']).length);
+    check('util.paginate slices rows', (function () {
+      var page = OSAS.util.paginate(store.all('events'), 2, 4);
+      return page.items.length <= 4 && page.pages >= 1 && page.total === store.all('events').length;
+    })(), 'page2 items=' + OSAS.util.paginate(store.all('events'), 2, 4).items.length);
+    check('util.sortBy orders rows', (function () {
+      var sorted = OSAS.util.sortBy(store.all('announcements'), 'title', 'asc');
+      return sorted.length === store.all('announcements').length;
+    })());
+
+    section('Persistence');
+    var backup = JSON.parse(store.exportBackup());
+    check('backup round-trips', backup.users.length === store.all('users').length && backup.version === 5);
+    var annCount = store.all('announcements').length, userCount = store.all('users').length;
+    store.reset();
+    check('reset restores the seed data', store.all('announcements').length === annCount &&
+      store.all('users').length === userCount);
+    window.localStorage.setItem(OSAS.CONFIG.storageKey, '{ broken json');
+    check('corrupt storage reseeds cleanly', (function () {
+      try { return store.load().users.length > 0; } catch (e) { return false; }
+    })());
+
+    section('Logout');
+    auth.logout();
+    check('logout clears the session', auth.current() === null);
+  }
+
+  try { run(); }
+  catch (err) { failed++; lines.push('THROW  ' + (err && err.stack ? String(err.stack).split('\n')[0] : String(err))); }
+
+  var summary = 'SELF-TEST passed=' + passed + ' failed=' + failed + ' total=' + (passed + failed);
+  lines.push('');
+  lines.push(summary);
+  document.getElementById('out').textContent = lines.join('\n');
+  document.title = failed === 0 ? 'SELF-TEST OK' : 'SELF-TEST FAIL';
+  document.body.setAttribute('data-summary', summary);
+  document.body.setAttribute('data-lines', lines.filter(function (l) {
+    return l.indexOf('FAIL') === 0 || l.indexOf('THROW') === 0;
+  }).join(' ~ '));
+})();
+</script>
+</body>
+</html>
