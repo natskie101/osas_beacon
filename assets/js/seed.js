@@ -586,9 +586,9 @@
   var TRACKING = [
     tr('Orientation Module — Overview: Welcome to UC-LM', 'Orientation Module', 12840, 9412, '6m 12s', 92, '2026-09-16T09:20:00', 8.4, 'ORIENT-101'),
     tr('Revised Student Code of Conduct and Disciplinary Procedures', 'Regulation', 9120, 7208, '4m 48s', 78, '2026-09-16T08:35:00', 5.1, 'REG-2026-001'),
-    tr('Orientation Module — Digital Portal Guide', 'Orientation Module', 11320, 8520, '5m 40s', 90, '2026-09-16T08:05:00', 6.2, 'MOD-2026-007'),
+    tr('Orientation Module — Digital Portal Guide', 'Orientation Module', 11320, 8520, '5m 40s', 90, '2026-09-16T08:05:00', 6.2, 'ORIENT-107'),
     tr('1st Semester Enrollment Guidelines for AY 2026-2027', 'Announcement', 8640, 6910, '3m 26s', 71, '2026-09-15T17:10:00', 12.6, 'ANN-2026-001'),
-    tr('Orientation Module — Campus Facilities & Services', 'Orientation Module', 7930, 5884, '5m 02s', 83, '2026-09-16T07:50:00', 2.7, 'MOD-2026-003'),
+    tr('Orientation Module — Campus Facilities & Services', 'Orientation Module', 7930, 5884, '5m 02s', 83, '2026-09-16T07:50:00', 2.7, 'ORIENT-103'),
     tr('Notice of Tuition Fee Adjustment for Academic Year 2026-2027', 'Announcement', 6410, 5102, '2m 58s', 64, '2026-09-14T16:25:00', -1.8, 'ANN-2026-002'),
     tr('University Uniform and Identification Card Policy', 'Regulation', 5220, 3984, '3m 11s', 58, '2026-09-13T15:40:00', 1.2, 'REG-2026-002'),
     tr('Health Advisory from the University Medical Services Office', 'Announcement', 4380, 3215, '2m 12s', 46, '2026-09-12T14:05:00', -4.3, 'ANN-2026-007'),
