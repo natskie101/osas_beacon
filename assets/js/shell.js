@@ -17,6 +17,14 @@ OSAS.shell = (function () {
     { n: 10, label: 'Reports', href: 'reports.html', page: 'reports', icon: 'fileText' }
   ];
 
+  var STUDENT_NAV = [
+    { n: 1, label: 'Dashboard', href: 'student/dashboard.html', page: 'student-dashboard', icon: 'dashboard' },
+    { n: 2, label: 'Orientation', href: 'student/orientation.html', page: 'student-orientation', icon: 'graduation' },
+    { n: 3, label: 'Announcements', href: 'student/announcements.html', page: 'student-announcements', icon: 'megaphone' },
+    { n: 4, label: 'Events', href: 'student/events.html', page: 'student-events', icon: 'calendar' },
+    { n: 5, label: 'Feedback & Support', href: 'student/support.html', page: 'student-support', icon: 'headset', badge: 'tickets' }
+  ];
+
   var PAGE_META = {
     dashboard: {
       title: 'Admin Dashboard Overview',

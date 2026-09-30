@@ -339,9 +339,7 @@
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Announcement & Information Broadcast Management',
       subtitle: 'Create, publish, and organize university-wide announcements and information notices across the student portal.',
-      actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-        OSAS.icons.icon('download', 13) + ' Export List</button>' +
-        '<button type="button" class="btn btn--primary" data-action="compose">' +
+      actions: '<button type="button" class="btn btn--primary" data-action="compose">' +
         OSAS.icons.icon('plus', 13) + ' Create Announcement</button>'
     }) + toolbar() + filterBar() + table(filtered());
   }
@@ -384,7 +382,6 @@
       console.log('[Announcements] Action:', action, id);
 
       if (action === 'compose') { announcementModal(null, 'compose'); return; }
-      if (action === 'export') { exportCsv(); return; }
       if (action === 'view') {
         var row = OSAS.store.find('announcements', id);
         if (row) { previewModal(row); }

@@ -232,8 +232,7 @@
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Viewing & Participation Tracking Core',
       subtitle: 'Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.',
-      actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-        OSAS.icons.icon('download', 13) + ' Export Logs</button>'
+      actions: ''
     }) + toolbar() + tabStrip() + table(filtered());
   }
 

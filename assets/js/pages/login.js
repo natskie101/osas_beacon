@@ -39,11 +39,12 @@
     'Official college bulletins, regulations, and automated student alerts — for every SCT student.'
   ];
 
-  document.getElementById('auth-brand').innerHTML = OSAS.icons.beacon(96, 2) +
-    '<div class="auth__wordmark">BEACON</div>' +
-    '<div class="auth__wordmark-sub">Region &middot; Southern College of Technology</div>' +
-    '<p class="auth__tag" id="auth-tag">' + TAGS[0] + '</p>';
-  document.getElementById('auth-corner').innerHTML = OSAS.icons.beacon(22, 2.4);
+  document.getElementById('auth-brand').innerHTML =
+      '<img src="logo/5125ce0d-87ff-402c-a1b4-d5c370f44713.png" class="auth__logo" alt="Southway College of Technology Logo">' +
+      '<div class="auth__wordmark"></div>' +
+      '<div class="auth__wordmark-sub">&middot; Southway College of Technology</div>' +
+      '<p class="auth__tag" id="auth-tag">' + TAGS[0] + '</p>';
+  document.getElementById('auth-corner').innerHTML = '';
 
   /* Tagline rotation (carousel dots under the brand panel) */
   var dots = document.getElementById('auth-dots');

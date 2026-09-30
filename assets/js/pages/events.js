@@ -210,10 +210,8 @@
     content: shell.content,
     title: 'Events & Activities Management',
     subtitle: 'Schedule, publish and monitor university events, seminars, and student activities.',
-    actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-      OSAS.icons.icon('download', 13) + ' Export Schedule</button>' +
-      '<button type="button" class="btn btn--primary" data-action="new">' +
-      OSAS.icons.icon('plus', 13) + ' New Event</button>',
+    actions: '<button type="button" class="btn btn--primary" data-action="new">' +
+        OSAS.icons.icon('plus', 13) + ' New Event</button>',
     resource: 'events',
     defaultState: { search: '', category: 'All', status: 'All', page: 1 },
     filters: [
@@ -290,21 +288,6 @@
       var row = id ? OSAS.store.find('events', id) : null;
       if (action === 'new') {
         eventModal({ status: 'Scheduled', mode: 'On-campus', audience: 'All Students' }, 'new');
-        return;
-      }
-      if (action === 'export') {
-        U.exportCsv('beacon-events.csv', [
-          { label: 'Event Code', value: 'code' },
-          { label: 'Event Title', value: 'title' },
-          { label: 'Category', value: 'category' },
-          { label: 'Start', value: function (r) { return OSAS.fmt.dateTime(r.startAt); } },
-          { label: 'End', value: function (r) { return OSAS.fmt.dateTime(r.endAt); } },
-          { label: 'Venue', value: 'venue' },
-          { label: 'Audience', value: 'audience' },
-          { label: 'Registered', value: 'registered' },
-          { label: 'Status', value: 'status' }
-        ], page.rows());
-        C.toast('success', 'Schedule exported', page.rows().length + ' activities written to CSV.');
         return;
       }
       if (!row) { return; }

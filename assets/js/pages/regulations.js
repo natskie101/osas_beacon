@@ -276,9 +276,7 @@
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Student Code of Conduct & School Regulations',
       subtitle: 'Maintain and communicate university policies, the student code of conduct, and mandated regulations to all enrolled students.',
-      actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-        OSAS.icons.icon('download', 13) + ' Export Policies</button>' +
-        '<button type="button" class="btn btn--brand" data-action="new">' +
+      actions: '<button type="button" class="btn btn--brand" data-action="new">' +
         OSAS.icons.icon('plus', 13) + ' Add Regulation Policy</button>'
     }) + toolbar() + tabStrip() + table(filtered());
   }
@@ -319,7 +317,6 @@
 
       if (action === 'tab') { state.tab = id; state.page = 1; render(); return; }
       if (action === 'new') { regulationModal(null, 'new'); return; }
-      if (action === 'export') { exportCsv(); return; }
       if (action === 'view') {
         var row = OSAS.store.find('regulations', id);
         if (row) { previewModal(row); }

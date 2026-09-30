@@ -250,9 +250,7 @@
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Automated Broadcasts & Student Alerts',
       subtitle: 'Configure automated broadcast alerts and reminders for university-wide announcement communications.',
-      actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-        OSAS.icons.icon('download', 13) + ' Export Logs</button>' +
-        '<button type="button" class="btn btn--primary" data-action="new">' +
+      actions: '<button type="button" class="btn btn--primary" data-action="new">' +
         OSAS.icons.icon('send', 13) + ' New Broadcast</button>'
     }) + toolbar() + tabStrip() + table(filtered());
   }

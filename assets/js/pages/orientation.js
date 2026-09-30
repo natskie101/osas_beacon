@@ -341,9 +341,7 @@
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Student Onboarding & Orientation Modules',
       subtitle: 'Manage onboarding materials, orientation modules, and information guides for incoming students.',
-      actions: '<button type="button" class="btn btn--ghost" data-action="export">' +
-        OSAS.icons.icon('download', 13) + ' Export List</button>' +
-        '<button type="button" class="btn btn--brand" data-action="new">' +
+      actions: '<button type="button" class="btn btn--brand" data-action="new">' +
         OSAS.icons.icon('plus', 13) + ' Create Orientation Module</button>'
     }) + toolbar() + table(filtered());
   }

@@ -11,7 +11,7 @@ OSAS.CONFIG = {
      'api'    -> REST backend in /api (PHP + MySQL, see database/schema.sql)   */
   dataMode: 'local',
   apiBase: 'api/index.php',
-  storageKey: 'beacon.osas.portal.v12',
+  storageKey: 'beacon.osas.portal.v13',
   resetKey: 'beacon.osas.reset',
   sessionKey: 'beacon.osas.session',
   demoPassword: 'Beacon@2026',

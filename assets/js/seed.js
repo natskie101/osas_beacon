@@ -10,7 +10,7 @@
   var META = {
     system: 'BEACON',
     systemFull: 'Information Broadcasting & Student Services System',
-    institution: 'Southern College of Technology',
+    institution: 'Southway College of Technology',
     campusCode: 'SCT',
     academicYear: 'AY 2026-2027',
     schemaVersion: 5,
@@ -330,7 +330,7 @@
     /* ---------- Module 3: Student Code of Conduct & Related Regulations ---------- */
   function regBody(title, summary, effective) {
     return '<h4>Article I — Coverage and Scope</h4>' +
-      '<p>This policy governs all officially enrolled students of the University of Cebu — Lapu-Lapu and Mandaue campuses, including students on practicum, internship, or any off-campus academic engagement.</p>' +
+      '<p>This policy governs all officially enrolled students of the Southway College of Technology campuses, including students on practicum, internship, or any off-campus academic engagement.</p>'
       '<h4>Article II — Policy Statement</h4><p>' + summary + '</p>' +
       '<h4>Article III — Implementing Guidelines</h4><ul>' +
       '<li>All students are duty-bound to read and observe the provisions of "' + title + '".</li>' +
@@ -544,7 +544,7 @@
       'Please submit your physical examination results to the University Health Clinic prior to enrollment. Walk-in schedules are open daily.',
       'University Email', 'Pending', '2026-09-12T10:00:00', 'All Student Portals', 0),
     b(4, 'URGENT: Campus Weather Advisory & Class Suspension',
-      'All classes in both the Lapu-Lapu and Mandaue campuses are suspended starting 3:30 PM today due to severe weather conditions.',
+      'All classes in both the Southway College of Technology campuses are suspended starting 3:30 PM today due to severe weather conditions.',
       'SMS Alert', 'Sent', '2026-09-15T15:30:00', 'All Student Portals', 13980),
     b(5, 'Reminder: Mandatory Orientation Completion Deadline',
       'Portal access will be temporarily restricted for incoming freshmen who have not completed the orientation modules within thirty days of enlistment.',
@@ -560,7 +560,7 @@
     return {
       id: 'REP-2026-' + pad3(n), code: 'REP-2026-' + pad3(n), title: title, category: category,
       period: period, status: status, format: format, records: records, generatedAt: date,
-      generatedBy: 'Josefina Reyes', scope: 'Lapu-Lapu & Mandaue campuses'
+      generatedBy: 'Josefina Reyes', scope: 'Southway College of Technology campuses'
     };
   }
   var REPORTS = [
