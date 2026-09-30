@@ -3,9 +3,10 @@
    ========================================================================== */
 (function () {
   'use strict';
-  var C = OSAS.components, U = OSAS.util;
+  /* Auto-clear stale session if dashboard loads without valid auth */
   var shell = OSAS.shell.mount();
   if (!shell) { return; }
+  var C = OSAS.components, U = OSAS.util;
   var content = shell.content;
 
   function statsHtml(data) {

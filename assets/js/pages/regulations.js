@@ -3,11 +3,13 @@
    ========================================================================== */
 (function () {
   'use strict';
+  window.addEventListener('error', function (e) { console.error('[Global Error]', e.message, e.filename, e.lineno); });
   var C = OSAS.components, U = OSAS.util;
   var shell = OSAS.shell.mount();
-  if (!shell) { return; }
+  if (!shell) { console.warn('[Regulations] Shell mount failed - auth required'); return; }
   var content = shell.content;
   var OPTIONS = OSAS.store.options();
+  console.log('[Regulations] Module initialized, C.modal:', typeof C.modal, 'OSAS:', !!OSAS);
 
   var state = { search: '', category: 'All', status: 'All', tab: 'all', page: 1 };
 
@@ -106,6 +108,7 @@
 
   /* -------------------------------------------------------- policy editor */
   function regulationFormHtml(row) {
+    row = row || {};
     var isEdit = !!(row && row.id);
     var nextCode = OSAS.store.nextId('regulations', 'RULE-2026-', 3);
     return '<div id="reg-alert"></div>' +
@@ -142,7 +145,8 @@
 
   function regulationModal(row, mode) {
     var isEdit = mode === 'edit';
-    C.modal({
+    try {
+      C.modal({
       size: 'lg',
       title: isEdit ? 'Edit Regulation' : 'New Regulation',
       subtitle: isEdit
@@ -167,10 +171,6 @@
           if (!categoryValue) { errors.push('Select the policy category.'); }
           if (!summary) { errors.push('A policy summary is required.'); }
           if (!U.stripTags(bodyHtml)) { errors.push('The policy text cannot be empty.'); }
-          if (status === 'Published' && (!el.querySelector('#reg-verify-1').checked ||
-            !el.querySelector('#reg-verify-2').checked)) {
-            errors.push('Both verification checkpoints are required before publishing.');
-          }
           if (errors.length) {
             alertHost.innerHTML = C.alert('danger', 'Unable to save the regulation', errors.join(' '));
             return;
@@ -178,11 +178,8 @@
 
           var payload = {
             title: title, category: categoryValue, summary: summary, body: bodyHtml,
-            referenceCode: OSAS.forms.value('reg-reference') || (row.referenceCode || 'UC-OSAS-NEW'),
-            audience: el.querySelector('#reg-audience').value || 'All Students',
-            effectiveDate: OSAS.forms.value('reg-effective') || 'To be determined upon approval',
-            reviewSchedule: OSAS.forms.value('reg-review') || 'Annual review every June',
-            approvalBody: OSAS.forms.value('reg-approval') || 'Board of Trustees',
+            referenceCode: OSAS.forms.value('reg-reference') || (row.referenceCode || 'RULE-2026-NEW'),
+            severity: el.querySelector('#reg-severity').value || 'Major Offense (Level 2)',
             status: status, updatedAt: U.now(),
             revisedBy: 'OSAS Council'
           };
@@ -221,7 +218,11 @@
         });
       }
     });
+  } catch (err) {
+    console.error('[Regulations] Modal creation error:', err);
+    C.toast('danger', 'Modal Error', 'Error: ' + (err.message || err));
   }
+}
 
   function previewModal(row) {
     C.modal({
@@ -309,60 +310,66 @@
   });
 
   content.addEventListener('click', function (event) {
-    var trigger = event.target.closest ? event.target.closest('[data-action]') : null;
-    if (!trigger) { return; }
-    var action = trigger.getAttribute('data-action');
-    var id = trigger.getAttribute('data-id');
+    try {
+      var trigger = event.target.closest ? event.target.closest('[data-action]') : null;
+      if (!trigger) { return; }
+      var action = trigger.getAttribute('data-action');
+      var id = trigger.getAttribute('data-id');
+      console.log('[Regulations] Action:', action, id);
 
-    if (action === 'tab') { state.tab = id; state.page = 1; render(); return; }
-    if (action === 'new') { regulationModal(null, 'new'); return; }
-    if (action === 'export') { exportCsv(); return; }
-    if (action === 'view') {
-      var row = OSAS.store.find('regulations', id);
-      if (row) { previewModal(row); }
-      return;
-    }
-    if (action === 'edit') {
-      var editRow = OSAS.store.find('regulations', id);
-      if (editRow) { regulationModal(editRow, 'edit'); }
-      return;
-    }
-    if (action === 'more') {
-      var moreRow = OSAS.store.find('regulations', id);
-      if (moreRow) { previewModal(moreRow); }
-      return;
-    }
-    if (action === 'archive') {
-      var archRow = OSAS.store.find('regulations', id);
-      if (!archRow) { return; }
-      C.confirm({
-        title: 'Archive this regulation?',
-        subtitle: archRow.title,
-        alertTone: 'warning', alertTitle: 'Students will lose portal access to this policy',
-        alertText: 'The policy remains in the register for audit purposes and can be restored at any time.',
-        confirmLabel: 'Archive policy',
-        onConfirm: function () {
-          OSAS.store.update('regulations', archRow.id, { status: 'Archived', updatedAt: U.now() });
-          OSAS.store.logActivity({
-            tone: 'amber', icon: 'scale', title: 'Regulation Archived',
-            text: archRow.code + ' — "' + archRow.title + '" was archived from the student portals.'
-          });
-          C.toast('info', 'Regulation archived', archRow.title);
-          render();
-        }
-      });
-      return;
-    }
-    if (action === 'restore') {
-      var restRow = OSAS.store.find('regulations', id);
-      if (!restRow) { return; }
-      OSAS.store.update('regulations', restRow.id, { status: 'Published', updatedAt: U.now() });
-      OSAS.store.logActivity({
-        tone: 'green', icon: 'scale', title: 'Regulation Restored',
-        text: restRow.code + ' — "' + restRow.title + '" was restored to the active policy register.'
-      });
-      C.toast('success', 'Regulation restored', restRow.title);
-      render();
+      if (action === 'tab') { state.tab = id; state.page = 1; render(); return; }
+      if (action === 'new') { regulationModal(null, 'new'); return; }
+      if (action === 'export') { exportCsv(); return; }
+      if (action === 'view') {
+        var row = OSAS.store.find('regulations', id);
+        if (row) { previewModal(row); }
+        return;
+      }
+      if (action === 'edit') {
+        var editRow = OSAS.store.find('regulations', id);
+        if (editRow) { regulationModal(editRow, 'edit'); }
+        return;
+      }
+      if (action === 'more') {
+        var moreRow = OSAS.store.find('regulations', id);
+        if (moreRow) { previewModal(moreRow); }
+        return;
+      }
+      if (action === 'archive') {
+        var archRow = OSAS.store.find('regulations', id);
+        if (!archRow) { return; }
+        C.confirm({
+          title: 'Archive this regulation?',
+          subtitle: archRow.title,
+          alertTone: 'warning', alertTitle: 'Students will lose portal access to this policy',
+          alertText: 'The policy remains in the register for audit purposes and can be restored at any time.',
+          confirmLabel: 'Archive policy',
+          onConfirm: function () {
+            OSAS.store.update('regulations', archRow.id, { status: 'Archived', updatedAt: U.now() });
+            OSAS.store.logActivity({
+              tone: 'amber', icon: 'scale', title: 'Regulation Archived',
+              text: archRow.code + ' — "' + archRow.title + '" was archived from the student portals.'
+            });
+            C.toast('info', 'Regulation archived', archRow.title);
+            render();
+          }
+        });
+        return;
+      }
+      if (action === 'restore') {
+        var restRow = OSAS.store.find('regulations', id);
+        if (!restRow) { return; }
+        OSAS.store.update('regulations', restRow.id, { status: 'Published', updatedAt: U.now() });
+        OSAS.store.logActivity({
+          tone: 'green', icon: 'scale', title: 'Regulation Restored',
+          text: restRow.code + ' — "' + restRow.title + '" was restored to the active policy register.'
+        });
+        C.toast('success', 'Regulation restored', restRow.title);
+        render();
+      }
+    } catch (err) {
+      console.error('[Regulations] Click handler error:', err);
+      C.toast('danger', 'Error', 'Error: ' + (err.message || err));
     }
   });
 

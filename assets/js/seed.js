@@ -10,8 +10,8 @@
   var META = {
     system: 'BEACON',
     systemFull: 'Information Broadcasting & Student Services System',
-    institution: 'University of Cebu — Lapu-Lapu and Mandaue',
-    campusCode: 'UC-LM',
+    institution: 'Southern College of Technology',
+    campusCode: 'SCT',
     academicYear: 'AY 2026-2027',
     schemaVersion: 5,
     seededAt: '2026-09-16T09:45:00',

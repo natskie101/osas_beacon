@@ -3,6 +3,13 @@
    ========================================================================== */
 (function () {
   'use strict';
+  /* Clear stale session data from old versions */
+  try {
+    var keys = Object.keys(localStorage).filter(function (k) { return k.startsWith('beacon.osas'); });
+    keys.forEach(function (k) { localStorage.removeItem(k); });
+    sessionStorage.clear();
+  } catch (e) { /* ignore */ }
+
   var C = OSAS.components;
 
   /* If a session already exists, skip the sign-in screen. */
@@ -29,12 +36,12 @@
   var TAGS = [
     'Sign in to access the <strong>Information Broadcasting and Student Services System</strong> of the Office of Student Affairs.',
     'Track announcements, orientation modules, and student support inquiries in one secure portal.',
-    'Official university bulletins, regulations, and automated student alerts — for every UC-LM student.'
+    'Official college bulletins, regulations, and automated student alerts — for every SCT student.'
   ];
 
   document.getElementById('auth-brand').innerHTML = OSAS.icons.beacon(96, 2) +
     '<div class="auth__wordmark">BEACON</div>' +
-    '<div class="auth__wordmark-sub">Region &middot; University of Cebu</div>' +
+    '<div class="auth__wordmark-sub">Region &middot; Southern College of Technology</div>' +
     '<p class="auth__tag" id="auth-tag">' + TAGS[0] + '</p>';
   document.getElementById('auth-corner').innerHTML = OSAS.icons.beacon(22, 2.4);
 

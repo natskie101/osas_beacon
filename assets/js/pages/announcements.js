@@ -3,11 +3,13 @@
    ========================================================================== */
 (function () {
   'use strict';
+  window.addEventListener('error', function (e) { console.error('[Global Error]', e.message, e.filename, e.lineno); });
   var C = OSAS.components, U = OSAS.util;
   var shell = OSAS.shell.mount();
-  if (!shell) { return; }
+  if (!shell) { console.warn('[Announcements] Shell mount failed - auth required'); return; }
   var content = shell.content;
   var OPTIONS = OSAS.store.options();
+  console.log('[Announcements] Module initialized, C.modal:', typeof C.modal, 'OSAS:', !!OSAS);
 
   var state = { search: '', category: 'All', status: 'All', audience: 'All', page: 1 };
 
@@ -106,6 +108,7 @@
 
   /* ------------------------------------------------- Compose / edit dialog */
   function announcementFormHtml(row) {
+    row = row || {};
     var isEdit = !!(row && row.id);
     var attachments = row.attachments || [];
     var attachmentHtml = attachments.length
@@ -151,7 +154,8 @@
     var isEdit = mode === 'edit';
     var row = record || {};
 
-    return C.modal({
+    try {
+      return C.modal({
       size: 'lg',
       title: isEdit ? 'Edit Announcement' : 'Create Announcement',
       subtitle: isEdit
@@ -285,7 +289,11 @@
         el.querySelector('#ann-save-draft').addEventListener('click', function () { save('Draft'); });
       }
     });
+  } catch (err) {
+    console.error('[Announcements] Modal creation error:', err);
+    C.toast('danger', 'Modal Error', 'Error: ' + (err.message || err));
   }
+}
 
   /* --------------------------------------------------- Read-only preview */
   function previewModal(row) {
@@ -368,58 +376,64 @@
   });
 
   content.addEventListener('click', function (event) {
-    var trigger = event.target.closest ? event.target.closest('[data-action]') : null;
-    if (!trigger) { return; }
-    var action = trigger.getAttribute('data-action');
-    var id = trigger.getAttribute('data-id');
+    try {
+      var trigger = event.target.closest ? event.target.closest('[data-action]') : null;
+      if (!trigger) { return; }
+      var action = trigger.getAttribute('data-action');
+      var id = trigger.getAttribute('data-id');
+      console.log('[Announcements] Action:', action, id);
 
-    if (action === 'compose') { announcementModal(null, 'compose'); return; }
-    if (action === 'export') { exportCsv(); return; }
-    if (action === 'view') {
-      var row = OSAS.store.find('announcements', id);
-      if (row) { previewModal(row); }
-      return;
-    }
-    if (action === 'edit') {
-      var editRow = OSAS.store.find('announcements', id);
-      if (editRow) { announcementModal(editRow, 'edit'); }
-      return;
-    }
-    if (action === 'delete') {
-      var delRow = OSAS.store.find('announcements', id);
-      if (!delRow) { return; }
-      C.confirm({
-        title: 'Delete this draft?',
-        subtitle: U.esc(delRow.title),
-        alertTone: 'warning',
-        alertTitle: 'The draft will be permanently removed',
-        alertText: 'This action cannot be undone.',
-        confirmLabel: 'Delete',
-        confirmClass: 'btn--danger',
-        onConfirm: function () {
-          OSAS.store.remove('announcements', id);
-          C.toast('info', 'Draft deleted', delRow.title);
-          render();
-        }
-      });
-      return;
-    }
-    if (action === 'duplicate') {
-      var source = OSAS.store.find('announcements', id);
-      if (!source) { return; }
-      var code = OSAS.store.nextId('announcements', 'ANN-2026', 3);
-      OSAS.store.insert('announcements', {
-        id: code, code: code, title: source.title + ' (Copy)', summary: source.summary,
-        body: source.body, category: source.category, audience: source.audience,
-        priority: source.priority, status: 'Draft', views: 0, author: source.author,
-        publishedAt: '', scheduledFor: '', updatedAt: U.now()
-      });
-      OSAS.store.logActivity({
-        tone: 'info', icon: 'megaphone', title: 'Announcement Duplicated',
-        text: code + ' was created as a draft copy of "' + source.title + '".'
-      });
-      C.toast('info', 'Draft copy created', code + ' is ready for editing.');
-      render();
+      if (action === 'compose') { announcementModal(null, 'compose'); return; }
+      if (action === 'export') { exportCsv(); return; }
+      if (action === 'view') {
+        var row = OSAS.store.find('announcements', id);
+        if (row) { previewModal(row); }
+        return;
+      }
+      if (action === 'edit') {
+        var editRow = OSAS.store.find('announcements', id);
+        if (editRow) { announcementModal(editRow, 'edit'); }
+        return;
+      }
+      if (action === 'delete') {
+        var delRow = OSAS.store.find('announcements', id);
+        if (!delRow) { return; }
+        C.confirm({
+          title: 'Delete this draft?',
+          subtitle: U.esc(delRow.title),
+          alertTone: 'warning',
+          alertTitle: 'The draft will be permanently removed',
+          alertText: 'This action cannot be undone.',
+          confirmLabel: 'Delete',
+          confirmClass: 'btn--danger',
+          onConfirm: function () {
+            OSAS.store.remove('announcements', id);
+            C.toast('info', 'Draft deleted', delRow.title);
+            render();
+          }
+        });
+        return;
+      }
+      if (action === 'duplicate') {
+        var source = OSAS.store.find('announcements', id);
+        if (!source) { return; }
+        var code = OSAS.store.nextId('announcements', 'ANN-2026', 3);
+        OSAS.store.insert('announcements', {
+          id: code, code: code, title: source.title + ' (Copy)', summary: source.summary,
+          body: source.body, category: source.category, audience: source.audience,
+          priority: source.priority, status: 'Draft', views: 0, author: source.author,
+          publishedAt: '', scheduledFor: '', updatedAt: U.now()
+        });
+        OSAS.store.logActivity({
+          tone: 'info', icon: 'megaphone', title: 'Announcement Duplicated',
+          text: code + ' was created as a draft copy of "' + source.title + '".'
+        });
+        C.toast('info', 'Draft copy created', code + ' is ready for editing.');
+        render();
+      }
+    } catch (err) {
+      console.error('[Announcements] Click handler error:', err);
+      C.toast('danger', 'Error', 'Error: ' + (err.message || err));
     }
   });
 

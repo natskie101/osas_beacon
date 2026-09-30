@@ -82,7 +82,7 @@ OSAS.shell = (function () {
     return '<aside class="sidebar" id="sidebar">' +
       '<div class="sidebar__brand">' + OSAS.icons.beacon(30) +
       '<div><div class="sidebar__wordmark">BEACON</div>' +
-      '<div class="sidebar__tag">UC-LM OSAS Portal</div></div></div>' +
+      '<div class="sidebar__tag">SCT OSAS Portal</div></div></div>' +
       '<nav class="nav"><div class="nav__label">Modules</div><ul>' + items + '</ul></nav>' +
       '<div class="sidebar__foot"><div class="sidebar__user">' +
       OSAS.components.avatar(session.user.firstName, session.user.lastName) +

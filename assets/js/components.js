@@ -342,16 +342,7 @@ OSAS.components = (function () {
     }).join('') + '</div>';
   }
 
-  return {
-    STATUS_CLASS: STATUS_CLASS, badge: badge, priority: priority, avatar: avatar, avatarOf: avatarOf,
-    alert: alert, statCard: statCard, delta: delta, progressBar: progressBar, statStrip: statStrip,
-    emptyState: emptyState, logItem: logItem, toast: toast, toastRoot: toastRoot,
-    flashFromQuery: flashFromQuery, modal: modal, confirm: confirm,
-    dataTable: dataTable, pager: pager, bindPager: bindPager,
-    richText: richText, initRichText: initRichText, richTextValue: richTextValue,
-    chart: chart, legend: legend
-  };
-})();
+  function esc(value) { return OSAS.util.esc(value); }
   /* --------------------------------------------------- rich text editor */
   function richText(options) {
     var id = options.id || OSAS.util.uid('rt');
@@ -416,4 +407,14 @@ OSAS.components = (function () {
     var area = document.getElementById(id);
     return area ? area.innerHTML : '';
   }
-/* @@COMP-END@@ */
+
+  return {
+    STATUS_CLASS: STATUS_CLASS, badge: badge, priority: priority, avatar: avatar, avatarOf: avatarOf,
+    alert: alert, statCard: statCard, delta: delta, progressBar: progressBar, statStrip: statStrip,
+    emptyState: emptyState, logItem: logItem, toast: toast, toastRoot: toastRoot,
+    flashFromQuery: flashFromQuery, modal: modal, confirm: confirm,
+    dataTable: dataTable, pager: pager, bindPager: bindPager,
+    richText: richText, initRichText: initRichText, richTextValue: richTextValue,
+    chart: chart, legend: legend
+  };
+})();
