@@ -473,6 +473,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .auth__left{display:flex;align-items:center;justify-content:center;padding:54px 40px 76px;border-right:1px solid var(--line-2)}
 .auth__brand{text-align:left;width:100%;max-width:300px}
 .auth__brand .beacon-mark{display:block;margin:0 auto;color:var(--brand)}
+.auth__logo{display:block;width:100%;max-width:252px;height:auto;margin:0 auto}
 .auth__wordmark{font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:.14em;color:var(--brand);line-height:1;text-align:center;margin-top:16px}
 .auth__rule{border:0;border-top:2px solid var(--brand);margin:20px 0 16px}
 .auth__tag{font-size:13px;font-weight:500;color:var(--brand);line-height:1.75}
@@ -500,7 +501,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 
 /* Form field enhancements for login */
 .auth__form-inner .field{margin-bottom:15px}
-.auth__form-inner .field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:7px}
+.auth__form-inner .field label:not(.checkbox){display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:7px}
 .auth__form-inner .input-group{position:relative;display:flex;align-items:center}
 .auth__form-inner .input-group__ico{position:absolute;left:13px;color:var(--muted-2);display:flex;align-items:center;justify-content:center;pointer-events:none}
 .auth__form-inner .input-group .input{width:100%;padding:10px 34px 10px 40px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
@@ -514,6 +515,8 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .auth .checkbox__box{width:15px;height:15px;border:1px solid #d5dae1;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff;flex:0 0 15px}
 .auth .checkbox input:checked + .checkbox__box{background:var(--brand);border-color:var(--brand)}
 .auth .checkbox input:checked + .checkbox__box::after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-1px)}
+.auth .checkbox:hover .checkbox__box{border-color:var(--brand)}
+.auth .checkbox input:focus-visible + .checkbox__box{outline:2px solid var(--brand);outline-offset:2px}
 .link{font-size:13px;color:var(--brand);text-decoration:none;font-weight:500}
 .link:hover{text-decoration:underline}
 .auth .link{font-size:12px;font-weight:700}

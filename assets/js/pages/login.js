@@ -3,9 +3,13 @@
    ========================================================================== */
 (function () {
   'use strict';
-  /* Clear stale session data from old versions */
+  /* Clear stale portal data from old versions — but keep a remembered session
+     alive, otherwise "Remember this device" is wiped on every visit here. */
   try {
-    var keys = Object.keys(localStorage).filter(function (k) { return k.startsWith('beacon.osas'); });
+    var keep = OSAS.CONFIG.sessionKey;
+    var keys = Object.keys(localStorage).filter(function (k) {
+      return k.indexOf('beacon.osas') === 0 && k !== keep;
+    });
     keys.forEach(function (k) { localStorage.removeItem(k); });
     sessionStorage.clear();
   } catch (e) { /* ignore */ }
@@ -40,8 +44,8 @@
   ];
 
   document.getElementById('auth-brand').innerHTML =
-      OSAS.icons.beacon(104, 2.4) +
-      '<div class="auth__wordmark">BEACON</div>' +
+      '<img class="auth__logo" src="logo/5125ce0d-87ff-402c-a1b4-d5c370f44713.png" ' +
+        'alt="BEACON" width="337" height="205">' +
       '<hr class="auth__rule">' +
       '<p class="auth__tag" id="auth-tag">' + TAGS[0] + '</p>';
   document.getElementById('auth-corner').innerHTML = '';

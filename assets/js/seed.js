@@ -327,10 +327,41 @@
     an(24, 'Proposed Revision of the Student Grievance Procedure', 'Academic Affairs', 'All Student Portals', 'Draft', '2026-09-11T10:35:00', 0,
       'Draft revision of the student grievance procedure submitted for review by the legal and academic affairs offices.')
   );
+  /* Latest published bulletin — headlines the student dashboard feed */
+  ANNOUNCEMENTS.push(
+    an(25, 'Midterm Examination Schedule Released', 'Academic Affairs', 'All Student Portals', 'Published', '2026-09-16T09:20:00', 12,
+      'Please check your official email for details.')
+  );
+  /* Reference documents attached to a bulletin, plus the full memorandum body
+     for the flagship announcement (both are read by the student
+     Announcements module and edited through the announcement form) */
+  var ANN_FILES = {
+    'ANN-2026-025': [{ name: 'Midterm_Exam_Room_Assignments.pdf', size: '5.2 MB' }],
+    'ANN-2026-010': [{ name: 'Scholarship_Application_AY2026-2027.pdf', size: '1.4 MB' }]
+  };
+  var midterm = ANNOUNCEMENTS.filter(function (r) { return r.code === 'ANN-2026-025'; })[0];
+  if (midterm) {
+    midterm.summary = 'Official university schedule for First Semester A.Y. 2026-2027.';
+    midterm.body =
+      '<p>Dear Student Body,</p>' +
+      '<p>Please be advised that the Midterm Examinations for the First Semester will take place from ' +
+      '<strong>October 12, 2026 to October 17, 2026</strong>.</p>' +
+      '<h4>Important Reminders and Campus Protocols</h4>' +
+      '<ol>' +
+      '<li><strong>Student Identification:</strong> Physical or Digital OSAS Pass IDs must be presented at all examination rooms.</li>' +
+      '<li><strong>Arrival Time:</strong> Students must arrive at least 15 minutes before their scheduled examination. Laboratory clearances must be updated prior to the examination week.</li>' +
+      '<li><strong>Examination Permits:</strong> Download your digitized examination permits via the OSAS Portal Student Dashboard.</li>' +
+      '</ol>' +
+      '<p>For specific room assignments and your examination schedule, please refer to the attached PDF schedule document below.</p>' +
+      '<p>Regards,<br>Office of Student Affairs Administration</p>';
+  }
+  ANNOUNCEMENTS.forEach(function (row) {
+    if (ANN_FILES[row.code]) { row.attachments = ANN_FILES[row.code]; }
+  });
     /* ---------- Module 3: Student Code of Conduct & Related Regulations ---------- */
   function regBody(title, summary, effective) {
     return '<h4>Article I — Coverage and Scope</h4>' +
-      '<p>This policy governs all officially enrolled students of the Southway College of Technology campuses, including students on practicum, internship, or any off-campus academic engagement.</p>'
+      '<p>This policy governs all officially enrolled students of the Southway College of Technology campuses, including students on practicum, internship, or any off-campus academic engagement.</p>' +
       '<h4>Article II — Policy Statement</h4><p>' + summary + '</p>' +
       '<h4>Article III — Implementing Guidelines</h4><ul>' +
       '<li>All students are duty-bound to read and observe the provisions of "' + title + '".</li>' +
@@ -388,6 +419,31 @@
     r(17, 'Guidelines on On-Campus Parking for Students', 'Campus Facilities', 'Archived', '2025-05-12T10:30:00', 95, 'May 15, 2025', 'Superseded by the 2025 Traffic Management Bulletin', 'Physical Facilities Management Office',
       'Archived guidelines on student parking zones, stickers, and the traffic flow inside the campus. Replaced by the 2025 Traffic Management Bulletin.')
   );
+  /* Rules published straight to the student Rules & Regulation module */
+  REGULATIONS.push(
+    r(18, 'Campus ID & RFID Badge Wear Protocol', 'Conduct & Discipline', 'Published', '2026-09-10T08:00:00', 190,
+      'October 1, 2026', 'Annual review every June', 'Office of Student Affairs and Services',
+      'Mandatory visible wearing of the student identification card and RFID badge during entry, laboratory work, and official college activities.'),
+    r(19, 'Student Organization Activity Permits', 'Student Organizations', 'Published', '2026-09-08T09:30:00', 175,
+      'September 1, 2026', 'Annual review every June', 'Office of Student Affairs and Services',
+      'Requirements for holding meetings, inviting outside speakers, using university facilities and equipment, and distributing printed or online publications.'),
+    r(20, 'Substance-Free Campus & Anti-Smoking', 'Health & Safety', 'Published', '2026-09-05T10:00:00', 164,
+      'August 15, 2026', 'Annual review every June', 'Campus Safety Committee',
+      'Establishes tobacco, vaping, cigarette and illegal drug-free zones, and designates the smoking areas outside the campus premises.'),
+    r(21, 'Classroom Decorum & Digital Device Usage', 'Conduct & Discipline', 'Published', '2026-09-02T08:00:00', 152,
+      'August 1, 2026', 'Annual review every June', 'Academic Council',
+      'Sets the acceptable use of laptops, phones and other gadgets during lectures, and prohibits unauthorized audio and video recording inside classrooms.')
+  );
+  /* Standard disciplinary ladder rendered by the student policy view
+     (see student/rules.html — Article V). Admin modules ignore the field. */
+  var SANCTIONS = [
+    { tier: 'First Offense', text: 'Formal written warning + a required reflection to be submitted within three (3) working days.' },
+    { tier: 'Second Offense', text: 'Parent/Guardian + Dean notification and a written community service assignment.' },
+    { tier: 'Third Offense', text: 'Suspension from academic privileges for one (1) academic semester.' }
+  ];
+  REGULATIONS.forEach(function (reg) {
+    if (reg.status === 'Published' && !reg.sanctions) { reg.sanctions = SANCTIONS; }
+  });
     /* ---------- Module 4: Student Orientation & Information Module ---------- */
   function modBody(title, description, objectives) {
     return '<p>' + description + '</p>' +
@@ -435,6 +491,35 @@
     m(10, 'Orientation Module — 2025 Campus Tour (Legacy)', 'Orientation Module — Campus Facilities & Services', 'Archived', '2025-07-01T09:00:00', 412, 81, 16, 'v1.0', false,
       'Archived 2025 campus tour module retained for reference. Superseded by the Campus Facilities & Services module.')
   ];
+  /* Most recently updated published module — featured on the student dashboard */
+  MODULES.push(
+    m(11, 'University Vision, Mission & Core Values', 'Orientation Module — Overview', 'Published', '2026-09-16T09:10:00', 1320, 94, 12, 'v1.1', true,
+      'The university vision, mission and core values, plus the Office of Student Affairs mandate that frames every orientation module.')
+  );
+  /* Publishing details recorded in the module form (contentType + department);
+     shown by the student Orientation module. */
+  var MOD_DEPTS = {
+    'ORIENT-001': 'Office of Student Affairs & Services',
+    'ORIENT-002': "Registrar's Office",
+    'ORIENT-003': 'Office of Student Affairs & Services',
+    'ORIENT-004': "Registrar's Office",
+    'ORIENT-005': 'Guidance & Testing Center',
+    'ORIENT-006': 'Office of Student Affairs & Services',
+    'ORIENT-007': 'IT Services Office',
+    'ORIENT-008': 'Campus Safety & Health Office',
+    'ORIENT-009': "Registrar's Office",
+    'ORIENT-010': 'Office of Student Affairs & Services',
+    'ORIENT-011': 'Office of Student Affairs & Services'
+  };
+  var MOD_TYPES = {
+    'ORIENT-002': 'Document / PDF',
+    'ORIENT-003': 'Slide Deck',
+    'ORIENT-007': 'Web URL / Embed'
+  };
+  MODULES.forEach(function (row) {
+    if (MOD_DEPTS[row.code]) { row.department = MOD_DEPTS[row.code]; }
+    if (MOD_TYPES[row.code]) { row.contentType = MOD_TYPES[row.code]; }
+  });
     /* ---------- Module 5: Events & Activities Management ---------- */
   /* ev(n, title, category, status, start, end, venue, mode, audience, capacity, registered, description) */
   function ev(n, title, category, status, start, end, venue, mode, audience, capacity, registered, description) {
@@ -447,6 +532,8 @@
     };
   }
   var EVENTS = [
+    ev(11, 'OSAS Student Services & Organization Fair', 'Student Organizations', 'Scheduled', '2026-09-16T08:00:00', '2026-09-16T17:00:00', 'Campus Grounds & Activity Center', 'On-campus', 'All Students', 2500, 1684,
+      'A one-day fair where accredited organizations and campus offices open their service desks, present their semestral programs, and accept student sign-ups on the spot.'),
     ev(12, 'Freshmen Orientation Assembly — Day 1', 'Orientation & Onboarding', 'Scheduled', '2026-09-22T08:00:00', '2026-09-22T12:00:00', 'UC-LM University Gymnasium', 'On-campus', 'Incoming Freshmen', 1500, 1284,
       'Official welcome assembly for incoming freshmen including the campus orientation briefing and module walkthrough.'),
     ev(13, 'Student Organization Recruitment Fair', 'Student Organizations', 'Scheduled', '2026-09-25T09:00:00', '2026-09-27T17:00:00', 'Campus Grounds & Activity Center', 'On-campus', 'All Students', 3000, 2140,
@@ -464,6 +551,15 @@
     ev(19, 'Campus Clean-Up and Tree Planting Drive', 'Community Extension', 'Completed', '2026-09-05T06:30:00', '2026-09-05T11:00:00', 'UC-LM Grounds & Coastal Area', 'Off-campus', 'All Students', 800, 736,
       'Community extension activity for the National Clean-Up Month including tree planting and coastal clean-up.')
   ];
+  /* Promo media published with an event — read by the student Events module
+     (ATTACHED MEDIA & PROMO) and preserved when the admin form re-saves. */
+  var EVT_FILES = {
+    'EVT-2026-011': [{ name: 'osas_services_fair_banner_2026.png', size: '1.8 MB', role: 'Event Poster | Banner Attached' }],
+    'EVT-2026-015': [{ name: 'intramurals_2026_opening_teaser.png', size: '2.4 MB', role: 'Event Poster | Teaser Attached' }]
+  };
+  EVENTS.forEach(function (row) {
+    if (EVT_FILES[row.code]) { row.attachments = EVT_FILES[row.code]; }
+  });
     /* ---------- Module 7: Feedback & Support Center ---------- */
   function plusHours(iso, hours) {
     var d = new Date(iso);
@@ -523,6 +619,42 @@
       'NCM 101 appears as enlisted but it is missing from my official schedule of classes in the portal.',
       'High', 'In Progress', '2026-09-12T09:05:00', 'Nathaniel Cruz')
   ];
+  /* The demo student's own thread — the student Feedback & Support module only
+     ever lists tickets filed by the signed-in student. */
+  TICKETS.unshift(
+    t(9, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
+      'LMS Access Issues', 'Module 4 quiz video loading error',
+      'The video player inside the Module 4 quiz stays at 0% buffering after the countdown starts, so I cannot answer the last two items. I have already tried Chrome, Edge and a mobile data connection with the same result.',
+      'High', 'Open', '2026-09-16T09:40:00', 'Nathaniel Cruz'),
+    t(8, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
+      'Orientation Content Feedback', 'Suggestion for the orientation navigation walkthrough',
+      'The navigation walkthrough skips the part about requesting a replacement ID. A short clip for that step would help a lot of freshmen.',
+      'Low', 'In Progress', '2026-09-14T15:10:00', 'Pia Santiago'),
+    t(7, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
+      'Enrollment & Records', 'Copy of my certificate of registration for on-the-job placement',
+      'My host company needs a stamped certificate of registration for the OJT clearance. I already have the soft copy from the registrar, but the portal download shows an empty page.',
+      'Medium', 'Resolved', '2026-09-08T11:25:00', 'Andrea Villanueva')
+  );
+  /* Opening acknowledgement on the ticket that is still Open (mock detail). */
+  TICKETS.forEach(function (row) {
+    if (row.code === 'TCS-2026-009') {
+      row.messages.push({
+        author: 'LMS Support System (Auto-Response)', role: 'OSAS Support', at: '2026-09-16T09:41:00',
+        body: 'Ticket received by OSAS Support. Assigned to the LMS Administration Team. Estimated resolution time: within 24 hours.'
+      });
+      row.updatedAt = '2026-09-16T09:41:00';
+    }
+  });
+  /* Satisfaction rating recorded by the student — rendered by the admin ticket
+     list (row.rating) and by the student Feedback & Support module. */
+  var TICKET_RATINGS = {
+    'TCS-2026-001': 5, 'TCS-2026-002': 4, 'TCS-2026-003': 3, 'TCS-2026-004': 5,
+    'TCS-2026-005': 2, 'TCS-2026-006': 4, 'TCS-2026-007': 5, 'TCS-2026-008': 4,
+    'TCS-2026-009': 3
+  };
+  TICKETS.forEach(function (row) {
+    if (TICKET_RATINGS[row.code]) { row.rating = TICKET_RATINGS[row.code]; }
+  });
     /* ---------- Module 8: Automated Broadcasts & Student Alerts ---------- */
   /* b(n, subject, message, channel, status, at, audience, reach) */
   function b(n, subject, message, channel, status, at, audience, reach) {
