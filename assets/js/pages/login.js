@@ -34,15 +34,15 @@
   }
 
   var TAGS = [
-    'Sign in to access the <strong>Information Broadcasting and Student Services System</strong> of the Office of Student Affairs.',
+    'Welcome to the centralized <strong>Management &amp; Reporting System</strong> for the Office of Student Affairs.',
     'Track announcements, orientation modules, and student support inquiries in one secure portal.',
     'Official college bulletins, regulations, and automated student alerts — for every SCT student.'
   ];
 
   document.getElementById('auth-brand').innerHTML =
-      '<img src="logo/5125ce0d-87ff-402c-a1b4-d5c370f44713.png" class="auth__logo" alt="Southway College of Technology Logo">' +
-      '<div class="auth__wordmark"></div>' +
-      '<div class="auth__wordmark-sub">&middot; Southway College of Technology</div>' +
+      OSAS.icons.beacon(104, 2.4) +
+      '<div class="auth__wordmark">BEACON</div>' +
+      '<hr class="auth__rule">' +
       '<p class="auth__tag" id="auth-tag">' + TAGS[0] + '</p>';
   document.getElementById('auth-corner').innerHTML = '';
 

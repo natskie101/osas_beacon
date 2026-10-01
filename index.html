@@ -13,66 +13,80 @@
 
 <!-- Login Page Content -->
 <main class="auth" id="auth-main">
-  <div class="auth__panel auth__left" id="auth-brand">
-    <div class="auth__brand"></div>
-  </div>
-  <div class="auth__panel auth__right">
-    <div class="auth__form">
-      <div class="auth__header">
-        <h1 class="auth__title">Welcome back</h1>
-        <p class="auth__subtitle">Sign in to access the BEACON OSAS Portal</p>
-      </div>
-      <div id="auth-alert"></div>
-      <form class="auth__form-inner" id="login-form" novalidate>
-        <div class="field">
-          <label for="email">University Email Address</label>
-          <span class="input-group">
-            <span class="input-group__ico" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
+  <div class="auth__card">
+
+    <!-- Brand panel -->
+    <div class="auth__panel auth__left">
+      <div class="auth__brand" id="auth-brand"></div>
+      <div class="auth__corner" id="auth-corner"></div>
+      <div class="auth__dots" id="auth-dots" role="tablist" aria-label="Feature highlights"></div>
+    </div>
+
+    <!-- Sign-in panel -->
+    <div class="auth__panel auth__right">
+      <div class="auth__form">
+        <div class="auth__header">
+          <h1 class="auth__title">Sign in to Portal</h1>
+          <p class="auth__subtitle">Please enter your authorized credentials to proceed</p>
+        </div>
+        <div id="auth-alert"></div>
+        <form class="auth__form-inner" id="login-form" novalidate>
+          <div class="field">
+            <label for="email">User ID</label>
+            <span class="input-group">
+              <span class="input-group__ico" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+              <input class="input" id="email" type="email" placeholder="admin.officer@university.edu.ph" autocomplete="username" required>
             </span>
-            <input class="input" id="email" type="email" placeholder="juan.delacruz@uc.edu.ph" autocomplete="username" required>
-          </span>
-        </div>
-        <div class="field">
-          <label for="password">Password</label>
-          <span class="input-group">
-            <span class="input-group__ico" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <span class="input-group">
+              <span class="input-group__ico" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input class="input" id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+              <button type="button" class="input-group__toggle" id="password-toggle" aria-label="Show password">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
             </span>
-            <input class="input" id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
-            <button type="button" class="input-group__toggle" id="password-toggle" aria-label="Show password">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-          </span>
+          </div>
+          <div class="field field--inline">
+            <label class="checkbox">
+              <input type="checkbox" id="remember">
+              <span class="checkbox__box"></span>
+              <span>Remember this device</span>
+            </label>
+            <a href="#" class="link" id="forgot-password">Forgot Password?</a>
+          </div>
+          <button type="submit" class="btn btn--primary btn--block auth__submit" id="login-submit">Login</button>
+        </form>
+
+        <div class="auth__alt">
+          <div class="auth__alt-row"><span class="auth__alt-line"></span><span>Or sign up here</span><span class="auth__alt-line"></span></div>
+          <a href="#" class="btn btn--outline btn--block" id="create-account">Create Account</a>
         </div>
-        <div class="field field--inline">
-          <label class="checkbox">
-            <input type="checkbox" id="remember">
-            <span class="checkbox__box"></span>
-            <span>Remember me</span>
-          </label>
-          <a href="#" class="link" id="forgot-password">Forgot password?</a>
+
+        <div class="auth__foot">
+          <p class="auth__hint" id="auth-hint"></p>
+          <button type="button" class="btn btn--link" id="fill-demo">Fill demo credentials</button>
         </div>
-        <button type="submit" class="btn btn--primary btn--block" id="login-submit">Sign In</button>
-      </form>
-      <div class="auth__foot">
-        <p class="auth__hint" id="auth-hint"></p>
-        <button type="button" class="btn btn--ghost btn--sm" id="fill-demo">Fill demo credentials</button>
-        <p class="auth__signup">Don't have an account? <a href="#" id="create-account">Create one</a></p>
+
+        <p class="auth__legal">Protected by BEACON Security Policy &bull; Authorized Access Only</p>
       </div>
     </div>
+
   </div>
-  <div class="auth__corner" id="auth-corner"></div>
-  <div class="auth__dots" id="auth-dots" role="tablist" aria-label="Feature highlights"></div>
 </main>
 
 <script src="assets/js/seed.js"></script>
