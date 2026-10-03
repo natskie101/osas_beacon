@@ -259,13 +259,6 @@
               '<div class="cell-sub">' + U.esc(row.audience) + '</div>';
           }
         },
-        {
-          label: 'Registrations',
-          render: function (row) {
-            return '<div class="cell-strong">' + OSAS.fmt.number(row.registered) + '</div>' +
-              '<div class="cell-sub">students registered</div>';
-          }
-        },
         { label: 'Status', render: function (row) { return C.badge(row.status); } },
         {
           label: 'Actions',

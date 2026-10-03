@@ -68,6 +68,7 @@ OSAS.forms = (function () {
   function userForm(options) {
     var opts = options || {};
     var editing = !!opts.user;
+    var studentOnly = !!opts.studentOnly;
     var user = opts.user || {};
     var meta = OSAS.store.meta();
     var optionList = OSAS.store.options();
@@ -85,7 +86,8 @@ OSAS.forms = (function () {
       '<div class="form-grid form-grid--2">' +
       field('UC Student ID', textInput('uf-student-id', user.studentId, '26-00000'),
         { id: 'uf-student-id', hint: 'Leave blank for faculty, staff and administrator accounts.' }) +
-      field('User Role', selectInput('uf-role', optionList.roles, user.role, 'Select a role'),
+      field('User Role', selectInput('uf-role', studentOnly ? ['Student'] : optionList.roles,
+        studentOnly ? 'Student' : user.role, 'Select a role'),
         { id: 'uf-role', required: true }) +
       '</div></div>' +
       '<div class="form-section">' +
@@ -96,7 +98,8 @@ OSAS.forms = (function () {
       '</div>' +
       '<div class="form-grid form-grid--2">' +
       field('Access Level', selectInput('uf-access', optionList.accessLevels, user.accessLevel, 'Select an access level'), { id: 'uf-access' }) +
-      field('Account Status', selectInput('uf-status', ['Active', 'Pending', 'Inactive'], user.status || 'Active', 'Select status'), { id: 'uf-status' }) +
+      field('Account Status', selectInput('uf-status', ['Active', 'Pending', 'Inactive'],
+        studentOnly ? 'Pending' : (user.status || 'Active'), 'Select status'), { id: 'uf-status' }) +
       '</div>' +
       field('Mobile Number (optional)', textInput('uf-phone', user.phone, '+63 9XX XXX XXXX'), { id: 'uf-phone' }) +
       '</div>' +
@@ -129,7 +132,8 @@ OSAS.forms = (function () {
       title: editing ? 'Edit User Account' : 'Add New User',
       subtitle: editing
         ? 'Update the portal identity, role assignment and access level of this account.'
-        : 'Create a university portal account for students, staff, or administrators.',
+        : (studentOnly ? 'Register a student account for portal access.' :
+          'Create a university portal account for students, staff, or administrators.'),
       body: body,
       footer: '<button type="button" class="btn btn--ghost" data-close>Cancel</button>' +
         '<button type="button" class="btn btn--primary" id="user-form-save">' +
@@ -194,7 +198,7 @@ OSAS.forms = (function () {
 
         el.querySelector('#user-form-save').addEventListener('click', function () {
           var first = value('uf-first'), last = value('uf-last'), email = value('uf-email');
-          var role = value('uf-role');
+          var role = studentOnly ? 'Student' : value('uf-role');
           var password = value('uf-password'), confirmPassword = value('uf-confirm');
           var errors = [];
 
@@ -224,7 +228,7 @@ OSAS.forms = (function () {
             firstName: first, lastName: last, email: email, username: email.split('@')[0],
             role: role, studentId: value('uf-student-id'), department: value('uf-department'),
             program: value('uf-program'), accessLevel: value('uf-access'),
-            status: value('uf-status') || 'Active', phone: value('uf-phone'),
+            status: studentOnly ? 'Pending' : (value('uf-status') || 'Active'), phone: value('uf-phone'),
             schoolIdImage: schoolIdImage
           };
 
@@ -409,7 +413,9 @@ OSAS.forms = (function () {
       '<div class="form-grid form-grid--2">' +
       field('Student', selectInput('tc-student', studentOptions, '', 'Select the student filing the inquiry'),
         { id: 'tc-student', required: true, hint: 'Only accounts with the Student role can file portal inquiries.' }) +
-      field('Concern Category', selectInput('tc-category', optionList.ticketCategories, '', 'Select a category'),
+      field('Concern Category', selectInput('tc-category', optionList.ticketCategories.filter(function (category) {
+        return category !== 'Enrollment & Records';
+      }), '', 'Select a category'),
         { id: 'tc-category', required: true }) +
       '</div></div>' +
       '<div class="form-section">' +

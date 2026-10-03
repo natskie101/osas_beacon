@@ -114,10 +114,6 @@ OSAS.shell = (function () {
       '<div class="topbar__actions">' +
       '<a class="icon-btn" href="broadcasts.html" title="Notification hub (' + counts.broadcasts + ' queued)">' +
       OSAS.icons.icon('bell', 15) + '</a>' +
-      '<button type="button" class="icon-btn" id="print-view" title="Print current view">' +
-      OSAS.icons.icon('printer', 15) + '</button>' +
-      '<button type="button" class="icon-btn" id="sign-out-top" title="Sign out">' +
-      OSAS.icons.icon('logout', 15) + '</button>' +
       '</div></header>';
   }
 
@@ -167,8 +163,6 @@ OSAS.shell = (function () {
       });
     }
     document.getElementById('sign-out').addEventListener('click', signOut);
-    document.getElementById('sign-out-top').addEventListener('click', signOut);
-    document.getElementById('print-view').addEventListener('click', function () { window.print(); });
 
     OSAS.components.flashFromQuery();
     return { session: session, meta: meta, content: document.getElementById('page-content') };

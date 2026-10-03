@@ -21,7 +21,7 @@
   var params = new URLSearchParams(window.location.search);
   var next = params.get('next');
   if (existing) {
-    window.location.replace(next || 'dashboard.html');
+    window.location.replace(existing.role === 'Student' ? 'student/dashboard.html' : (next || 'dashboard.html'));
     return;
   }
 
@@ -105,7 +105,8 @@
     button.textContent = 'Verifying account…';
     alertHost.innerHTML = C.alert('success', 'Signed in successfully',
       'Welcome back, ' + OSAS.util.esc(result.user.firstName) + '! Opening the portal dashboard…');
-    window.setTimeout(function () { window.location.href = next || 'dashboard.html'; }, 650);
+    var destination = result.user.role === 'Student' ? 'student/dashboard.html' : (next || 'dashboard.html');
+    window.setTimeout(function () { window.location.href = destination; }, 650);
   });
   /* Forgot password */
   document.getElementById('forgot-password').addEventListener('click', function (event) {
@@ -147,6 +148,7 @@
   /* Create account — Frames 91 / 92 */
   document.getElementById('create-account').addEventListener('click', function () {
     OSAS.forms.userForm({
+      studentOnly: true,
       onSaved: function (user) {
         document.getElementById('email').value = user.email;
         document.getElementById('password').focus();
