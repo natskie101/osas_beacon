@@ -11,7 +11,7 @@
   var OPTIONS = OSAS.store.options();
   console.log('[Regulations] Module initialized, C.modal:', typeof C.modal, 'OSAS:', !!OSAS);
 
-  var state = { search: '', category: 'All', status: 'All', tab: 'all', page: 1 };
+  var state = { search: '', category: 'All', status: 'Published', tab: 'all', page: 1 };
 
   function filtered() {
     var rows = OSAS.store.all('regulations').slice();

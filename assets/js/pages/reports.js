@@ -209,6 +209,22 @@
     var source = REPORT_SOURCES[row.category];
     var preview = source ? OSAS.store.all(source.resource).slice(0, 6) : [];
     var columns = source ? source.columns : [];
+    
+    // Student view columns
+    var studentColumns = [
+      { label: 'Student ID', value: 'studentId' },
+      { label: 'Name', value: function (r) { return (r.firstName || '') + ' ' + (r.lastName || ''); } },
+      { label: 'Program', value: 'program' },
+      { label: 'Department', value: 'department' },
+      { label: 'Year Level', value: 'year' },
+      { label: 'Date Completed', value: function (r) { return OSAS.fmt.date(r.lastLogin); } }
+    ];
+    
+    var students = OSAS.store.all('users').filter(function(u) { return u.role === 'Student'; });
+    var studentBody = students.length ? C.dataTable({ columns: studentColumns, rows: students, empty: 'No students available.' }) :
+      C.alert('info', 'No students available',
+        'There are currently no student records to display.');
+    
     C.modal({
       size: 'lg',
       title: U.esc(row.title),
@@ -229,7 +245,11 @@
         '<dt>Source Module</dt><dd>' + (source ? U.esc(source.resource) : '—') + '</dd>' +
         '</dl></div>' +
         '<div class="form-section">' +
-        '<div class="section-title"><span>2.</span> Record Preview (first ' + preview.length + ')</div>' +
+        '<div class="section-title"><span>2.</span> Student Records</div>' +
+        studentBody +
+        '</div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>3.</span> Record Preview (first ' + preview.length + ')</div>' +
         (preview.length ? C.dataTable({ columns: columns, rows: preview, empty: 'No records available for this report category.' }) :
           C.alert('info', 'No preview available',
             'This report category has no source records to preview right now.')) +
@@ -322,7 +342,7 @@
           align: 'right',
           render: function (row) {
             row = row || {};
-            return '<div class="cell-actions">' +
+            return '<div class="cell-actions" style="display:flex;gap:8px;align-items:center;">' +
               '<button type="button" class="btn btn--primary btn--sm" data-action="download" data-id="' + U.esc(row.id) + '">Download</button>' +
               '<button type="button" class="btn btn--ghost btn--sm" data-action="view" data-id="' + U.esc(row.id) + '">View</button></div>';
           }

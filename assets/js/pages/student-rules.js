@@ -66,6 +66,19 @@
     catch (err) { /* ignore */ }
   }
 
+  function sections(html) {
+    var out = [], re = /<h4>([\s\S]*?)<\/h4>/g, match, cursor = 0, current = null;
+    while ((match = re.exec(html))) {
+      if (current && match.index > cursor) { current.html += html.slice(cursor, match.index); }
+      current = { heading: match[1], html: '' };
+      out.push(current);
+      cursor = match.index + match[0].length;
+    }
+    if (current) { current.html += html.slice(cursor); }
+    if (!out.length) { out.push({ heading: '', html: html || '' }); }
+    return out;
+  }
+
   /* --------------------------------------------------------- list view */
   function chip(key, label) {
     return '<button type="button" class="sr-tab' + (state.category === key ? ' is-on' : '') +
@@ -90,7 +103,7 @@
   }
 
   function cardHtml(reg) {
-    return '<a class="sr-card" href="#/rule/' + ruleCode(reg) + '">' +
+    return '<div class="sr-card">' +
       '<span class="sr-card__bar"></span>' +
       '<div class="sr-card__body">' +
         '<div class="sr-card__pills">' +
@@ -101,9 +114,12 @@
         '<p class="sr-card__text">' + U.esc(reg.summary) + '</p>' +
         '<div class="sr-card__meta">' + U.esc(authority(reg)) + ' · Revised: ' +
           OSAS.fmt.shortDate(reg.updatedAt) + '</div>' +
+        '<div class="sr-card__actions" style="margin-top:12px;">' +
+          '<button type="button" class="btn btn--primary btn--sm" data-action="view" data-id="' + U.esc(reg.id) + '">View Policy</button>' +
+        '</div>' +
       '</div>' +
       '<span class="sr-card__chev">' + OSAS.icons.icon('chevronRight', 16) + '</span>' +
-    '</a>';
+    '</div>';
   }
 
   function cardsHtml() {
@@ -135,19 +151,6 @@
   }
 
   /* -------------------------------------------------------- detail view */
-  function sections(html) {
-    var out = [], re = /<h4>([\s\S]*?)<\/h4>/g, match, cursor = 0, current = null;
-    while ((match = re.exec(html))) {
-      if (current && match.index > cursor) { current.html += html.slice(cursor, match.index); }
-      current = { heading: match[1], html: '' };
-      out.push(current);
-      cursor = match.index + match[0].length;
-    }
-    if (current) { current.html += html.slice(cursor); }
-    if (!out.length) { out.push({ heading: '', html: html || '' }); }
-    return out;
-  }
-
   function sanctionsHtml(reg) {
     var tiers = reg.sanctions || [];
     if (!tiers.length) { return ''; }
@@ -158,30 +161,14 @@
       }).join('') + '</div></div>';
   }
 
-  /* detail screen replaces the bar title with "‹ Policy Details" + bookmark */
-  function barFor(reg) {
-    var marked = Boolean((readMap().mark || {})[reg.id]);
-    shell.setBar({
-      menu: false, bell: false, avatar: false,
-      title: '<button type="button" class="sr-back" id="sr-back">' +
-        OSAS.icons.icon('chevronLeft', 17) + 'Policy Details</button>',
-      extra: '<button type="button" class="sr-bookmark' + (marked ? ' is-on' : '') +
-        '" id="sr-bookmark" aria-pressed="' + (marked ? 'true' : 'false') +
-        '" aria-label="Bookmark this policy">' + BOOKMARK_SVG + '</button>'
-    });
-  }
-
-  function detailHtml(reg) {
+  function detailModalHtml(reg) {
     var map = readMap();
     var acked = (map.ack || {})[reg.id];
-
-    return '<div class="sr sr--detail">' +
-      '<div class="sr-pills">' +
+    return '<div class="sr-pills">' +
         '<span class="sr-pill sr-pill--code">' + ruleCode(reg) + '</span>' +
         '<span class="sr-pill sr-pill--status">In Force</span>' +
         (acked ? '<span class="sr-pill sr-pill--ack">Acknowledged</span>' : '') +
       '</div>' +
-      '<h1 class="sr-title">' + U.esc(reg.title) + '</h1>' +
       '<div class="sr-meta">' +
         '<div class="sr-meta__row"><span>Category:</span> <span class="sr-meta__v">' +
           U.esc(reg.category) + '</span></div>' +
@@ -190,20 +177,38 @@
         '<div class="sr-meta__row"><span>Effective:</span> <span class="sr-meta__v">' +
           U.esc(reg.effectiveDate) + '</span></div>' +
       '</div>' +
-      sections(reg.body).map(function (s) {
-        return '<div class="sr-art">' +
-          (s.heading ? '<div class="sr-art__h">' + U.esc(s.heading) + '</div>' : '') +
-          '<div class="sr-art__body">' + s.html + '</div></div>';
-      }).join('') +
-      sanctionsHtml(reg) +
-      '<div class="sr-ack">' +
-        (acked
-          ? '<button type="button" class="sr-ack__btn is-done" disabled>' +
-              OSAS.icons.icon('checkCircle', 15) + '&nbsp;&nbsp;Policy acknowledged</button>' +
-            '<div class="sr-ack__note">Acknowledged on ' + OSAS.fmt.dateTime(acked) + '</div>'
-          : '<button type="button" class="sr-ack__btn" id="sr-ack">I acknowledge this policy</button>') +
+      '<div style="margin-top:16px; max-height:400px; overflow-y:auto; border-top:1px solid #ddd; padding-top:16px;">' +
+        sections(reg.body).map(function (s) {
+          return '<div class="sr-art">' +
+            (s.heading ? '<div class="sr-art__h">' + U.esc(s.heading) + '</div>' : '') +
+            '<div class="sr-art__body">' + s.html + '</div></div>';
+        }).join('') +
+        sanctionsHtml(reg) +
       '</div>' +
-    '</div>';
+      '<div class="sr-ack" style="margin-top:16px; padding-top:16px; border-top:1px solid #ddd;">' +
+        (acked
+          ? '<div style="color:#666;"><span class="sr-pill sr-pill--ack" style="margin-right:8px;">✓</span>Acknowledged on ' + OSAS.fmt.dateTime(acked) + '</div>'
+          : '<button type="button" class="btn btn--primary" id="sr-modal-ack" style="width:100%;">I Acknowledge This Policy</button>') +
+      '</div>';
+  }
+
+  function showPolicyModal(reg) {
+    C.modal({
+      size: 'lg',
+      title: U.esc(reg.title),
+      subtitle: ruleCode(reg) + ' · ' + U.esc(reg.category),
+      body: detailModalHtml(reg),
+      footer: '<button type="button" class="btn btn--ghost" data-close>Close</button>',
+      onMount: function (el, close) {
+        var ackBtn = el.querySelector('#sr-modal-ack');
+        if (ackBtn) {
+          ackBtn.addEventListener('click', function() {
+            acknowledge(reg);
+            close();
+          });
+        }
+      }
+    });
   }
 
   /* --------------------------------------------------------- behaviour */
@@ -213,6 +218,7 @@
       node.classList.toggle('is-on', node.getAttribute('data-cat') === key);
     });
     $('sr-list').innerHTML = cardsHtml();
+    wireListCards();
   }
 
   function closeFilter() {
@@ -227,6 +233,7 @@
     $('sr-q').addEventListener('input', function (event) {
       state.q = event.target.value;
       $('sr-list').innerHTML = cardsHtml();
+      wireListCards();
     });
     $('sr-filter-btn').addEventListener('click', function (event) {
       event.stopPropagation();
@@ -242,6 +249,19 @@
       });
     });
     $('sr-filter').addEventListener('click', function (event) { event.stopPropagation(); });
+    wireListCards();
+  }
+
+  function wireListCards() {
+    var viewBtns = document.querySelectorAll('[data-action="view"]');
+    viewBtns.forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var regId = this.getAttribute('data-id');
+        var reg = OSAS.store.find('regulations', regId);
+        if (reg) { showPolicyModal(reg); }
+      });
+    });
   }
 
   function toggleBookmark(reg, button) {
@@ -268,14 +288,6 @@
       text: reg.title + ' was acknowledged by ' + shell.fullName(user) + '.'
     });
     C.toast('success', 'Policy acknowledged', reg.title);
-    renderDetail(reg);
-  }
-
-  function wireDetail(reg) {
-    $('sr-back').addEventListener('click', function () { window.location.hash = ''; });
-    $('sr-bookmark').addEventListener('click', function () { toggleBookmark(reg, this); });
-    var ack = $('sr-ack');
-    if (ack) { ack.addEventListener('click', function () { acknowledge(reg); }); }
   }
 
   /* ---------------------------------------------------------- routing */
@@ -288,19 +300,7 @@
     scrollTop();
   }
 
-  function renderDetail(reg) {
-    main.innerHTML = detailHtml(reg);
-    barFor(reg);
-    wireDetail(reg);
-    scrollTop();
-  }
-
   function route() {
-    var match = (window.location.hash || '').match(/^#\/rule\/(.+)$/);
-    if (match) {
-      var reg = published().filter(function (r) { return ruleCode(r) === match[1]; })[0];
-      if (reg) { renderDetail(reg); return; }
-    }
     renderList();
   }
 

@@ -11,12 +11,13 @@
   var OPTIONS = OSAS.store.options();
   console.log('[Announcements] Module initialized, C.modal:', typeof C.modal, 'OSAS:', !!OSAS);
 
-  var state = { search: '', category: 'All', status: 'All', audience: 'All', page: 1 };
+  var STUDENT_AUDIENCES = ['All Student Portals', 'Incoming Freshmen', 'Student Officers', 'Graduating Students'];
+  var state = { search: '', category: 'All', status: 'Published', audience: 'All', page: 1 };
 
   function filtered() {
     var rows = OSAS.store.all('announcements').slice();
     rows = U.search(rows, state.search, ['title', 'summary', 'category', 'audience', 'code']);
-    rows = U.byStatus(rows, state.status);
+    rows = rows.filter(function (r) { return r.status === 'Published' && STUDENT_AUDIENCES.indexOf(r.audience) > -1; });
     if (state.category !== 'All') {
       rows = rows.filter(function (r) { return r.category === state.category; });
     }
@@ -52,10 +53,8 @@
     return '<div class="ann-filters" id="ann-filters" style="display:none">' +
       '<div class="field"><label for="ann-category">Category</label>' +
       '<select class="input" id="ann-category">' + selectOptions(OPTIONS.announcementCategories, state.category) + '</select></div>' +
-      '<div class="field"><label for="ann-status">Status</label>' +
-      '<select class="input" id="ann-status">' + selectOptions(OSAS.store.options().statuses, state.status) + '</select></div>' +
-      '<div class="field"><label for="ann-audience">Target Audience</label>' +
-      '<select class="input" id="ann-audience">' + selectOptions(OPTIONS.audiences, state.audience) + '</select></div>' +
+      '<div class="field"><label for="ann-audience">Target Audience (Student View)</label>' +
+      '<select class="input" id="ann-audience">' + selectOptions(STUDENT_AUDIENCES, state.audience) + '</select></div>' +
       '</div>';
   }
 
@@ -345,7 +344,7 @@
   }
 
   /* ---------------- one-time delegated bindings (survive re-renders) ----- */
-  var FILTER_KEYS = { 'ann-category': 'category', 'ann-status': 'status', 'ann-audience': 'audience' };
+  var FILTER_KEYS = { 'ann-category': 'category', 'ann-audience': 'audience' };
 
   content.addEventListener('input', function (event) {
     if (event.target.id !== 'ann-search') { return; }

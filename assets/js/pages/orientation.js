@@ -9,12 +9,12 @@
   var content = shell.content;
   var OPTIONS = OSAS.store.options();
 
-  var state = { search: '', category: 'All', status: 'All', page: 1 };
+  var state = { search: '', category: 'All', status: 'Published', page: 1 };
 
   function filtered() {
     var rows = OSAS.store.all('modules').slice();
     rows = U.search(rows, state.search, ['title', 'description', 'category', 'code']);
-    rows = U.byStatus(rows, state.status);
+    rows = rows.filter(function (r) { return r.status === 'Published'; });
     if (state.category !== 'All') {
       rows = rows.filter(function (r) { return r.category === state.category; });
     }
