@@ -207,7 +207,7 @@
         '<span>Recorded ' + OSAS.fmt.dateTime(ack.at) + '</span></div></div>';
     }
     return '<button type="button" class="sa-ack__btn" id="sa-ack">' +
-      'Acknowledge &amp; Save to Calendar</button>';
+      'Acknowledge</button>';
   }
   function detailHtml(row) {
     var ack = acked(annCode(row));

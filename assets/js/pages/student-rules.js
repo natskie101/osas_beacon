@@ -188,7 +188,7 @@
       '<div class="sr-ack" style="margin-top:16px; padding-top:16px; border-top:1px solid #ddd;">' +
         (acked
           ? '<div style="color:#666;"><span class="sr-pill sr-pill--ack" style="margin-right:8px;">✓</span>Acknowledged on ' + OSAS.fmt.dateTime(acked) + '</div>'
-          : '<button type="button" class="btn btn--primary" id="sr-modal-ack" style="width:100%;">I Acknowledge This Policy</button>') +
+          : '<button type="button" class="btn btn--primary" id="sr-modal-ack" style="width:100%;">I Acknowledge</button>') +
       '</div>';
   }
 

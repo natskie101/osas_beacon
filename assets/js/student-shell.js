@@ -163,8 +163,8 @@ OSAS.studentShell = (function () {
       title: 'Notifications',
       subtitle: 'Latest alerts delivered to your student portal account.',
       body: body,
-      footer: '<button type="button" class="btn btn--ghost" data-close>Close</button>' +
-        '<a class="btn btn--primary" href="../broadcasts.html">Open Notification Hub</a>'
+      
+        
     });
   }
 
