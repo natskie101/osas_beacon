@@ -37,7 +37,7 @@
     check('reports seeded', counts.reports >= 6, 'n=' + counts.reports);
     check('tracking seeded', counts.tracking >= 8, 'n=' + counts.tracking);
     check('audit log seeded', counts.auditLog >= 5, 'n=' + counts.auditLog);
-    check('schema version is 5', store.meta().schemaVersion === 5, 'v=' + store.meta().schemaVersion);
+    check('schema version is 7', store.meta().schemaVersion === 7, 'v=' + store.meta().schemaVersion);
     check('metrics present', typeof store.metrics().totalPortalViews === 'number',
       'portalViews=' + store.metrics().totalPortalViews);
     check('options present', store.options().departments.length > 0,
@@ -142,7 +142,7 @@
 
     section('Persistence');
     var backup = JSON.parse(store.exportBackup());
-    check('backup round-trips', backup.users.length === store.all('users').length && backup.version === 5);
+    check('backup round-trips', backup.users.length === store.all('users').length && backup.version === 7);
     var annCount = store.all('announcements').length, userCount = store.all('users').length;
     store.reset();
     check('reset restores the seed data', store.all('announcements').length === annCount &&

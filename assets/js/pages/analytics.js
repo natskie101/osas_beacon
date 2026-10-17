@@ -11,8 +11,46 @@
 
   var state = { search: '', program: 'All', tab: 'all', page: 1 };
 
+  /* Mandatory orientation modules — the compliance denominator used by the
+     ledger, the progress breakdown and the orientation report (module 10). */
+  function mandatoryModules() {
+    return OSAS.store.all('modules').filter(function (row) {
+      return row.mandatory && row.status === 'Published';
+    });
+  }
+  function students() {
+    return OSAS.store.all('users').filter(function (r) { return r.role === 'Student'; });
+  }
+
+  /* Cohort-wide orientation progress, used by the summary cards. */
+  function cohortProgress() {
+    var mods = mandatoryModules();
+    var list = students();
+    var totalSlots = list.length * mods.length || 1;
+    var completedSlots = 0;
+    var compliant = 0, inProgress = 0, overdue = 0;
+    list.forEach(function (row) {
+      var done = (row.orientationModules || []).length;
+      completedSlots += done;
+      var pct = row.orientationPct || 0;
+      if (pct >= 100) { compliant++; }
+      else if (pct > 0) { inProgress++; }
+      else { overdue++; }
+    });
+    return {
+      students: list.length,
+      modules: mods.length,
+      rate: Math.round((completedSlots / totalSlots) * 100),
+      compliant: compliant,
+      inProgress: inProgress,
+      overdue: overdue,
+      eventsAttended: list.reduce(function (s, r) { return s + (r.eventsAttended || 0); }, 0),
+      coCurricularHrs: list.reduce(function (s, r) { return s + (r.coCurricularHrs || 0); }, 0)
+    };
+  }
+
   function filtered() {
-    var rows = OSAS.store.all('users').filter(function (r) { return r.role === 'Student'; });
+    var rows = students();
     rows = U.search(rows, state.search, ['studentId', 'firstName', 'lastName', 'email', 'program', 'department']);
     if (state.program !== 'All') {
       rows = rows.filter(function (r) { return r.program === state.program; });
@@ -41,13 +79,13 @@
   }
 
   function tabStrip() {
-    var students = OSAS.store.all('users').filter(function (r) { return r.role === 'Student'; });
-    var orientDone = students.filter(function (r) { return r.orientationDone; }).length;
-    var atRisk = students.filter(function (r) { return r.status === 'Inactive' || r.orientationDone === false; }).length;
+    var list = students();
+    var orientDone = list.filter(function (r) { return r.orientationDone; }).length;
+    var atRisk = list.filter(function (r) { return r.status === 'Inactive' || r.orientationDone === false; }).length;
     var tabs = [
-      { key: 'all', label: 'All Student Logs' },
-      { key: 'orientation', label: 'Orientation Progress' },
-      { key: 'atrisk', label: 'At-Risk / Incomplete' }
+      { key: 'all', label: 'All Student Logs (' + list.length + ')' },
+      { key: 'orientation', label: 'Orientation Progress (' + orientDone + ')' },
+      { key: 'atrisk', label: 'At-Risk / Incomplete (' + atRisk + ')' }
     ];
     return '<div class="toolbar"><div class="tabs">' + tabs.map(function (tab) {
       return '<button type="button" class="tab' + (state.tab === tab.key ? ' tab--on' : '') +
@@ -152,6 +190,10 @@
     var pct = row.orientationPct || 0;
     var modules = row.orientationModules || [];
     var events = row.attendedEvents || [];
+    var mandatory = mandatoryModules();
+    var doneCodes = {};
+    modules.forEach(function (m) { doneCodes[m.code] = true; });
+    var missing = mandatory.filter(function (mod) { return !doneCodes[mod.code]; });
     var statusLabel = pct >= 100 ? 'Compliant' : pct >= 50 ? 'In Progress' : 'Overdue';
     var statusClass = pct >= 100 ? 'active' : pct >= 50 ? 'pending' : 'danger';
 
@@ -161,17 +203,28 @@
             '<span class="trk-module-check">' + OSAS.icons.icon('check', 14) + '</span>' +
             '<div class="trk-module-info">' +
             '<div class="trk-module-name">' + U.esc(m.name) + '</div>' +
-            '<div class="trk-module-date">Completed: ' + U.esc(m.date) + '</div>' +
+            '<div class="trk-module-date">Completed: ' + U.esc(OSAS.fmt.dateTime(m.date)) + '</div>' +
             '</div></div>';
         }).join('') + '</div>'
       : '<div class="trk-empty">No modules completed yet.</div>';
+
+    var missingHtml = missing.length
+      ? '<div class="trk-module-list">' + missing.map(function (mod) {
+          return '<div class="trk-module">' +
+            '<span class="trk-module-check trk-module-check--todo">' + OSAS.icons.icon('clock', 14) + '</span>' +
+            '<div class="trk-module-info">' +
+            '<div class="trk-module-name">' + U.esc(mod.title) + '</div>' +
+            '<div class="trk-module-date">Mandatory &middot; outstanding</div>' +
+            '</div></div>';
+        }).join('') + '</div>'
+      : '<div class="trk-empty">All mandatory orientation modules are complete.</div>';
 
     var eventHtml = events.length
       ? '<div class="trk-event-list">' + events.map(function (e) {
           return '<div class="trk-event">' +
             '<div class="trk-event-info">' +
             '<div class="trk-event-name">' + U.esc(e.name) + '</div>' +
-            '<div class="trk-event-date">' + U.esc(e.date) + '</div>' +
+            '<div class="trk-event-date">' + U.esc(OSAS.fmt.dateTime(e.date)) + '</div>' +
             '</div>' +
             '<span class="trk-event-credit">+' + U.esc(e.credit) + ' Credit Hrs</span>' +
             '</div>';
@@ -191,9 +244,13 @@
         '<span class="badge badge--' + statusClass + '">' + statusLabel + '</span>' +
         '</div>' +
         '<div class="trk-section">' +
-        '<div class="trk-section__title">Orientation Progress (' + modules.length + ' / ' + (modules.length + 2) + ' Completed)</div>' +
+        '<div class="trk-section__title">Mandatory Orientation Progress (' + modules.filter(function (m) { return doneCodes[m.code]; }).length + ' / ' + mandatory.length + ' Completed)</div>' +
         orientationBar(pct) +
         moduleHtml +
+        '</div>' +
+        '<div class="trk-section">' +
+        '<div class="trk-section__title">Outstanding Mandatory Modules (' + missing.length + ' remaining)</div>' +
+        missingHtml +
         '</div>' +
         '<div class="trk-section">' +
         '<div class="trk-section__title">Attended Campus Events (' + events.length + ' Events / ' + (events.reduce(function (s, e) { return s + (parseInt(e.credit) || 0); }, 0)) + ' Hours)</div>' +
@@ -221,6 +278,7 @@
       { label: 'Program', value: 'program' },
       { label: 'Department', value: 'department' },
       { label: 'Orientation %', value: 'orientationPct' },
+      { label: 'Mandatory Modules Done', value: function (r) { return (r.orientationModules || []).length + '/' + (r.orientationTotal || 0); } },
       { label: 'Events Attended', value: 'eventsAttended' },
       { label: 'Co-Curricular Hrs', value: 'coCurricularHrs' },
       { label: 'Status', value: 'status' }
@@ -228,12 +286,29 @@
     C.toast('success', 'Tracking exported', rows.length + ' records written to CSV.');
   }
 
+  /* ------------------------------------------------- summary + breakdown */
+  function summaryHtml() {
+    var s = cohortProgress();
+    return '<div class="stats">' +
+      C.statCard('Cohort Orientation Rate', s.rate + '%',
+        '<span class="u-muted">' + s.modules + ' mandatory modules &times; ' + s.students + ' students</span>') +
+      C.statCard('Fully Compliant', s.compliant,
+        '<span class="badge badge--active">Cleared</span><span class="u-muted">all mandatory modules done</span>') +
+      C.statCard('In Progress', s.inProgress,
+        '<span class="badge badge--pending">Ongoing</span><span class="u-muted">' + s.overdue + ' not yet started</span>') +
+      C.statCard('Co-Curricular Engagement', s.coCurricularHrs + ' hrs',
+        '<span class="u-muted">from ' + s.eventsAttended + ' events attended</span>') +
+      '</div>';
+  }
+
   function render() {
     content.innerHTML = OSAS.shell.pageHead({
       title: 'Viewing & Participation Tracking Core',
       subtitle: 'Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.',
       actions: ''
-    }) + toolbar() + tabStrip() + table(filtered());
+    }) + summaryHtml() + toolbar() + tabStrip() +
+      '<div class="form-section"><div class="section-title"><span>1.</span> Student Participation Ledger</div>' +
+      table(filtered()) + '</div>';
   }
 
   /* ---------------- one-time delegated bindings (survive re-renders) ----- */

@@ -63,14 +63,18 @@ OSAS.pagekit = (function () {
       if (typeof config.stats === 'function') { html += config.stats(state, rows); }
       if (config.filters && config.filters.length) { html += filterBar(); }
       if (typeof config.beforeTable === 'function') { html += config.beforeTable(state, rows); }
-      html += C.dataTable({
-        columns: config.columns(state, rows),
-        rows: page.items,
-        toolbar: typeof config.toolbar === 'function' ? config.toolbar(state, rows, page) : (config.toolbar || ''),
-        footer: config.footer === false ? '' :
-          C.pager(page, config.footerLabel ? config.footerLabel(page, rows) : undefined),
-        empty: config.empty
-      });
+      /* `table: false` lets a page render only its head/stats/panels and skip
+         the directory table (and its toolbar + pager) entirely. */
+      if (config.table !== false) {
+        html += C.dataTable({
+          columns: config.columns(state, rows),
+          rows: page.items,
+          toolbar: typeof config.toolbar === 'function' ? config.toolbar(state, rows, page) : (config.toolbar || ''),
+          footer: config.footer === false ? '' :
+            C.pager(page, config.footerLabel ? config.footerLabel(page, rows) : undefined),
+          empty: typeof config.empty === 'function' ? config.empty(state, rows) : config.empty
+        });
+      }
       if (typeof config.afterTable === 'function') { html += config.afterTable(state, rows, page); }
       content.innerHTML = html;
       if (typeof config.afterRender === 'function') { config.afterRender(state, rows, page); }

@@ -1,8 +1,9 @@
 /* ==========================================================================
    Module 9 — User Account & Access Management
-   Prototype build. The module opens on the Verification Queue of pending
-   registrations. "Needs Review" opens the Add New User modal with the
-   applicant's School ID; Verify / Reject clear the request from the queue.
+   Prototype build. The module opens on the User Directory; the Verification
+   Queue tab holds pending registrations and never mixes with the directory.
+   "Needs Review" opens the Add New User modal with the applicant's School ID;
+   Verify / Reject clear the request from the queue.
    ========================================================================== */
 (function () {
   'use strict';
@@ -188,8 +189,8 @@
       C.statCard('Active Student Accounts', OSAS.fmt.number(stats.activeStudentAccounts),
         '<span class="badge badge--active">Active</span><span class="u-muted">signed in at least once</span>') +
       C.statCard('Pending Activations', OSAS.fmt.number(stats.pendingActivations),
-        '<span class="badge badge--pending">Awaiting</span><span class="u-muted">of which ' + stats.pending +
-        ' are in this directory</span>') +
+        '<span class="badge badge--pending">Awaiting</span><span class="u-muted">' + stats.pending +
+        ' tracked in the verification queue</span>') +
       C.statCard('Administrative Staff', OSAS.fmt.number(stats.administrativeStaff),
         '<span class="u-muted">' + stats.byRole.Administrator + ' admin &middot; ' +
         (stats.byRole.Faculty || 0) + ' faculty &middot; ' + (stats.byRole.Staff || 0) + ' staff in directory</span>') +
@@ -218,7 +219,7 @@
         return '<option value="' + U.esc(r) + '"' + (r === state.role ? ' selected' : '') + '>' + U.esc(r) + '</option>';
       }).join('') + '</select></div>' +
       '<div class="field"><label for="usr-status">Account Status</label><select class="input" id="usr-status">' +
-      ['All', 'Active', 'Pending', 'Inactive'].map(function (s) {
+      ['All', 'Active', 'Inactive'].map(function (s) {
         return '<option value="' + s + '"' + (s === state.status ? ' selected' : '') + '>' + s + '</option>';
       }).join('') + '</select></div></div>';
   }
@@ -312,9 +313,6 @@
         align: 'right',
         render: function (row) {
           return '<div class="cell-actions">' +
-            (row.status === 'Pending'
-              ? '<button type="button" class="btn btn--outline btn--sm" data-action="review" data-id="' +
-                U.esc(row.id) + '">Review</button>' : '') +
             '<button type="button" class="btn btn--outline btn--sm" data-action="edit" data-id="' +
             U.esc(row.id) + '">Manage</button>' +
             '<button type="button" class="btn btn--ghost btn--sm" data-action="toggle" data-id="' +
@@ -333,7 +331,7 @@
       icon('plus', 13) + ' Add New User</button>',
     resource: 'users',
     defaultState: {
-      tab: 'queue', search: '', tier: 'All', filtersOpen: false,
+      tab: 'directory', search: '', tier: 'All', filtersOpen: false,
       role: 'All', status: 'All', page: 1
     },
     filter: function (rows, state) {
@@ -345,7 +343,10 @@
         }
         return U.sortBy(queue, 'requestedAt', 'desc');
       }
-      var list = U.search(rows, state.search,
+      /* Pending registrations belong to the Verification Queue only — keep them
+         out of the directory so the two lists never overlap. */
+      var list = rows.filter(function (row) { return row.status !== 'Pending'; });
+      list = U.search(list, state.search,
         ['firstName', 'lastName', 'email', 'studentId', 'department', 'program']);
       list = U.byStatus(list, state.status);
       if (state.role !== 'All') {
@@ -367,7 +368,10 @@
       return 'Showing ' + info.from + '–' + info.to + ' of ' + info.total +
         (queue ? ' pending registration requests' : ' registered users');
     },
-    empty: 'No registration requests match the current filters.',
+    empty: function (state) {
+      return isQueue(state) ? 'No registration requests match the current filters.'
+        : 'No users match the current filters.';
+    },
     onAction: function (action, id) {
       if (action === 'tab') { page.state.tab = id; page.state.page = 1; page.render(); return; }
       if (action === 'filters') { page.state.filtersOpen = !page.state.filtersOpen; page.render(); return; }

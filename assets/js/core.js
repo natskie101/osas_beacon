@@ -202,7 +202,7 @@ OSAS.util = (function () {
   return {
     esc: esc, clone: clone, uid: uid, now: now, contains: contains, search: search,
     byStatus: byStatus, sortBy: sortBy, paginate: paginate, download: download,
-    exportCsv: exportCsv, debounce: debounce, qs: qs, qsa: qsa, stripTags: stripTags,
+    exportCsv: exportCsv, escapeCsv: escapeCsv, debounce: debounce, qs: qs, qsa: qsa, stripTags: stripTags,
     truncate: truncate, clamp: clamp, monthYear: monthYear, slug: slug
   };
 })();

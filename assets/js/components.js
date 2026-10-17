@@ -213,7 +213,18 @@ OSAS.components = (function () {
 
     var body = rows.map(function (row) {
       var cells = columns.map(function (col) {
-        var content = typeof col.render === 'function' ? col.render(row) : esc(row[col.key]);
+        /* Columns may supply a custom `render`, a `value` (field name or
+           accessor), or a legacy `key` field name. */
+        var content;
+        if (typeof col.render === 'function') {
+          content = col.render(row);
+        } else if (typeof col.value === 'function') {
+          content = esc(col.value(row));
+        } else if (col.value !== undefined) {
+          content = esc(row[col.value]);
+        } else {
+          content = esc(row[col.key]);
+        }
         return '<td' + (col.align === 'right' ? ' class="u-right"' : '') + '>' + content + '</td>';
       }).join('');
       return '<tr data-id="' + esc(row.id) + '">' + cells + '</tr>';

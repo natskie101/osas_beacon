@@ -12,9 +12,8 @@ OSAS.shell = (function () {
     { n: 5, label: 'Events & Activities', href: 'events.html', page: 'events', icon: 'calendar' },
     { n: 6, label: 'Viewing & Tracking', href: 'analytics.html', page: 'analytics', icon: 'activity' },
     { n: 7, label: 'Feedback & Support', href: 'support.html', page: 'support', icon: 'headset', badge: 'tickets' },
-    { n: 8, label: 'Notification Hub', href: 'broadcasts.html', page: 'broadcasts', icon: 'bell', badge: 'broadcasts' },
-    { n: 9, label: 'User Management', href: 'users.html', page: 'users', icon: 'users' },
-    { n: 10, label: 'Reports', href: 'reports.html', page: 'reports', icon: 'fileText' }
+    { n: 8, label: 'User Management', href: 'users.html', page: 'users', icon: 'users' },
+    { n: 9, label: 'Reports', href: 'reports.html', page: 'reports', icon: 'fileText' }
   ];
 
   var STUDENT_NAV = [
@@ -32,11 +31,11 @@ OSAS.shell = (function () {
     },
     announcements: {
       title: 'Announcement & Information Broadcast Management',
-      subtitle: 'Create, publish, and organize university-wide announcements and information notices across the student portal.'
+      subtitle: 'Create, publish, and organize school announcements and information notices across the student portal.'
     },
     regulations: {
       title: 'Student Code of Conduct & Related Regulations',
-      subtitle: 'Maintain and communicate university policies, the student code of conduct, and mandated regulations.'
+      subtitle: 'Maintain and communicate school policies, the student code of conduct, and mandated regulations.'
     },
     orientation: {
       title: 'Student Orientation & Information Module',

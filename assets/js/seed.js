@@ -13,7 +13,7 @@
     institution: 'Southway College of Technology',
     campusCode: 'SCT',
     academicYear: 'AY 2026-2027',
-    schemaVersion: 5,
+    schemaVersion: 7,
     seededAt: '2026-09-16T09:45:00',
     demoPassword: 'Beacon@2026'
   };
@@ -559,6 +559,80 @@
   };
   EVENTS.forEach(function (row) {
     if (EVT_FILES[row.code]) { row.attachments = EVT_FILES[row.code]; }
+  });
+  /* ---------- Module 6 + Module 10: student orientation progress ----------
+     Per-student completion records for the MANDATORY orientation modules,
+     plus credited co-curricular attendance. Read by the Viewing & Tracking
+     ledger (module 6) and compiled into the orientation reports (module 10). */
+  var MODULE_BY_CODE = {}, EVENT_BY_CODE = {};
+  MODULES.forEach(function (row) { MODULE_BY_CODE[row.code] = row; });
+  EVENTS.forEach(function (row) { EVENT_BY_CODE[row.code] = row; });
+  var MANDATORY_MODULES = MODULES.filter(function (row) {
+    return row.mandatory && row.status === 'Published';
+  });
+
+  /* Completion date for the n-th module of a student, kept before SEED_NOW */
+  function completedAt(index, offsetDays) {
+    var d = new Date('2026-08-24T08:00:00');
+    d.setDate(d.getDate() + (offsetDays || 0) + index * 2);
+    function p(v) { return String(v).padStart(2, '0'); }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' +
+      p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+
+  /* studentId -> mandatory module codes already completed, in order */
+  var PROGRESS = {
+    '22-00104': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003', 'ORIENT-004', 'ORIENT-005', 'ORIENT-007'],
+    '24-01193': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003', 'ORIENT-004', 'ORIENT-005', 'ORIENT-007'],
+    '23-00741': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003', 'ORIENT-004', 'ORIENT-005', 'ORIENT-007'],
+    '23-00872': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003', 'ORIENT-004', 'ORIENT-005'],
+    '24-01455': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003', 'ORIENT-004'],
+    '26-00042': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002'],
+    '26-00044': ['ORIENT-001', 'ORIENT-011', 'ORIENT-002', 'ORIENT-003'],
+    '24-01208': ['ORIENT-001', 'ORIENT-011'],
+    '26-00043': ['ORIENT-001', 'ORIENT-011'],
+    '26-00017': ['ORIENT-001'],
+    '26-00041': [],
+    '26-00045': []
+  };
+
+  /* studentId -> [eventCode, creditHours] already attended */
+  var ATTENDED = {
+    '22-00104': [['EVT-2026-011', 6], ['EVT-2026-018', 8], ['EVT-2026-019', 4]],
+    '23-00741': [['EVT-2026-011', 6], ['EVT-2026-018', 8], ['EVT-2026-019', 4]],
+    '24-01193': [['EVT-2026-018', 8], ['EVT-2026-019', 4]],
+    '23-00872': [['EVT-2026-011', 6], ['EVT-2026-018', 8]],
+    '24-01455': [['EVT-2026-011', 6]],
+    '26-00042': [['EVT-2026-011', 6]],
+    '26-00044': [['EVT-2026-019', 4]]
+  };
+
+  USERS.forEach(function (user) {
+    if (user.role !== 'Student') { return; }
+    var codes = PROGRESS[user.studentId] || [];
+    var offset = parseInt(String(user.studentId).slice(0, 2), 10) % 7;
+    /* Year level derived from the entry-year prefix of the student ID when the
+       directory record does not already carry one. */
+    if (!user.year) {
+      user.year = { '22': 'Fourth Year', '23': 'Third Year', '24': 'Second Year',
+        '25': 'Second Year', '26': 'First Year' }[String(user.studentId).slice(0, 2)] || '';
+    }
+    user.orientationTotal = MANDATORY_MODULES.length;
+    user.orientationModules = codes.map(function (code, i) {
+      var mod = MODULE_BY_CODE[code];
+      return { code: code, name: mod ? mod.title : code, date: completedAt(i, offset) };
+    });
+    user.orientationCompleted = codes.length;
+    user.orientationPct = Math.round(codes.length / MANDATORY_MODULES.length * 100);
+    user.orientationDone = user.orientationPct >= 100;
+    user.attendedEvents = (ATTENDED[user.studentId] || []).map(function (pair) {
+      var evt = EVENT_BY_CODE[pair[0]];
+      return { code: pair[0], name: evt ? evt.title : pair[0], date: evt ? evt.startAt : '', credit: pair[1] };
+    });
+    user.eventsAttended = user.attendedEvents.length;
+    user.coCurricularHrs = user.attendedEvents.reduce(function (sum, e) {
+      return sum + (parseInt(e.credit, 10) || 0);
+    }, 0);
   });
     /* ---------- Module 7: Feedback & Support Center ---------- */
   function plusHours(iso, hours) {
