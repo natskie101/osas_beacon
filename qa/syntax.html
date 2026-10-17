@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JS SYNTAX CHECK</title>
+</head>
+<body>
+<pre id="out">RUNNING</pre>
+<script>
+(function () {
+  var file = new URLSearchParams(window.location.search).get('file') || '/assets/js/core.js';
+  if (file.charAt(0) !== '/') { file = '/' + file; }
+
+  function scan(src) {
+    var depth = 0, line = 1, opens = [], state = 'code', startLine = 0;
+    for (var i = 0; i < src.length; i++) {
+      var ch = src[i], nx = src[i + 1];
+      if (state === 'line') { if (ch === '\n') { state = 'code'; line++; } continue; }
+      if (state === 'block') {
+        if (ch === '*' && nx === '/') { state = 'code'; i++; }
+        else if (ch === '\n') { line++; }
+        continue;
+      }
+      if (state === "'" || state === '"' || state === '`') {
+        if (ch === '\\') { i++; continue; }
+        if (ch === '\n') { line++; }
+        if (ch === state) { state = 'code'; }
+        continue;
+      }
+      if (ch === '\n') { line++; continue; }
+      if (ch === '/' && nx === '/') { state = 'line'; i++; continue; }
+      if (ch === '/' && nx === '*') { state = 'block'; i++; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { state = ch; startLine = line; continue; }
+      if (ch === '{') { depth++; opens.push(line); }
+      else if (ch === '}') { depth--; opens.pop(); if (depth < 0) { return 'EXTRA } at line ' + line; } }
+    }
+    if (state === "'" || state === '"' || state === '`') { return 'UNTERMINATED string opened at line ' + startLine; }
+    if (state === 'block') { return 'UNTERMINATED block comment'; }
+    if (depth !== 0) { return 'UNBALANCED depth ' + depth + ' at EOF, unmatched { opened at lines ' + opens.join(', '); }
+    return 'BALANCED';
+  }
+
+  fetch(file).then(function (r) { return r.ok ? r.text() : Promise.reject(new Error('HTTP ' + r.status + ' for ' + file)); }).then(function (src) {
+    var lines = src.split('\n').length;
+    var compile = 'COMPILE=unknown';
+    try {
+      new Function(src);
+      compile = 'COMPILE=ok';
+    } catch (e) {
+      compile = 'COMPILE=' + e.name + ': ' + e.message;
+    }
+    var result = 'FILE=' + file + ' LINES=' + lines + ' ' + compile + ' SCAN=' + scan(src);
+    document.getElementById('out').textContent = result;
+    document.title = 'SYNTAX ' + (compile.indexOf('ok') > -1 ? 'OK' : 'FAIL');
+    document.body.setAttribute('data-result', result);
+  }).catch(function (e) {
+    document.getElementById('out').textContent = 'FETCH-ERROR: ' + e.message;
+    document.title = 'SYNTAX FETCHFAIL';
+  });
+})();
+</script>
+</body>
+</html>
