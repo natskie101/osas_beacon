@@ -1,6 +1,6 @@
 /* ==========================================================================
    BEACON OSAS Portal — UI components
-   Toasts, modals, cards, tables, pagers, rich-text editor and SVG chart.
+   Toasts, modals, cards, tables, pagers and rich-text editor.
    ========================================================================== */
 OSAS.components = (function () {
   var STATUS_CLASS = {
@@ -262,97 +262,6 @@ OSAS.components = (function () {
     });
   }
 
-  /* ------------------------------------------------------------ line chart
-     Renders the module-1 "Weekly Portal Traffic & Module Engagement" chart
-     from OSAS.store.traffic() with a hover tooltip.
-     ---------------------------------------------------------------------- */
-  function chart(hostId) {
-    var host = document.getElementById(hostId);
-    if (!host) { return; }
-    var data = OSAS.store.traffic();
-    var W = 720, H = 272, PAD = { top: 16, right: 26, bottom: 30, left: 40 };
-    var innerW = W - PAD.left - PAD.right;
-    var innerH = H - PAD.top - PAD.bottom;
-    var max = data.axisMax || 600;
-    var step = data.axisStep || 100;
-    var labels = data.labels;
-    var count = labels.length;
-
-    function x(i) { return PAD.left + (innerW / (count - 1)) * i; }
-    function y(v) { return PAD.top + innerH - (innerH * (v / max)); }
-
-    function path(values) {
-      return values.map(function (v, i) {
-        return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1);
-      }).join(' ');
-    }
-    function line(values, dashed) {
-      return '<path d="' + path(values) + '" fill="none" stroke="' + (dashed ? '#1a67d8' : '#7a1420') +
-        '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"' +
-        (dashed ? ' stroke-dasharray="6 5"' : '') + '/>';
-    }
-    function area(values) {
-      return '<path d="' + path(values) + ' L' + x(count - 1).toFixed(1) + ' ' + (PAD.top + innerH) +
-        ' L' + x(0).toFixed(1) + ' ' + (PAD.top + innerH) + ' Z" fill="rgba(122,20,32,.07)" stroke="none"/>';
-    }
-    function points(values, color) {
-      return values.map(function (v, i) {
-        return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) +
-          '" r="3.2" fill="#fff" stroke="' + color + '" stroke-width="2"/>';
-      }).join('');
-    }
-
-    var grid = '';
-    for (var value = 0; value <= max; value += step) {
-      grid += '<line class="grid-line" x1="' + PAD.left + '" x2="' + (W - PAD.right) + '" y1="' +
-        y(value).toFixed(1) + '" y2="' + y(value).toFixed(1) + '"/>' +
-        '<text x="' + (PAD.left - 10) + '" y="' + (y(value) + 3.5).toFixed(1) + '" text-anchor="end">' +
-        OSAS.fmt.number(value) + '</text>';
-    }
-    var axis = labels.map(function (label, i) {
-      return '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle">' + esc(label) + '</text>';
-    }).join('');
-    var slot = innerW / (count - 1);
-    var hotspots = labels.map(function (label, i) {
-      return '<rect x="' + (x(i) - slot / 2).toFixed(1) + '" y="' + PAD.top + '" width="' + slot.toFixed(1) +
-        '" height="' + innerH + '" fill="transparent" data-day="' + i + '" style="cursor:crosshair"/>';
-    }).join('');
-
-    host.innerHTML = '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
-      'aria-label="Weekly portal traffic and module engagement">' + grid + axis +
-      area(data.current.logins) + area(data.current.completions) +
-      line(data.previous.logins, true) + line(data.previous.completions, true) +
-      line(data.current.logins, false) + line(data.current.completions, false) +
-      points(data.current.logins, '#7a1420') + points(data.current.completions, '#1a67d8') +
-      hotspots + '</svg><div class="chart-tip" id="' + hostId + '-tip"></div>';
-
-    var tip = document.getElementById(hostId + '-tip');
-    OSAS.util.qsa('rect[data-day]', host).forEach(function (rect) {
-      rect.addEventListener('mouseenter', function () {
-        var i = parseInt(rect.getAttribute('data-day'), 10);
-        tip.innerHTML = '<div class="chart-tip__date">' + esc(labels[i]) + ' — ' + esc(data.current.label) + '</div>' +
-          '<div class="chart-tip__row"><span class="chart-tip__key">Admin logins</span><b>' +
-          OSAS.fmt.number(data.current.logins[i]) + '</b></div>' +
-          '<div class="chart-tip__row"><span class="chart-tip__key">Module completions</span><b>' +
-          OSAS.fmt.number(data.current.completions[i]) + '</b></div>' +
-          '<div class="chart-tip__row"><span class="chart-tip__key">' + esc(data.previous.label) + ' logins</span><b>' +
-          OSAS.fmt.number(data.previous.logins[i]) + '</b></div>';
-        var box = host.getBoundingClientRect();
-        tip.style.left = ((x(i) / W) * box.width) + 'px';
-        tip.style.top = ((y(data.current.logins[i]) / H) * box.height) + 'px';
-        tip.classList.add('chart-tip--on');
-      });
-      rect.addEventListener('mouseleave', function () { tip.classList.remove('chart-tip--on'); });
-    });
-  }
-
-  function legend(items) {
-    return '<div class="chart-legend">' + items.map(function (item) {
-      return '<span class="legend-item"><span class="legend-swatch' +
-        (item.dashed ? ' legend-swatch--dash' : '') + '"></span>' + esc(item.label) + '</span>';
-    }).join('') + '</div>';
-  }
-
   function esc(value) { return OSAS.util.esc(value); }
   /* --------------------------------------------------- rich text editor */
   function richText(options) {
@@ -425,7 +334,6 @@ OSAS.components = (function () {
     emptyState: emptyState, logItem: logItem, toast: toast, toastRoot: toastRoot,
     flashFromQuery: flashFromQuery, modal: modal, confirm: confirm,
     dataTable: dataTable, pager: pager, bindPager: bindPager,
-    richText: richText, initRichText: initRichText, richTextValue: richTextValue,
-    chart: chart, legend: legend
+    richText: richText, initRichText: initRichText, richTextValue: richTextValue
   };
 })();

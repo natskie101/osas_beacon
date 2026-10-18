@@ -12,11 +12,12 @@
   function statsHtml(data) {
     return '<div class="stats">' +
       C.statCard('Total Registered Students', OSAS.fmt.number(data.totalStudents),
-        C.delta(data.totalStudentsGrowth, 'Across both campuses') +
-        ' <span class="u-muted">&middot; ' + U.esc(data.metrics.lastSyncLabel) + '</span>') +
-      C.statCard('Orientation Completion Rate', OSAS.fmt.percent(data.orientationRate, 1),
-        C.delta(data.orientationGrowth, 'Increase Verified') +
-        ' <span class="u-muted">&middot; ' + OSAS.fmt.number(data.metrics.freshmenEnrolled) + ' freshmen</span>') +
+        '<span class="badge badge--active">' + data.activeStudents + ' active</span>' +
+        '<span class="u-muted">' + data.pendingStudents + ' pending verification</span>') +
+      C.statCard('Orientation Completion Rate', OSAS.fmt.percent(data.orientationRate, 0),
+        '<span class="badge badge--active">' + data.compliantStudents + ' fully compliant</span>' +
+        '<span class="u-muted">' + data.mandatoryModules + ' mandatory modules &times; ' +
+        data.totalStudents + ' students</span>') +
       C.statCard('Open Support Tickets', data.openTickets,
         '<span class="badge badge--high">High Priority</span>' +
         '<span class="u-muted">' + data.highPriorityTickets + ' high &middot; avg response ' +
@@ -27,25 +28,11 @@
       '</div>';
   }
 
-  function chartCard(data) {
-    return '<div class="card">' +
-      '<div class="card__head"><div>' +
-      '<h3 class="card__title">Weekly Portal Traffic &amp; Module Engagement</h3>' +
-      '<div class="card__sub">Daily admin sign-ins and orientation module completions, current week against the previous week.</div>' +
-      '</div><span class="chip">Last 7 days</span></div>' +
-      '<div class="chart-host" id="dash-chart"></div>' +
-      C.legend([
-        { label: 'Admin Logins — Current Week' },
-        { label: 'Module Completions — Current Week', dashed: true }
-      ]) +
-      '</div>';
-  }
-
   function auditCard(data) {
     return '<div class="card" style="display:flex;flex-direction:column">' +
       '<div class="card__head"><div>' +
       '<h3 class="card__title">Live System Audit Log</h3>' +
-      '<div class="card__sub">Recent system activity across all OSAS modules (last 24 hours).</div>' +
+      '<div class="card__sub">Most recent activity across all OSAS modules.</div>' +
       '</div></div>' +
       '<div class="log-list u-grow">' + data.audit.map(C.logItem).join('') + '</div>' +
       '<div class="card__foot"><button type="button" class="link" data-action="full-log">' +
@@ -87,13 +74,13 @@
     ];
 
     var toolbar = '<div class="table-toolbar"><div class="panel-title">Priority Inquiries &amp; Action Required Items</div>' +
-      '<a class="link" href="support.html">Go to Support Center ' + OSAS.icons.icon('arrowRight', 12) + '</a></div>';
+      '<a class="link" href="support.html">Go to Feedback &amp; Support ' + OSAS.icons.icon('arrowRight', 12) + '</a></div>';
 
     var queue = data.queue;
     var rows = queue.slice(0, 3);
     var footer = '<div class="table-foot"><div>Showing 1–' + rows.length + ' of ' + queue.length +
-      ' priority tickets &middot; Refreshed just now</div>' +
-      '<div class="u-muted">Immediate attention items from Module 7: Support Center</div></div>';
+      ' open inquiries &middot; Refreshed just now</div>' +
+      '<div class="u-muted">Immediate attention items from Module 7: Feedback &amp; Support</div></div>';
 
     return C.dataTable({
       columns: columns, rows: rows, toolbar: toolbar, footer: footer,
@@ -106,7 +93,7 @@
     C.modal({
       size: 'lg',
       title: 'System Event Log',
-      subtitle: 'Chronological audit trail of portal activity across all ten OSAS modules.',
+      subtitle: 'Chronological audit trail of portal activity across all OSAS modules.',
       body: C.statStrip([
         { label: 'Total Events', value: OSAS.fmt.number(entries.length) },
         { label: 'Today', value: OSAS.fmt.number(entries.filter(function (e) { return e.at.slice(0, 10) === OSAS.SEED_NOW.slice(0, 10); }).length) },
@@ -142,10 +129,8 @@
           '<a class="btn btn--primary" href="reports.html">' + OSAS.icons.icon('fileText', 13) + ' Open Reports</a>'
       }) +
       statsHtml(data) +
-      '<div class="cols cols--dash u-mb-14">' + chartCard(data) + auditCard(data) + '</div>' +
+      '<div class="u-mb-14">' + auditCard(data) + '</div>' +
       priorityCard(data);
-
-    C.chart('dash-chart');
   }
 
   content.addEventListener('click', function (event) {

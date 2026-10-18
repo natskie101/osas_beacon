@@ -293,7 +293,6 @@ OSAS.store = (function () {
       version: OSAS_SEED.meta.schemaVersion,
       meta: OSAS_SEED.meta,
       metrics: OSAS_SEED.metrics,
-      traffic: OSAS_SEED.traffic,
       options: OSAS_SEED.options,
       engagementNotes: OSAS_SEED.engagementNotes || []
     };
@@ -389,7 +388,6 @@ OSAS.store = (function () {
 
   function meta() { return load().meta; }
   function metrics() { return load().metrics; }
-  function traffic() { return load().traffic; }
   function options() { return load().options; }
   function notes() { return load().engagementNotes || []; }
   function exportBackup() { return JSON.stringify(load(), null, 2); }
@@ -398,7 +396,7 @@ OSAS.store = (function () {
     RESOURCES: RESOURCES, load: load, reset: reset, persist: persist,
     all: all, find: find, insert: insert, update: update, remove: remove,
     nextId: nextId, logActivity: logActivity,
-    meta: meta, metrics: metrics, traffic: traffic, options: options, notes: notes,
+    meta: meta, metrics: metrics, options: options, notes: notes,
     exportBackup: exportBackup
   };
 })();
@@ -522,22 +520,67 @@ OSAS.analytics = (function () {
     });
   }
 
+  /* ---------------------------------------------------------------- cohort
+     Student orientation progress and service response times shared by the
+     dashboard, the tracking ledger and the orientation reports. */
+  function students(rows) {
+    return (rows || OSAS.store.all('users')).filter(function (r) { return r.role === 'Student'; });
+  }
+  function mandatoryModules(rows) {
+    return (rows || OSAS.store.all('modules')).filter(function (m) {
+      return m.mandatory && m.status === 'Published';
+    });
+  }
+  function cohort() {
+    var mods = mandatoryModules();
+    var list = students();
+    var slots = (list.length * mods.length) || 1;
+    var completed = 0, compliant = 0, inProgress = 0, notStarted = 0;
+    list.forEach(function (row) {
+      completed += (row.orientationModules || []).length;
+      var pct = row.orientationPct || 0;
+      if (pct >= 100) { compliant++; }
+      else if (pct > 0) { inProgress++; }
+      else { notStarted++; }
+    });
+    return {
+      students: list.length, modules: mods.length, completed: completed,
+      rate: Math.round((completed / slots) * 100),
+      compliant: compliant, inProgress: inProgress, notStarted: notStarted
+    };
+  }
+  /* Average hours between a ticket being submitted and the first OSAS reply. */
+  function avgFirstResponseHours(rows) {
+    var gaps = [];
+    rows.forEach(function (row) {
+      var reply = (row.messages || []).filter(function (m) { return m.role !== 'Student'; })[0];
+      if (reply && row.submittedAt) {
+        gaps.push((new Date(reply.at) - new Date(row.submittedAt)) / 3600000);
+      }
+    });
+    if (!gaps.length) { return 0; }
+    var total = gaps.reduce(function (acc, gap) { return acc + gap; }, 0);
+    return Math.round((total / gaps.length) * 10) / 10;
+  }
+
   /* ------------------------------------------------------------ dashboard */
   function dashboard() {
-    var metrics = OSAS.store.metrics();
     var tickets = OSAS.store.all('tickets');
     var events = OSAS.store.all('events');
-    var modules = OSAS.store.all('modules');
-    var published = modules.filter(function (m) { return m.status === 'Published'; });
+    var users = OSAS.store.all('users');
     var queue = priorityQueue(tickets);
+    var studentRows = students(users);
+    var cohortStats = cohort();
     return {
-      totalStudents: metrics.registeredStudents,
-      totalStudentsGrowth: metrics.registeredStudentsGrowth,
-      orientationRate: weightedRate(published, 'completionRate', 'learners'),
-      orientationGrowth: metrics.orientationCompletionGrowth,
+      totalStudents: studentRows.length,
+      activeStudents: count(studentRows, 'status', 'Active'),
+      pendingStudents: count(studentRows, 'status', 'Pending'),
+      orientationRate: cohortStats.rate,
+      mandatoryModules: cohortStats.modules,
+      compliantStudents: cohortStats.compliant,
       openTickets: openTickets(tickets).length,
       highPriorityTickets: queue.filter(function (t) { return t.priority === 'High'; }).length,
-      avgResponseHours: metrics.avgSupportResponseHours,
+      avgResponseHours: avgFirstResponseHours(tickets),
       activeEvents: count(events, 'status', 'Scheduled'),
       upcomingEvents: count(events, 'status', 'Scheduled'),
       scheduledThisWeek: events.filter(function (e) {
@@ -545,9 +588,7 @@ OSAS.analytics = (function () {
         return e.status === 'Scheduled' && diff >= 0 && diff <= 14;
       }).length,
       queue: queue,
-      audit: OSAS.store.all('auditLog').slice(0, 5),
-      traffic: OSAS.store.traffic(),
-      metrics: metrics
+      audit: OSAS.store.all('auditLog').slice(0, 5)
     };
   }
 
@@ -601,7 +642,7 @@ OSAS.analytics = (function () {
       closed: count(rows, 'status', 'Closed'),
       awaitingAction: open.length,
       highPriority: open.filter(function (r) { return r.priority === 'High'; }).length,
-      avgResponseHours: OSAS.store.metrics().avgSupportResponseHours,
+      avgResponseHours: avgFirstResponseHours(rows),
       categories: groupCount(rows, 'category')
     };
   }
@@ -669,6 +710,8 @@ OSAS.analytics = (function () {
   return {
     count: count, sum: sum, avg: avg, weightedRate: weightedRate, groupCount: groupCount,
     priorityQueue: priorityQueue, openTickets: openTickets,
+    students: students, mandatoryModules: mandatoryModules, cohort: cohort,
+    avgFirstResponseHours: avgFirstResponseHours,
     dashboard: dashboard, content: content, modules: modules, events: events,
     tickets: tickets, broadcasts: broadcasts, users: users, tracking: tracking, reports: reports
   };

@@ -99,7 +99,14 @@
     check('dashboard aggregate exposes KPIs', typeof dash.totalStudents === 'number' &&
       dash.totalStudents > 0 && typeof dash.orientationRate === 'number' && dash.audit.length > 0,
       'students=' + dash.totalStudents + ' rate=' + dash.orientationRate + ' queue=' + dash.queue.length);
-    check('dashboard traffic series available', !!dash.traffic && (dash.traffic.weekly || dash.traffic.days || dash.traffic.labels || dash.traffic.length) !== undefined);
+    check('dashboard KPIs read from the stored records',
+      dash.totalStudents === stats.students().length &&
+      dash.openTickets === stats.openTickets(store.all('tickets')).length &&
+      dash.activeEvents === store.all('events').filter(function (e) { return e.status === 'Scheduled'; }).length,
+      'students=' + dash.totalStudents + ' open=' + dash.openTickets + ' events=' + dash.activeEvents);
+    check('dashboard orientation rate matches the tracked cohort',
+      dash.orientationRate === stats.cohort().rate,
+      'rate=' + dash.orientationRate);
     var cont = stats.content(store.all('announcements'));
     check('content counters consistent', cont.total === store.all('announcements').length &&
       cont.published <= cont.total, 'pub=' + cont.published + '/' + cont.total);

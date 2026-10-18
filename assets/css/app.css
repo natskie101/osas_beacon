@@ -192,7 +192,6 @@ svg{display:block}
 .delta--down{color:var(--red)}
 .delta--flat{color:var(--muted)}
 .cols{display:grid;gap:14px}
-.cols--dash{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
 .cols--2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .cols--3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .stack-14{display:flex;flex-direction:column;gap:14px}
@@ -418,25 +417,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .meter-row .bar{width:88px;flex:0 0 88px}
 .meter-val{font-size:11.5px;font-weight:700;color:var(--ink-2);min-width:34px}
 
-/* ---------- 17. Chart ---------- */
-.chart-host{position:relative;padding:14px 12px 4px}
-.chart-svg{width:100%;height:272px;overflow:visible}
-.chart-svg text{font-family:var(--sans);font-size:10px;fill:var(--muted-2)}
-.chart-svg .grid-line{stroke:#eef0f3;stroke-width:1}
-.chart-legend{display:flex;gap:18px;align-items:center;justify-content:center;padding:4px 0 12px;flex-wrap:wrap}
-.legend-item{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-2);font-weight:600}
-.legend-swatch{width:16px;height:3px;border-radius:2px;background:var(--brand)}
-.legend-swatch--dash{background:repeating-linear-gradient(90deg,var(--blue) 0 5px,transparent 5px 9px)}
-.chart-tip{
-  position:absolute;pointer-events:none;background:#1f2937;color:#fff;font-size:11px;
-  padding:7px 10px;border-radius:7px;box-shadow:var(--shadow-md);white-space:nowrap;
-  transform:translate(-50%,-118%);opacity:0;transition:opacity .12s ease;z-index:10;
-}
-.chart-tip--on{opacity:1}
-.chart-tip__row{display:flex;justify-content:space-between;gap:16px}
-.chart-tip__key{opacity:.75}
-.chart-tip__date{font-weight:800;margin-bottom:4px}
-/* ---------- 18. Tiles / detail lists ---------- */
+/* ---------- 17. Tiles / detail lists ---------- */
 .tile-list{display:flex;flex-direction:column;gap:10px}
 .tile{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fff}
 .tile--tint{background:#fcfcfd}
@@ -460,7 +441,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .stat-strip__label{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .stat-strip__value{font-family:var(--serif);font-size:18px;font-weight:700;margin-top:4px}
 
-/* ---------- 19. Login ---------- */
+/* ---------- 18. Login ---------- */
 .auth{min-height:100vh;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:44px 24px}
 .auth__card{
   width:100%;max-width:880px;min-height:620px;
@@ -561,7 +542,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
   .auth__left{padding:32px 22px 64px}
   .auth__wordmark{font-size:26px}
 }
-/* ---------- 20. User management — verification queue ---------- */
+/* ---------- 19. User management — verification queue ---------- */
 /* Module 9 only. Every rule is .vm-* prefixed or anchored on .vm-head, the
    toolbar only the queue view renders, so no other module is affected. */
 .vm-head{align-items:flex-start;padding-bottom:14px}
@@ -904,17 +885,16 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
   .ann-filters{flex-direction:column}
 }
 
-/* ---------- 21. Print ---------- */
+/* ---------- 20. Print ---------- */
 @media print{
   .sidebar,.topbar,.page-head__actions,.btn,.pager,.filter-bar,.tabs,.sidebar-backdrop{display:none !important}
   .content{padding:0}
   body{background:#fff}
 }
 
-/* ---------- 22. Responsive ---------- */
+/* ---------- 21. Responsive ---------- */
 @media (max-width:1280px){
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cols--dash{grid-template-columns:minmax(0,1fr)}
   .filter-bar,.filter-bar--3{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:1080px){

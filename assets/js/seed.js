@@ -37,23 +37,6 @@
     lastSyncLabel: 'Synced 12 mins ago'
   };
 
-  /* ---------- Weekly traffic & module engagement (dashboard chart) ---------- */
-  var TRAFFIC = {
-    labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-    axisMax: 600,
-    axisStep: 100,
-    current: {
-      label: 'Current Week',
-      logins: [204, 238, 286, 342, 398, 436, 518],
-      completions: [142, 186, 204, 246, 288, 332, 398]
-    },
-    previous: {
-      label: 'Last Week',
-      logins: [176, 204, 248, 296, 330, 392, 468],
-      completions: [122, 150, 178, 214, 246, 286, 352]
-    }
-  };
-
   /* ---------- Select options used by filters & forms ---------- */
   var OPTIONS = {
     roles: ['Administrator', 'Faculty', 'Staff', 'Student'],
@@ -160,7 +143,6 @@
   window.OSAS_SEED = {
     meta: META,
     metrics: METRICS,
-    traffic: TRAFFIC,
     options: OPTIONS,
     users: [],
     announcements: [],
