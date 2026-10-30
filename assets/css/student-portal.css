@@ -1008,3 +1008,37 @@ select.sf-input{appearance:none;background-image:linear-gradient(45deg,transpare
   .sf-sec__p{font-size:13.5px}
   .sf-tab{font-size:13px}
 }
+
+/* ==========================================================================
+   Lost & Found / Document Requests module additions
+   Reuses the .sf-* list, card, form and detail components; only the report
+   type switch, claim panel and workflow steps need their own rules.
+   ========================================================================== */
+.lf-toggle{display:flex;gap:8px;margin-top:4px}
+.lf-toggle__btn{flex:1;padding:11px 12px;border:1px solid var(--line);border-radius:9px;
+  background:#fff;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);
+  cursor:pointer;transition:.14s}
+.lf-toggle__btn:hover{border-color:#e6c9cd;background:var(--brand-tint);color:var(--brand)}
+.lf-toggle__btn.is-on{background:var(--brand);border-color:var(--brand);color:#fff;
+  box-shadow:0 6px 14px rgba(122,20,32,.18)}
+
+.lf-claim{margin-top:11px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fafbfc}
+.lf-claim__h{margin-bottom:12px;font-family:var(--sans);font-size:11px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--brand)}
+.lf-claim .sf-field:last-of-type{margin-bottom:0}
+.lf-claim .sf-submit{margin-top:13px}
+
+.sf-step{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+.sf-step:last-child{border-bottom:0}
+.sf-step__dot{flex:none;width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--brand)}
+.sf-step__dot--warn{background:#c9971d}
+.sf-step__body{min-width:0}
+.sf-step__title{font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--ink)}
+.sf-step__meta{margin-top:1px;font-size:11px;color:var(--muted-2)}
+.sf-step__note{margin-top:4px;font-size:12px;line-height:1.58;color:var(--ink-2)}
+
+/* Claim photo: uploaded in the ownership form, shown on the claim card */
+.sf-msg__file{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:4px 9px;
+  border:1px solid var(--line);border-radius:6px;background:#fff;font-size:11px;color:var(--ink-2)}
+.sf-msg__file svg{color:var(--muted-2);flex:none}
+.lf-claim .sf-drop{margin-top:2px}

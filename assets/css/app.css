@@ -887,7 +887,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 
 /* ---------- 20. Print ---------- */
 @media print{
-  .sidebar,.topbar,.page-head__actions,.btn,.pager,.filter-bar,.tabs,.sidebar-backdrop{display:none !important}
+  .sidebar,.topbar,.page-head__actions,.btn,.pager,.filter-bar,.tabs,.sidebar-backdrop,.app-foot{display:none !important}
   .content{padding:0}
   body{background:#fff}
 }
@@ -925,3 +925,188 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
   .modal__body{max-height:none}
 }
 
+/* ==========================================================================
+   Lost & Found directory — card grid (module 11)
+   Pastel letter panel, status pill, two meta rows and a full-width action.
+   Shared by the admin directory (lost-found.html) and the student board.
+   ========================================================================== */
+.lf-page{width:100%;max-width:1140px;margin:0 auto}
+.lf-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1280px){.lf-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:1024px){.lf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.lf-grid{grid-template-columns:minmax(0,1fr)}}
+.lf-board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;margin-bottom:14px;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+.lf-grid + .table-foot{margin-top:14px;padding:4px 2px 0;border-top:0;background:transparent}
+
+.lf-card{display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;box-shadow:var(--shadow);color:inherit;text-decoration:none;
+  transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+a.lf-card:hover{transform:translateY(-2px);border-color:#d5dae2;box-shadow:var(--shadow-md);text-decoration:none}
+.lf-card__art{position:relative;display:flex;align-items:center;justify-content:center;height:88px}
+.lf-card__art--blue{background:#dbe8f5}
+.lf-card__art--amber{background:#f7e8c6}
+.lf-card__art--green{background:#d9ecdf}
+.lf-card__art--orange{background:#f9ddc6}
+.lf-card__art--rose{background:#f5d8de}
+.lf-card__art--gray{background:#e7e9ee}
+.lf-card__letter{font-family:var(--serif);font-size:34px;font-weight:700;line-height:1;
+  color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(16,24,40,.10);user-select:none}
+.lf-card__state{position:absolute;top:9px;right:9px;display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.78);
+  box-shadow:0 1px 2px rgba(16,24,40,.06);
+  font-size:9.5px;font-weight:800;letter-spacing:.03em;color:#475569;white-space:nowrap}
+.lf-card__state-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.lf-card__state--blue{color:#1a67d8}
+.lf-card__state--amber{color:#a9660b}
+.lf-card__state--green{color:#0f8a4d}
+.lf-card__state--orange{color:#c2620a}
+.lf-card__state--rose{color:#a8324a}
+.lf-card__state--gray{color:#64748b}
+.lf-card__body{display:flex;flex-direction:column;flex:1;padding:10px 11px 11px}
+.lf-card__meta-top{display:flex;align-items:center;gap:5px;min-width:0;
+  font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.lf-card__code{color:#5b7ea6;white-space:nowrap}
+.lf-card__sep{color:var(--muted-2)}
+.lf-card__cat{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lf-card__title{margin-top:6px;font-family:var(--sans);font-size:13px;font-weight:800;line-height:1.35;
+  color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lf-card__meta{display:flex;flex-direction:column;gap:4px;margin-top:9px}
+.lf-card__meta-row{display:flex;align-items:center;gap:6px;min-width:0;font-size:10.5px;line-height:1.3;
+  color:var(--muted)}
+.lf-card__meta-row svg{flex:none;color:var(--muted-2)}
+.lf-card__meta-row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lf-card__foot{margin-top:auto;padding-top:10px}
+.lf-card__btn{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:7px 9px;
+  border:1px solid var(--line);border-radius:7px;background:#fff;font-family:inherit;font-size:10.5px;
+  font-weight:700;color:var(--ink-2);text-align:center;text-decoration:none;cursor:pointer;transition:.14s}
+.lf-card__btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-tint)}
+.lf-card__btn--brand{border-color:#e3c3c8;color:var(--brand);background:#fff}
+.lf-card__actions{display:flex;gap:7px}
+.lf-card__actions .lf-card__btn{flex:1}
+
+/* Claim attachment chip (admin verification modal) */
+.claim-file{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:7px;
+  padding:4px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;
+  font-size:11px;color:var(--ink-2)}
+.claim-file svg{color:var(--muted-2);flex:none}
+.claim-file span{color:var(--muted-2)}
+
+
+/* ==========================================================================
+   Admin shell — coordinator skin (matches the student portal)
+   White rounded navigation, brand-tinted active pill, compact top bar with
+   bell + avatar, and the same 1024px drawer breakpoint as the student shell.
+   These rules load last so they win over the original maroon sidebar.
+   ========================================================================== */
+body{background:#f4f6f9}
+.app{background:#f4f6f9}
+
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;z-index:60;
+  width:272px;max-width:84vw;flex:0 0 272px;height:auto;
+  padding:16px 14px;background:#fff;color:var(--ink-2);
+  border-right:1px solid var(--line);box-shadow:0 0 44px rgba(16,24,40,.2);
+  transform:translateX(-102%);transition:transform .22s ease;
+}
+.sidebar--on{transform:none}
+.sidebar__brand{
+  display:flex;align-items:center;gap:10px;
+  padding:0 0 13px;margin-bottom:14px;
+  border-bottom:1px solid var(--line-2);color:var(--brand);
+}
+.sidebar__brand .beacon-mark{flex:0 0 26px}
+.sidebar__wordmark{font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:.18em;line-height:1.2}
+.sidebar__tag{margin-top:2px;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1.35}
+.sidebar__close{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+  margin-left:auto;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;
+  color:var(--ink-2);cursor:pointer;transition:.15s}
+.sidebar__close:hover{background:#f5f6f8}
+.sidebar__close svg{width:16px;height:16px}
+
+.nav{flex:1;margin:0;padding:0;overflow-y:auto}
+.nav ul{list-style:none;margin:0;padding:0 2px 4px 0}
+.nav__label{display:none}
+.nav__item a{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:8px;padding:10px 12px;
+  border:1px solid var(--line);border-left:1px solid var(--line);border-radius:9px;
+  background:#fff;color:var(--ink-2);font-size:13px;font-weight:600;
+  text-decoration:none;transition:.15s;
+}
+.nav__item a:hover{border-color:var(--brand);background:#fff;color:var(--brand)}
+.nav__num,.nav__ico{display:none}
+.nav__item--active a{
+  border-color:var(--brand);background:var(--brand);color:#fff;font-weight:600;
+  box-shadow:0 6px 14px rgba(122,20,32,.22);
+}
+.nav__item--active a:hover{border-color:var(--brand);background:var(--brand);color:#fff}
+.nav__badge{
+  margin-left:auto;padding:1px 7px;border:1px solid #f0c9ce;border-radius:999px;
+  background:var(--brand-tint);color:var(--brand);font-size:9px;font-weight:800;letter-spacing:.04em;
+}
+.nav__item--active .nav__badge{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);color:#fff}
+
+.sidebar__foot{padding:12px 0 0;margin-top:8px;border-top:1px solid var(--line-2)}
+.sidebar__user{display:flex;align-items:center;gap:9px;padding:0;border-radius:0;background:transparent}
+.sidebar__user .avatar{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}
+.sidebar__user-name{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.3}
+.sidebar__user-role{margin-top:1px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sidebar__signout{
+  display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  margin:12px 0 0;padding:9px 12px;border:1px solid var(--line);border-radius:9px;
+  background:#fff;color:var(--ink-2);font-family:inherit;font-size:12.5px;font-weight:700;
+  cursor:pointer;transition:.15s;
+}
+.sidebar__signout:hover{border-color:#f0c9ce;background:var(--brand-tint);color:var(--brand)}
+.sidebar-backdrop{transition:opacity .2s ease,visibility .2s ease}
+
+.topbar{height:63px;padding:0 26px;gap:10px}
+.topbar__mark{display:none}
+.topbar__title{font-size:15px;font-weight:700;letter-spacing:-.1px;line-height:1.2;color:var(--brand);
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar__sub{display:none}
+.topbar__actions{gap:10px}
+.topbar .icon-btn{width:34px;height:34px;border-color:transparent;border-radius:9px}
+.topbar .icon-btn:hover{border-color:var(--line);background:#f5f6f8}
+.topbar__bell{position:relative}
+.topbar__bell-count{position:absolute;top:-1px;right:-1px;display:flex;align-items:center;justify-content:center;
+  min-width:15px;height:15px;padding:0 3px;border:1.5px solid #fff;border-radius:999px;
+  background:#ef4444;color:#fff;font-size:9px;font-weight:800;line-height:1}
+.topbar__bell-count[hidden]{display:none}
+.topbar__avatar{display:flex;align-items:center;justify-content:center;width:31px;height:31px;flex:0 0 31px;
+  padding:0;border:1.5px solid var(--brand);border-radius:50%;background:#fff;color:var(--brand);
+  font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.02em;cursor:pointer;transition:.15s}
+.topbar__avatar:hover{background:var(--brand-tint)}
+
+.content{flex:1 0 auto;padding:24px 26px 20px}
+.app-foot{display:none}
+.acct{display:flex;align-items:center;gap:11px}
+.acct__name{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3}
+.acct__role{margin-top:2px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.acct__mail{margin-top:3px;font-size:12px;color:var(--muted-2);word-break:break-word}
+
+@media (max-width:1023px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;height:auto;
+    transform:translateX(-102%);box-shadow:0 0 44px rgba(16,24,40,.2)}
+  .sidebar--on{transform:none}
+  .menu-btn{display:inline-flex}
+  .content{padding:16px 14px 34px}
+  .topbar{padding:0 14px}
+}
+@media (min-width:1024px){
+  .sidebar{position:sticky;top:0;left:auto;bottom:auto;z-index:30;
+    width:256px;max-width:none;flex:0 0 256px;height:100vh;
+    padding:20px 16px;transform:none;box-shadow:none}
+  .sidebar--on{transform:none}
+  .sidebar__close{display:none}
+  .sidebar-backdrop{display:none}
+  .menu-btn{display:none}
+  .topbar{height:62px}
+  .content{padding:26px 26px 14px;max-width:1560px;margin:0 auto}
+  .app-foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    width:100%;max-width:1560px;margin:0 auto;padding:15px 26px 34px;
+    border-top:1px solid var(--line);
+    font-size:11.5px;letter-spacing:.02em;color:var(--muted-2)}
+}

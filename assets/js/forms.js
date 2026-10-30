@@ -507,9 +507,346 @@ OSAS.forms = (function () {
     });
   }
 
+  /* ------------------------------------------------- Lost & found detail
+     Module 11 — item summary, ownership claim verification and status
+     controls. Mirrors the ticket detail modal so OSAS staff get the same
+     interaction pattern across both service desks. */
+  function lostFoundView(options) {
+    var item = options.item;
+    var session = OSAS.auth.current();
+    var staffName = session ? session.user.firstName + ' ' + session.user.lastName : 'OSAS Staff';
+
+    function pendingClaims() {
+      return (item.claims || []).filter(function (row) { return row.status === 'Pending'; });
+    }
+
+    function claimsHtml() {
+      var rows = item.claims || [];
+      if (!rows.length) {
+        return C().emptyState('No student has filed a claim for this item yet.');
+      }
+      return '<div class="thread">' + rows.map(function (row) {
+        var pending = row.status === 'Pending';
+        return '<div class="msg' + (pending ? '' : ' msg--staff') + '">' +
+          C().avatarOf(row.claimantName) +
+          '<div class="u-grow"><div class="msg__head">' +
+          '<span class="msg__name">' + U().esc(row.claimantName) + '</span>' +
+          '<span class="msg__role">' + U().esc(row.status) + '</span>' +
+          '<span class="msg__time">' + OSAS.fmt.dateTime(row.at) + '</span></div>' +
+          '<div class="msg__body">' + U().esc(row.message) + '</div>' +
+          '<div class="hint">Proof presented: ' + U().esc(row.proof || '-') + '</div>' +
+          (row.attachment
+            ? '<div class="claim-file">' + OSAS.icons.icon('fileText', 12) +
+              '<b>' + U().esc(row.attachment) + '</b>' +
+              '<span>photo attached by the claimant</span></div>'
+            : '') +
+          (pending
+            ? '<div class="btn-row u-mt-8">' +
+              '<button type="button" class="btn btn--success btn--sm" data-claim="verify" data-id="' +
+              U().esc(row.id) + '">' + OSAS.icons.icon('check', 12) + ' Verify claim</button>' +
+              '<button type="button" class="btn btn--ghost btn--sm" data-claim="reject" data-id="' +
+              U().esc(row.id) + '">Reject claim</button></div>'
+            : '<div class="hint">Reviewed by ' + U().esc(row.verifiedBy || 'OSAS Staff') + ' on ' +
+              OSAS.fmt.shortDate(row.verifiedAt) + '</div>') +
+          '</div></div>';
+      }).join('') + '</div>';
+    }
+
+    function details() {
+      return C().statStrip([
+        { label: 'Item Status', value: C().badge(item.status) },
+        { label: 'Report Type', value: C().badge(item.type) },
+        { label: 'Pending Claims', value: String(pendingClaims().length) },
+        { label: 'Date Reported', value: OSAS.fmt.shortDate(item.postedAt) }
+      ]) +
+        '<dl class="kv">' +
+        '<dt>Item</dt><dd>' + U().esc(item.title) + '</dd>' +
+        '<dt>Category</dt><dd>' + U().esc(item.category) + '</dd>' +
+        '<dt>Reported By</dt><dd>' + U().esc(item.reportedBy) + '</dd>' +
+        '<dt>Contact</dt><dd>' + U().esc(item.contact || item.reporterEmail || '—') + '</dd>' +
+        '<dt>Last Seen / Found At</dt><dd>' + U().esc(item.location) + '</dd>' +
+        '<dt>Date of Incident</dt><dd>' + OSAS.fmt.dateTime(item.dateOccurred) + '</dd>' +
+        '<dt>Item Custody</dt><dd>' + U().esc(item.custody) + '</dd>' +
+        (item.returnedTo ? '<dt>Returned To</dt><dd>' + U().esc(item.returnedTo) + ' · ' +
+          OSAS.fmt.shortDate(item.returnedAt) + '</dd>' : '') +
+        '<dt>Reference</dt><dd class="mono">' + U().esc(item.code) + '</dd>' +
+        '</dl>';
+    }
+
+    function body() {
+      return '<div id="lf-alert"></div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>1.</span> Item Summary</div>' + details() +
+        '<div class="tile tile--tint"><span class="tile__ico">' + OSAS.icons.icon('info', 15) + '</span>' +
+        '<div><div class="tile__title">' + U().esc(item.type) + ' report</div>' +
+        '<div class="tile__text">' + U().esc(item.description) + '</div></div></div>' +
+        (item.attachment ? '<div class="hint">Attached file: <b>' + U().esc(item.attachment) + '</b></div>' : '') +
+        '</div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>2.</span> Ownership Claims</div>' + claimsHtml() +
+        '</div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>3.</span> Item Controls</div>' +
+        '<div class="form-grid form-grid--2">' +
+        field('Item Status', selectInput('lf-status', OSAS.store.options().lostFoundStatuses,
+          item.status, 'Select status')) +
+        field('Custody', textInput('lf-custody', item.custody, 'Where the item is currently kept')) +
+        '</div>' +
+        C().alert('info', 'Verification standard',
+          'Release an item only after the claimant describes identifying details or presents a matching student ID. Every hand-over is recorded in the audit log.') +
+        '</div>';
+    }
+
+    return C().modal({
+      size: 'lg',
+      title: 'Lost &amp; Found — ' + U().esc(item.code),
+      subtitle: 'Verify ownership claims and update the status of this reported item',
+      body: body(),
+      footer: '<button type="button" class="btn btn--ghost" data-close>Close Window</button>' +
+        '<button type="button" class="btn btn--primary" id="lf-update">Update Item</button>',
+      onMount: function (el, close) {
+        function alertBox(tone, title, text) {
+          el.querySelector('#lf-alert').innerHTML = C().alert(tone, title, text);
+        }
+        function persist() {
+          OSAS.store.update('lostFound', item.id, {
+            status: item.status, custody: item.custody, claims: item.claims,
+            updatedAt: item.updatedAt, returnedTo: item.returnedTo, returnedAt: item.returnedAt
+          });
+        }
+        function notify() { if (typeof options.onUpdated === 'function') { options.onUpdated(item); } }
+        function refresh() {
+          el.querySelector('.modal__body').innerHTML = body();
+          bind();
+        }
+        function decide(claimId, decision) {
+          var row = (item.claims || []).filter(function (claim) { return claim.id === claimId; })[0];
+          if (!row) { return; }
+          row.status = decision === 'verify' ? 'Verified' : 'Rejected';
+          row.verifiedBy = staffName;
+          row.verifiedAt = U().now();
+          item.updatedAt = U().now();
+          if (decision === 'verify') {
+            item.status = 'Returned';
+            item.returnedTo = row.claimantName;
+            item.returnedAt = item.updatedAt;
+          } else if (!pendingClaims().length) {
+            item.status = 'Open';
+          }
+          persist();
+          OSAS.store.logActivity({
+            tone: decision === 'verify' ? 'green' : 'amber', icon: 'search',
+            title: decision === 'verify' ? 'Lost & Found Claim Verified' : 'Lost & Found Claim Rejected',
+            text: row.claimantName + ' · ' + item.code + ' (' + item.title + ') — claim ' +
+              row.status.toLowerCase() + ' by ' + staffName + '.'
+          });
+          C().toast(decision === 'verify' ? 'success' : 'info',
+            decision === 'verify' ? 'Claim verified' : 'Claim rejected',
+            item.code + ' — ' + row.claimantName);
+          refresh();
+          notify();
+        }
+        function bind() {
+          U().qsa('[data-claim]', el).forEach(function (button) {
+            button.addEventListener('click', function () {
+              decide(button.getAttribute('data-id'), button.getAttribute('data-claim'));
+            });
+          });
+        }
+        bind();
+
+        el.querySelector('#lf-update').addEventListener('click', function () {
+          var status = el.querySelector('#lf-status').value || item.status;
+          var custody = String(el.querySelector('#lf-custody').value || '').trim();
+          var changed = status !== item.status;
+          item.status = status;
+          if (custody) { item.custody = custody; }
+          item.updatedAt = U().now();
+          if (status === 'Returned' && !item.returnedAt) {
+            item.returnedAt = item.updatedAt;
+            item.returnedTo = item.returnedTo || 'Walk-in claimant (OSAS Office)';
+          }
+          persist();
+          OSAS.store.logActivity({
+            tone: status === 'Returned' ? 'green' : 'brand', icon: 'search',
+            title: 'Lost & Found Item Updated',
+            text: item.code + ' (' + item.title + ') — status set to ' + status +
+              (changed ? '' : ' (no change)') + '.'
+          });
+          C().toast('success', 'Item updated', item.code + ' is now marked as ' + status + '.');
+          refresh();
+          notify();
+        });
+      }
+    });
+  }
+
+  /* --------------------------------------------- Document request detail
+     Module 12 — request summary, workflow timeline, remarks and the
+     Submitted -> Under Review -> Ready for Pick-up -> Released path. */
+  function documentRequestView(options) {
+    var request = options.request;
+    var session = OSAS.auth.current();
+    var staffName = session ? session.user.firstName + ' ' + session.user.lastName : 'OSAS Records';
+    var CANCELLABLE = { 'Submitted': true, 'Under Review': true };
+
+    function timelineHtml() {
+      var rows = request.timeline || [];
+      if (!rows.length) {
+        return C().emptyState('No workflow activity has been recorded yet.');
+      }
+      return '<div class="thread">' + rows.map(function (row) {
+        return '<div class="msg' + (row.status === 'Rejected' ? '' : ' msg--staff') + '">' +
+          '<div class="u-grow"><div class="msg__head">' +
+          '<span class="msg__name">' + U().esc(row.status) + '</span>' +
+          '<span class="msg__role">' + U().esc(row.by || 'OSAS Records') + '</span>' +
+          '<span class="msg__time">' + OSAS.fmt.dateTime(row.at) + '</span></div>' +
+          '<div class="msg__body">' + U().esc(row.note) + '</div></div></div>';
+      }).join('') + '</div>';
+    }
+
+    function details() {
+      return C().statStrip([
+        { label: 'Request Status', value: C().badge(request.status) },
+        { label: 'Priority', value: C().priority(request.priority) },
+        { label: 'Requested', value: OSAS.fmt.shortDate(request.requestedAt) },
+        { label: 'Last Update', value: OSAS.fmt.shortDate(request.updatedAt) }
+      ]) +
+        '<dl class="kv">' +
+        '<dt>Student Name</dt><dd>' + U().esc(request.student) + '</dd>' +
+        '<dt>UC Student ID</dt><dd>' + U().esc(request.studentId || '—') + '</dd>' +
+        '<dt>Program / Year</dt><dd>' + U().esc(request.program || '—') +
+        (request.year ? ' · ' + U().esc(request.year) : '') + '</dd>' +
+        '<dt>University Email</dt><dd>' + U().esc(request.studentEmail) + '</dd>' +
+        '<dt>Document Type</dt><dd>' + U().esc(request.documentType) + '</dd>' +
+        '<dt>Purpose</dt><dd>' + U().esc(request.purpose) + '</dd>' +
+        '<dt>Copies</dt><dd>' + U().esc(String(request.copies || 1)) + '</dd>' +
+        '<dt>Delivery Mode</dt><dd>' + U().esc(request.deliveryMode) + '</dd>' +
+        '<dt>Processed By</dt><dd>' + U().esc(request.processedBy || 'Unassigned') + '</dd>' +
+        (request.releasedAt ? '<dt>Released On</dt><dd>' + OSAS.fmt.dateTime(request.releasedAt) + '</dd>' : '') +
+        '<dt>Reference</dt><dd class="mono">' + U().esc(request.code) + '</dd>' +
+        '</dl>';
+    }
+
+    function body() {
+      return '<div id="dr-alert"></div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>1.</span> Request Summary</div>' + details() +
+        (request.attachment ? '<div class="hint">Attached valid ID: <b>' + U().esc(request.attachment) + '</b></div>' : '') +
+        '</div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>2.</span> Workflow Timeline</div>' + timelineHtml() +
+        '</div>' +
+        '<div class="form-section">' +
+        '<div class="section-title"><span>3.</span> Processing Controls</div>' +
+        '<div class="form-grid form-grid--2">' +
+        field('Request Status', selectInput('dr-status', OSAS.store.options().documentRequestStatuses,
+          request.status, 'Select status')) +
+        field('Processed By', textInput('dr-processed', request.processedBy, 'Staff member handling the request')) +
+        '</div>' +
+        field('Remarks', '<textarea class="input" id="dr-remarks" rows="3" ' +
+          'placeholder="Notes visible to the student in the portal…">' + U().esc(request.remarks || '') + '</textarea>') +
+        C().alert('info', 'Release standard',
+          'Release a document only after the student presents a valid ID at the OSAS office, or after the signed PDF has been emailed for digital delivery.') +
+        '</div>';
+    }
+
+    return C().modal({
+      size: 'lg',
+      title: 'Document Request — ' + U().esc(request.code),
+      subtitle: 'Process the request and move it through the document release workflow',
+      body: body(),
+      footerClass: ' modal__foot--split',
+      footer: '<button type="button" class="btn btn--ghost" data-close>Close Window</button>' +
+        '<div class="btn-row">' +
+        '<button type="button" class="btn btn--ghost" id="dr-reject">Reject</button>' +
+        '<button type="button" class="btn btn--outline" id="dr-release">Mark Released</button>' +
+        '<button type="button" class="btn btn--primary" id="dr-update">Update Request</button></div>',
+      onMount: function (el) {
+        function alertBox(tone, title, text) {
+          el.querySelector('#dr-alert').innerHTML = C().alert(tone, title, text);
+        }
+        function persist() {
+          OSAS.store.update('documentRequests', request.id, {
+            status: request.status, remarks: request.remarks, processedBy: request.processedBy,
+            updatedAt: request.updatedAt, releasedAt: request.releasedAt, timeline: request.timeline
+          });
+        }
+        function notify() { if (typeof options.onUpdated === 'function') { options.onUpdated(request); } }
+        function refresh() {
+          el.querySelector('.modal__body').innerHTML = body();
+        }
+        function advance(status, note) {
+          request.status = status;
+          request.processedBy = staffName;
+          request.updatedAt = U().now();
+          if (status === 'Released') { request.releasedAt = request.updatedAt; }
+          request.timeline.push({
+            at: request.updatedAt, status: status, by: staffName,
+            note: note || 'Status updated by ' + staffName + '.'
+          });
+          persist();
+          OSAS.store.logActivity({
+            tone: status === 'Rejected' ? 'amber' : status === 'Released' ? 'green' : 'blue',
+            icon: 'fileText', title: 'Document Request ' + status,
+            text: request.code + ' · ' + request.student + ' — ' + request.documentType +
+              ' marked as ' + status + ' by ' + staffName + '.'
+          });
+          C().toast(status === 'Rejected' ? 'info' : 'success',
+            'Request ' + status.toLowerCase(), request.code + ' — ' + request.documentType);
+          refresh();
+          notify();
+        }
+        function notes() {
+          var box = el.querySelector('#dr-remarks');
+          return String((box && box.value) || '').trim();
+        }
+
+        el.querySelector('#dr-update').addEventListener('click', function () {
+          var status = el.querySelector('#dr-status').value || request.status;
+          var processed = String(el.querySelector('#dr-processed').value || '').trim();
+          request.remarks = notes();
+          if (processed) { request.processedBy = processed; }
+          if (status !== request.status) {
+            advance(status, request.remarks || undefined);
+            return;
+          }
+          request.updatedAt = U().now();
+          persist();
+          refresh();
+          C().toast('success', 'Request updated', request.code + ' — changes saved.');
+          notify();
+        });
+
+        el.querySelector('#dr-release').addEventListener('click', function () {
+          if (request.status === 'Released') {
+            alertBox('info', 'Already released', 'This document was already released to the student.');
+            return;
+          }
+          if (request.status === 'Rejected' || request.status === 'Cancelled') {
+            alertBox('warning', 'Cannot release', 'A rejected or cancelled request cannot be released. Reopen it first.');
+            return;
+          }
+          request.remarks = notes() || request.remarks;
+          advance('Released', request.remarks || 'Document released to the student at the OSAS office.');
+        });
+
+        el.querySelector('#dr-reject').addEventListener('click', function () {
+          if (!CANCELLABLE[request.status]) {
+            alertBox('warning', 'Cannot reject', 'Only requests that are submitted or under review can be rejected.');
+            return;
+          }
+          request.remarks = notes() || 'Request rejected after records verification.';
+          advance('Rejected', request.remarks);
+        });
+      }
+    });
+  }
+
   return {
     field: field, textInput: textInput, selectInput: selectInput, passwordInput: passwordInput,
     value: value, validEmail: validEmail, bindPasswordToggles: bindPasswordToggles,
-    userForm: userForm, ticketView: ticketView, ticketCreate: ticketCreate
+    userForm: userForm, ticketView: ticketView, ticketCreate: ticketCreate,
+    lostFoundView: lostFoundView, documentRequestView: documentRequestView
   };
 })();

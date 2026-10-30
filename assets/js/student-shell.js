@@ -14,6 +14,8 @@ OSAS.studentShell = (function () {
     { key: 'orientation', label: 'Orientation', href: 'orientation.html' },
     { key: 'announcements', label: 'Announcements', href: 'announcements.html' },
     { key: 'events', label: 'Events and Activities', href: 'events.html' },
+    { key: 'lostfound', label: 'Lost and Found', href: 'lost-found.html' },
+    { key: 'documents', label: 'Document Requests', href: 'document-requests.html' },
     { key: 'feedback', label: 'Feedback and Report', href: 'support.html' }
   ];
   var DEMO_STUDENT = 'ryan.delacruz@uc.edu.ph';
@@ -92,7 +94,7 @@ OSAS.studentShell = (function () {
             '</strong> (' + esc(user.role) + '), so student records, policies and portal alerts ' +
             'stay hidden on this page.</p>' +
           '<div class="sp-lock__actions">' +
-            '<a class="btn btn--outline" href="../dashboard.html">Back to admin dashboard</a>' +
+            '<a class="btn btn--outline" href="../coordinator/dashboard.html">Back to admin dashboard</a>' +
             '<button type="button" class="btn btn--primary" id="sp-demo-student">Open with demo student account</button>' +
           '</div>' +
           '<div class="sp-lock__hint">Demo student · Ryan Dela Cruz · ' + esc(DEMO_STUDENT) +

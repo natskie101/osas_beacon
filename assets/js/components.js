@@ -9,7 +9,9 @@ OSAS.components = (function () {
     closed: 'closed', inactive: 'inactive', scheduled: 'scheduled', inprogress: 'progress',
     processing: 'processing', pending: 'pending', pendingreview: 'pending', open: 'open',
     high: 'high', medium: 'medium', low: 'low', urgent: 'urgent', critical: 'critical',
-    warning: 'warning', info: 'info', upcoming: 'scheduled', cancelled: 'archived'
+    warning: 'warning', info: 'info', upcoming: 'scheduled', cancelled: 'archived',
+    submitted: 'pending', underreview: 'progress', ready: 'scheduled', released: 'completed',
+    returned: 'resolved', unclaimed: 'warning', rejected: 'archived', lost: 'high', found: 'active'
   };
 
   function statusKey(value) {

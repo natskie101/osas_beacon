@@ -13,7 +13,7 @@
     institution: 'Southway College of Technology',
     campusCode: 'SCT',
     academicYear: 'AY 2026-2027',
-    schemaVersion: 7,
+    schemaVersion: 8,
     seededAt: '2026-09-16T09:45:00',
     demoPassword: 'Beacon@2026'
   };
@@ -114,6 +114,38 @@
       'Enrollment & Records',
       'Facilities & Services'
     ],
+    lostFoundCategories: [
+      'IDs & Documents',
+      'Electronics & Gadgets',
+      'Bags & Wallets',
+      'Books & School Supplies',
+      'Clothing & Uniforms',
+      'Keys & Access Cards',
+      'Others'
+    ],
+    lostFoundLocations: [
+      'Main Library',
+      'Activity Center',
+      'Engineering Building Lobby',
+      'College of Computer Studies',
+      'Canteen & Food Court',
+      'Gymnasium',
+      'Registrar\'s Office',
+      'OSAS Office',
+      'Campus Grounds'
+    ],
+    lostFoundStatuses: ['Open', 'Claim Pending', 'Returned', 'Unclaimed', 'Archived'],
+    documentTypes: [
+      'Certificate of Enrollment',
+      'Certificate of Good Moral Character',
+      'Certificate of No Disciplinary Record',
+      'Student ID Replacement',
+      'Scholarship Certification',
+      'Certificate of Registration (OJT)',
+      'Leave of Absence Form'
+    ],
+    deliveryModes: ['Pick-up at OSAS', 'Email PDF'],
+    documentRequestStatuses: ['Submitted', 'Under Review', 'Ready for Pick-up', 'Released', 'Rejected'],
     audiences: [
       'All Student Portals',
       'Incoming Freshmen',
@@ -784,6 +816,231 @@
     tr('Second Semester Enlistment Schedule for All Colleges', 'Announcement', 2980, 2264, '1m 48s', 39, '2026-09-10T09:15:00', -6.7, 'ANN-2026-004')
   ];
 
+  /* ---------- Module 11: Lost & Found ---------- */
+  /* lf(n, type, title, category, description, location, occurred, reporter, email,
+        studentId, status, custody, posted, attachment) */
+  function lf(n, type, title, category, description, location, occurred, reporter,
+    email, studentId, status, custody, posted, attachment) {
+    return {
+      id: 'LF-2026-' + pad3(n), code: 'LF-2026-' + pad3(n),
+      type: type, title: title, category: category, description: description,
+      location: location, dateOccurred: occurred,
+      reportedBy: reporter, reporterEmail: email, studentId: studentId || '',
+      contact: email || 'OSAS Office',
+      status: status, custody: custody || 'OSAS Office',
+      attachment: attachment || '',
+      postedAt: posted, updatedAt: posted,
+      claims: [], returnedTo: '', returnedAt: ''
+    };
+  }
+  function claim(n, name, email, studentId, proof, message, at, status, attachment) {
+    return {
+      id: 'CLM-2026-' + pad3(n), claimantName: name, claimantEmail: email,
+      studentId: studentId || '', proof: proof, message: message,
+      attachment: attachment || '', at: at,
+      status: status || 'Pending', verifiedBy: '', verifiedAt: ''
+    };
+  }
+  var LOST_FOUND = [
+    lf(14, 'Found', 'Black leather wallet with a student ID inside', 'Bags & Wallets',
+      'A black leather wallet was turned over to the OSAS office. It contains a student ID and several receipts. The owner must describe the ID number and the wallet contents when claiming.',
+      'Main Library', '2026-09-16T08:20:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Claim Pending', 'OSAS Office', '2026-09-16T08:35:00', ''),
+    lf(13, 'Found', 'Blue Casio FX-991EX scientific calculator', 'Electronics & Gadgets',
+      'Found on the second floor of the Engineering Building after the 7:30 AM class. The name "J. Gomez" is written on the back cover.',
+      'Engineering Building Lobby', '2026-09-16T07:55:00', 'Nathaniel Cruz', 'nathaniel.cruz@uc.edu.ph', '',
+      'Open', 'OSAS Office', '2026-09-16T08:05:00', ''),
+    lf(12, 'Lost', 'Silver iPhone 13 with a cracked screen protector', 'Electronics & Gadgets',
+      'Lost between the canteen and the College of Business Administration building during the lunch break. The lock screen shows a photo of a black cat.',
+      'Canteen & Food Court', '2026-09-15T12:10:00', 'Alyssa Marie Uy', 'alyssa.uy@uc.edu.ph', '23-00741',
+      'Open', 'Unclaimed — with the finder', '2026-09-15T13:05:00', ''),
+    lf(11, 'Lost', 'Student ID card — 24-01455', 'IDs & Documents',
+      'The ID card slipped out of my uniform pocket while I was reviewing in the library. It has a blue lanyard attached.',
+      'Main Library', '2026-09-15T10:30:00', 'Kristine Joy Tan', 'kristine.tan@uc.edu.ph', '24-01455',
+      'Open', '—', '2026-09-15T11:15:00', ''),
+    lf(10, 'Found', 'Set of keys with a maroon lanyard', 'Keys & Access Cards',
+      'Found near the bleachers after the PE class. The set has three keys and a small flashlight keychain.',
+      'Gymnasium', '2026-09-14T15:40:00', 'Pia Santiago', 'pia.santiago@uc.edu.ph', '',
+      'Returned', 'OSAS Office', '2026-09-14T16:00:00', ''),
+    lf(9, 'Found', 'Brown prescription eyeglasses in a black case', 'Others',
+      'Turned over by a student after the general assembly. The case has a small sticker of the College of Nursing.',
+      'Activity Center', '2026-09-13T11:20:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Returned', 'OSAS Office', '2026-09-13T11:35:00', ''),
+    lf(8, 'Found', 'Intermediate Accounting Volume 2 textbook', 'Books & School Supplies',
+      'Left on the reading table on the second floor. The inside cover has a handwritten name that is partially erased.',
+      'Main Library', '2026-09-12T16:45:00', 'Nathaniel Cruz', 'nathaniel.cruz@uc.edu.ph', '',
+      'Unclaimed', 'OSAS Office', '2026-09-12T17:00:00', ''),
+    lf(7, 'Lost', 'Navy blue Jansport backpack', 'Bags & Wallets',
+      'Left under the table at the Activity Center during the organization fair. It contains two notebooks, a pencil case and a blue tumbler.',
+      'Activity Center', '2026-09-11T14:15:00', 'Joseph D. Gomez', 'joseph.gomez@uc.edu.ph', '24-01193',
+      'Open', '—', '2026-09-11T15:00:00', ''),
+    lf(6, 'Found', 'Nursing uniform jacket, size medium', 'Clothing & Uniforms',
+      'Found draped over a chair in the lobby. The name tag has been removed, but a small pin from the Nursing Society is attached.',
+      'Campus Grounds', '2026-09-10T09:50:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Open', 'OSAS Office', '2026-09-10T10:10:00', ''),
+    lf(5, 'Lost', 'USB flash drive with thesis drafts', 'Electronics & Gadgets',
+      'A silver 32 GB flash drive with a red cap. It holds the chapter drafts for my capstone project. Last used at the CCS laboratory.',
+      'College of Computer Studies', '2026-09-09T16:25:00', 'Emmanuel Mercado', 'emmanuel.mercado@uc.edu.ph', '23-00872',
+      'Open', '—', '2026-09-09T17:05:00', ''),
+    lf(4, 'Found', 'Clear water bottle covered with stickers', 'Others',
+      'Left at the canteen after the lunch rush. The bottle has travel stickers and a name written in marker that has faded.',
+      'Canteen & Food Court', '2026-09-08T13:30:00', 'Pia Santiago', 'pia.santiago@uc.edu.ph', '',
+      'Open', 'OSAS Office', '2026-09-08T13:45:00', ''),
+    lf(3, 'Lost', 'PE uniform shirt with embroidered initials', 'Clothing & Uniforms',
+      'Lost during the intramurals. Already recovered and turned over to the owner, so this report is kept for records only.',
+      'Gymnasium', '2026-09-05T08:40:00', 'Mark Anthony Lim', 'mark.lim@uc.edu.ph', '26-00017',
+      'Archived', '—', '2026-09-05T09:00:00', ''),
+    lf(2, 'Lost', 'Black wireless earbuds case', 'Electronics & Gadgets',
+      'The charging case fell out of my pocket somewhere between the canteen and the CCS building. Only the case is missing; the earbuds are with me.',
+      'Canteen & Food Court', '2026-09-15T12:45:00', 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104',
+      'Open', '—', '2026-09-15T13:20:00', ''),
+    lf(1, 'Found', 'Blue ID lace with the SCT logo', 'IDs & Documents',
+      'Found on the floor near the registrar\'s window. No ID card is attached, only the lace and a small clear sleeve.',
+      'Registrar\'s Office', '2026-09-14T10:05:00', 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104',
+      'Open', 'OSAS Office', '2026-09-14T10:20:00', '')
+  ];
+  /* Pending claim on the wallet turned over to the OSAS office. */
+  LOST_FOUND.forEach(function (row) {
+    if (row.code === 'LF-2026-014') {
+      row.claims.push(claim(3, 'Emmanuel Mercado', 'emmanuel.mercado@uc.edu.ph', '23-00872',
+        'Student ID 23-00872 and a photo of the wallet taken before it was lost',
+        'This is my wallet. It has my student ID inside and the receipts are from the bookstore last September 14.',
+        '2026-09-16T09:10:00', 'Pending', 'wallet-photo.jpg'));
+    }
+    if (row.code === 'LF-2026-010') {
+      row.claims.push(claim(2, 'Kristine Joy Tan', 'kristine.tan@uc.edu.ph', '24-01455',
+        'Student ID 24-01455 and the PE class schedule',
+        'These are my keys — the small flashlight keychain was a gift from my org.',
+        '2026-09-14T16:20:00', 'Verified'));
+      row.claims[0].verifiedBy = 'Andrea Villanueva';
+      row.claims[0].verifiedAt = '2026-09-15T08:15:00';
+      row.returnedTo = 'Kristine Joy Tan';
+      row.returnedAt = '2026-09-15T08:20:00';
+      row.updatedAt = '2026-09-15T08:20:00';
+    }
+    if (row.code === 'LF-2026-009') {
+      row.claims.push(claim(1, 'Mark Anthony Lim', 'mark.lim@uc.edu.ph', '26-00017',
+        'Student ID 26-00017 and a photo wearing the eyeglasses',
+        'The eyeglasses are mine. The black case has the Nursing Society sticker because my sister lent it to me.',
+        '2026-09-13T14:05:00', 'Verified'));
+      row.claims[0].verifiedBy = 'Andrea Villanueva';
+      row.claims[0].verifiedAt = '2026-09-14T09:40:00';
+      row.claims.push(claim(4, 'Julie Acabado', 'julie.acabado@uc.edu.ph', '24-01208',
+        'Student ID 24-01208',
+        'I think these are mine. I lost a similar pair last week.',
+        '2026-09-13T16:30:00', 'Rejected'));
+      row.claims[1].verifiedBy = 'Andrea Villanueva';
+      row.claims[1].verifiedAt = '2026-09-14T09:42:00';
+      row.returnedTo = 'Mark Anthony Lim';
+      row.returnedAt = '2026-09-14T09:50:00';
+      row.updatedAt = '2026-09-14T09:50:00';
+    }
+  });
+
+  /* ---------- Module 12: Document Requests ---------- */
+  /* dr(n, student, studentId, email, program, year, documentType, purpose, copies,
+        delivery, status, priority, requested, processedBy) */
+  function dr(n, student, studentId, email, program, year, documentType, purpose,
+    copies, delivery, status, priority, requested, processedBy) {
+    var row = {
+      id: 'DR-2026-' + pad3(n), code: 'DR-2026-' + pad3(n),
+      student: student, studentId: studentId, studentEmail: email, program: program,
+      year: year, documentType: documentType, purpose: purpose, copies: copies,
+      deliveryMode: delivery, status: status, priority: priority,
+      requestedAt: requested, updatedAt: requested, releasedAt: '',
+      processedBy: processedBy || 'OSAS Records', remarks: '',
+      attachment: 'valid-id.png',
+      timeline: [{
+        at: requested, status: 'Submitted', by: student,
+        note: 'Request submitted through the student portal.'
+      }]
+    };
+    if (status === 'Under Review' || status === 'Ready for Pick-up' || status === 'Released' || status === 'Rejected') {
+      row.timeline.push({
+        at: plusHours(requested, 2), status: 'Under Review', by: processedBy || 'OSAS Records',
+        note: 'Requirements and student records checked; request endorsed to the records officer.'
+      });
+      row.updatedAt = plusHours(requested, 2);
+    }
+    if (status === 'Ready for Pick-up' || status === 'Released') {
+      row.timeline.push({
+        at: plusHours(requested, 20), status: 'Ready for Pick-up', by: processedBy || 'OSAS Records',
+        note: 'Document signed and sealed. Bring your student ID when claiming at the OSAS office.'
+      });
+      row.updatedAt = plusHours(requested, 20);
+    }
+    if (status === 'Released') {
+      row.releasedAt = plusHours(requested, 26);
+      row.updatedAt = row.releasedAt;
+      row.timeline.push({
+        at: row.releasedAt, status: 'Released', by: processedBy || 'OSAS Records',
+        note: 'Released to the student. Claim stub signed and filed.'
+      });
+    }
+    if (status === 'Rejected') {
+      row.remarks = 'Existing balance with the Finance Office. Settle the account before requesting another certification.';
+      row.updatedAt = plusHours(requested, 5);
+      row.timeline.push({
+        at: row.updatedAt, status: 'Rejected', by: processedBy || 'OSAS Records',
+        note: row.remarks
+      });
+    }
+    if (status === 'Cancelled') {
+      row.updatedAt = plusHours(requested, 1);
+      row.timeline.push({
+        at: row.updatedAt, status: 'Cancelled', by: student,
+        note: 'Cancelled by the student through the portal.'
+      });
+    }
+    return row;
+  }
+  var DOCUMENT_REQUESTS = [
+    dr(12, 'Alyssa Marie Uy', '23-00741', 'alyssa.uy@uc.edu.ph', 'BS Management Accounting', 'Third Year',
+      'Certificate of Good Moral Character', 'Requirement for a scholarship application with a partner foundation.',
+      1, 'Pick-up at OSAS', 'Submitted', 'Medium', '2026-09-16T09:25:00', ''),
+    dr(11, 'Julie Acabado', '24-01208', 'julie.acabado@uc.edu.ph', 'AB Communication', 'Second Year',
+      'Certificate of Enrollment', 'Proof of enrollment for a part-time internship application.',
+      2, 'Email PDF', 'Cancelled', 'Low', '2026-09-15T14:10:00', ''),
+    dr(10, 'Mark Anthony Lim', '26-00017', 'mark.lim@uc.edu.ph', 'BS Information Systems', 'First Year',
+      'Student ID Replacement', 'Lost the original ID card and needs a replacement for library access.',
+      1, 'Pick-up at OSAS', 'Rejected', 'High', '2026-09-15T09:30:00', 'Nathaniel Cruz'),
+    dr(9, 'Emmanuel Mercado', '23-00872', 'emmanuel.mercado@uc.edu.ph', 'BS Accountancy', 'Third Year',
+      'Certificate of Registration (OJT)', 'Host company requires a stamped certificate of registration for the OJT clearance.',
+      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-10T08:15:00', 'Andrea Villanueva'),
+    dr(8, 'Kristine Joy Tan', '24-01455', 'kristine.tan@uc.edu.ph', 'BS Nursing', 'Second Year',
+      'Certificate of Good Moral Character', 'Requirement for the clinical affiliation application.',
+      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-12T10:40:00', 'Pia Santiago'),
+    dr(7, 'Joseph D. Gomez', '24-01193', 'joseph.gomez@uc.edu.ph', 'BS Civil Engineering', 'Second Year',
+      'Certificate of Enrollment', 'Requirement for a student assistance grant.',
+      1, 'Email PDF', 'Under Review', 'Medium', '2026-09-14T15:20:00', 'Nathaniel Cruz'),
+    dr(6, 'Julie Acabado', '24-01208', 'julie.acabado@uc.edu.ph', 'AB Communication', 'Second Year',
+      'Certificate of No Disciplinary Record', 'Requirement for a media internship at a local network.',
+      1, 'Pick-up at OSAS', 'Under Review', 'Low', '2026-09-14T11:05:00', 'Andrea Villanueva'),
+    dr(5, 'Alyssa Marie Uy', '23-00741', 'alyssa.uy@uc.edu.ph', 'BS Management Accounting', 'Third Year',
+      'Scholarship Certification', 'Renewal of the university academic scholarship for the second semester.',
+      1, 'Email PDF', 'Released', 'Medium', '2026-09-11T13:35:00', 'Pia Santiago'),
+    dr(4, 'Ryan Dela Cruz', '22-00104', 'ryan.delacruz@uc.edu.ph', 'BS Information Technology', 'Fourth Year',
+      'Certificate of Registration (OJT)', 'OJT clearance requirement for the host company.',
+      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-08T11:25:00', 'Andrea Villanueva'),
+    dr(3, 'Ryan Dela Cruz', '22-00104', 'ryan.delacruz@uc.edu.ph', 'BS Information Technology', 'Fourth Year',
+      'Certificate of Good Moral Character', 'Requirement for a graduate school application.',
+      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-13T09:50:00', 'Pia Santiago'),
+    dr(2, 'Mark Anthony Lim', '26-00017', 'mark.lim@uc.edu.ph', 'BS Information Systems', 'First Year',
+      'Certificate of Enrollment', 'Proof of enrollment for a barangay scholarship.',
+      1, 'Email PDF', 'Submitted', 'Medium', '2026-09-16T08:40:00', ''),
+    dr(1, 'Ryan Dela Cruz', '22-00104', 'ryan.delacruz@uc.edu.ph', 'BS Information Technology', 'Fourth Year',
+      'Certificate of No Disciplinary Record', 'Requirement for the OJT placement with a government agency.',
+      1, 'Pick-up at OSAS', 'Submitted', 'High', '2026-09-16T09:05:00', '')
+  ];
+  AUDIT.unshift(
+    log('blue', 'search', 'Lost & Found Claim Filed',
+      'Emmanuel Mercado filed a claim for LF-2026-014 (black leather wallet) and is awaiting OSAS verification.',
+      '2026-09-16T09:10:00', 'Just now'),
+    log('amber', 'fileText', 'Document Request Submitted',
+      'Alyssa Marie Uy requested a Certificate of Good Moral Character (DR-2026-012).',
+      '2026-09-16T09:25:00', 'Just now')
+  );
+
   /* ---------- Localization / phase status cards (module 6 summary) ---------- */
   var ENGAGEMENT_NOTES = [
     { id: 'note-1', tone: 'danger', title: 'Low engagement detected', text: 'Four published items are below the 70% engagement threshold. Consider re-broadcasting or revising the content structure.' },
@@ -801,6 +1058,8 @@
   window.OSAS_SEED.broadcasts = BROADCASTS;
   window.OSAS_SEED.reports = REPORTS;
   window.OSAS_SEED.tracking = TRACKING;
+  window.OSAS_SEED.lostFound = LOST_FOUND;
+  window.OSAS_SEED.documentRequests = DOCUMENT_REQUESTS;
   window.OSAS_SEED.auditLog = AUDIT;
   window.OSAS_SEED.engagementNotes = ENGAGEMENT_NOTES;
   window.OSAS_SEED._partial = false;
