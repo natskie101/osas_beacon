@@ -131,7 +131,8 @@
         align: "right",
         render: function (row) {
           var resolve =
-            row.status === "Open" || row.status === "In Progress"
+            (row.status === "Open" || row.status === "In Progress") &&
+            OSAS.auth.canHandleCategory(row.category)
               ? '<button type="button" class="btn btn--primary btn--sm" data-action="resolve" data-id="' +
                 U.esc(row.id) +
                 '">Resolve</button>'
@@ -156,6 +157,12 @@
       "</a></div>";
 
     var queue = data.queue;
+    if (OSAS.auth.isTechnicalAdmin()) {
+      var allowed = OSAS.auth.technicalCategories();
+      queue = queue.filter(function (row) {
+        return allowed.indexOf(row.category) > -1;
+      });
+    }
     var rows = queue.slice(0, 3);
     var footer =
       '<div class="table-foot"><div>Showing 1–' +
@@ -235,20 +242,28 @@
 
   function render() {
     var data = OSAS.analytics.dashboard();
+    var technicalDesk = OSAS.auth.isTechnicalAdmin();
     content.innerHTML =
       OSAS.shell.pageHead({
-        title: "Admin Dashboard Overview",
-        subtitle:
-          "Consolidated real-time status of all OSAS portal modules, content operations and student support activity for " +
-          U.esc(OSAS.store.meta().academicYear) +
-          ".",
+        title: technicalDesk
+          ? "Technical Support Dashboard"
+          : "Admin Dashboard Overview",
+        subtitle: technicalDesk
+          ? "Live view of student technical support, account management and activity tracking for " +
+            U.esc(OSAS.store.meta().academicYear) +
+            "."
+          : "Consolidated real-time status of all OSAS portal modules, content operations and student support activity for " +
+            U.esc(OSAS.store.meta().academicYear) +
+            ".",
         actions:
           '<button type="button" class="btn btn--ghost" data-action="refresh">' +
           OSAS.icons.icon("refresh", 13) +
           " Refresh Data</button>" +
-          '<a class="btn btn--primary" href="reports.html">' +
-          OSAS.icons.icon("fileText", 13) +
-          " Open Reports</a>",
+          (technicalDesk
+            ? ""
+            : '<a class="btn btn--primary" href="reports.html">' +
+              OSAS.icons.icon("fileText", 13) +
+              " Open Reports</a>"),
       }) +
       statsHtml(data) +
       '<div class="u-mb-14">' +
@@ -292,6 +307,14 @@
       if (!target) {
         return;
       }
+      if (!OSAS.auth.canHandleCategory(target.category)) {
+        C.toast(
+          "error",
+          "Not permitted",
+          "Your account cannot resolve tickets under this category.",
+        );
+        return;
+      }
       C.confirm({
         title: "Resolve ticket #" + target.code + "?",
         subtitle: target.student + " &middot; " + target.category,
@@ -313,6 +336,9 @@
             body: "Your concern has been addressed and verified. We are closing this ticket as resolved — please reopen it if the issue recurs.",
           });
           OSAS.store.persist();
+          var studentUser = OSAS.store.all("users").filter(function (row) {
+            return row.email === target.studentEmail;
+          })[0];
           OSAS.store.logActivity({
             tone: "green",
             icon: "check",
@@ -322,6 +348,12 @@
               " · " +
               target.category +
               " marked as resolved by OSAS Support.",
+            actorId: session ? session.user.id : "",
+            actorName: staff,
+            targetUserId: studentUser ? studentUser.id : "",
+            action: "ticket.resolve",
+            entity: "ticket",
+            entityId: target.id,
           });
           render();
           C.toast(

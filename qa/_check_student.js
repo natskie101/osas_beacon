@@ -200,7 +200,7 @@ let sb = makeSandbox(STUDENT, "rules.html");
 sb._load();
 let main = sb._el("sp-main").innerHTML;
 
-check("list mounts", main.includes("sr--list"), true);
+check("list mounts", main.includes("se--list"), true);
 check("all-rules chip shows live count", /All Rules \(16\)/.test(main), true);
 check(
   "category chips show counts",
@@ -293,7 +293,7 @@ sb._el("sr-q").value = "";
 sb._el("sr-q").dispatch("input", { target: sb._el("sr-q") });
 check(
   "clearing search restores 16 cards",
-  count(sb._el("sr-list").innerHTML, 'class="sr-card"') === 16,
+  count(sb._el("sr-list").innerHTML, 'class="se-card"') === 16,
   true,
 );
 
@@ -301,7 +301,12 @@ check(
 sb.location.hash = "#/rule/RULE-119";
 sb._fire("hashchange");
 main = sb._el("sp-main").innerHTML;
-check("detail view mounted", main.includes("sr--detail"), true);
+check("detail view mounted", main.includes("se--detail"), true);
+check(
+  "detail opens inline, not in a modal",
+  !sb._el("modal-root") || sb._el("modal-root").innerHTML === "",
+  true,
+);
 const bar = (id) => sb._el(id).innerHTML;
 check(
   "detail back link moved into the top bar",
@@ -404,12 +409,12 @@ sb._el("sr-back").dispatch("click");
 sb._fire("hashchange");
 check(
   "back returns to the list",
-  sb._el("sp-main").innerHTML.includes("sr--list"),
+  sb._el("sp-main").innerHTML.includes("se--list"),
   true,
 );
 check(
   "all 16 cards after back",
-  count(sb._el("sp-main").innerHTML, 'class="sr-card"') === 16,
+  count(sb._el("sp-main").innerHTML, 'class="se-card"') === 16,
   true,
 );
 check(
@@ -420,7 +425,7 @@ check(
   true,
 );
 
-console.log("\n--- rules module (administrator session) ---");
+console.log("\n--- rules module (coordinator session) ---");
 sb = makeSandbox(ADMIN, "rules.html");
 sb._load();
 main = sb._el("sp-main").innerHTML;
@@ -838,7 +843,7 @@ check(
   true,
 );
 
-console.log("\n--- orientation module (administrator session) ---");
+console.log("\n--- orientation module (coordinator session) ---");
 sb = makeSandbox(ADMIN, "orientation.html");
 sb._load();
 main = sb._el("sp-main").innerHTML;
@@ -1245,7 +1250,7 @@ check(
   true,
 );
 
-console.log("\n--- announcements module (administrator session) ---");
+console.log("\n--- announcements module (coordinator session) ---");
 sb = makeSandbox(ADMIN, "announcements.html");
 sb._load();
 main = sb._el("sp-main").innerHTML;
@@ -1573,7 +1578,7 @@ check(
   true,
 );
 
-console.log("\n--- events module (administrator session) ---");
+console.log("\n--- events module (coordinator session) ---");
 sb = makeSandbox(ADMIN, "events.html");
 sb._load();
 main = sb._el("sp-main").innerHTML;
@@ -2036,7 +2041,7 @@ check(
   true,
 );
 
-console.log("\n--- feedback & support module (administrator session) ---");
+console.log("\n--- feedback & support module (coordinator session) ---");
 sb = makeSandbox(ADMIN, "support.html");
 sb._load();
 main = sb._el("sp-main").innerHTML;
@@ -2080,7 +2085,7 @@ sb.localStorage.setItem(
   "beacon.osas.session",
   JSON.stringify({
     userId: ADMIN,
-    role: "Administrator",
+    role: "Coordinator",
     signedInAt: "2026-09-16T09:00:00",
   }),
 );
@@ -2125,7 +2130,7 @@ check(
   true,
 );
 check(
-  "administrator credentials prefilled (autoAdmin)",
+  "coordinator credentials prefilled (autoAdmin)",
   sb._el("email").value === "josefina.reyes@uc.edu.ph" &&
     sb._el("password").value === "Beacon@2026",
   true,

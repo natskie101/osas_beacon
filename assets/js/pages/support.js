@@ -11,6 +11,20 @@
   }
   var content = shell.content;
   var OPTIONS = OSAS.store.options();
+  var SCOPE_CATEGORIES = OSAS.auth.isTechnicalAdmin()
+    ? OSAS.auth.technicalCategories()
+    : OPTIONS.ticketCategories;
+
+  function studentIdFor(ticket) {
+    var email = String(ticket.studentEmail || "").toLowerCase();
+    var rows = OSAS.store.all("users");
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].email || "").toLowerCase() === email) {
+        return rows[i].id;
+      }
+    }
+    return "";
+  }
 
   var state = {
     search: "",
@@ -22,6 +36,11 @@
 
   function filtered() {
     var rows = OSAS.store.all("tickets").slice();
+    if (OSAS.auth.isTechnicalAdmin()) {
+      rows = rows.filter(function (r) {
+        return SCOPE_CATEGORIES.indexOf(r.category) > -1;
+      });
+    }
     rows = U.search(rows, state.search, [
       "code",
       "student",
@@ -49,8 +68,16 @@
     return (
       '<div class="tkt-toolbar">' +
       '<div class="tkt-toolbar__left">' +
-      '<div class="panel-title">Inquiry &amp; Complaint Directory</div>' +
-      '<div class="tkt-sub">Manage student inquiries, complaints, and feedback, and monitor the OSAS service response performance.</div>' +
+      '<div class="panel-title">' +
+      (OSAS.auth.isTechnicalAdmin()
+        ? "Technical Support Queue"
+        : "Inquiry &amp; Complaint Directory") +
+      "</div>" +
+      '<div class="tkt-sub">' +
+      (OSAS.auth.isTechnicalAdmin()
+        ? "LMS access, account and portal access, and student ID verification concerns assigned to the technical desk."
+        : "Manage student inquiries, complaints, and feedback, and monitor the OSAS service response performance.") +
+      "</div>" +
       "</div>" +
       '<div class="tkt-toolbar__right">' +
       '<span class="input-group tkt-search"><span class="input-group__ico">' +
@@ -72,7 +99,7 @@
       '<div class="field"><label for="tkt-category">Concern Category</label>' +
       '<select class="input" id="tkt-category">' +
       ["All"]
-        .concat(OPTIONS.ticketCategories)
+        .concat(SCOPE_CATEGORIES)
         .map(function (cat) {
           return (
             '<option value="' +
@@ -225,9 +252,10 @@
         align: "right",
         render: function (row) {
           var pending = row.status === "Open" || row.status === "In Progress";
+          var canReply = OSAS.auth.canHandleCategory(row.category);
           return (
             '<div class="cell-actions">' +
-            (pending
+            (pending && canReply
               ? '<button type="button" class="btn btn--brand btn--sm" data-action="respond" data-id="' +
                 U.esc(row.id) +
                 '">Respond</button>'
@@ -262,6 +290,14 @@
     if (!ticket) {
       return;
     }
+    if (!OSAS.auth.canHandleCategory(ticket.category)) {
+      C.toast(
+        "error",
+        "Not permitted",
+        "Your account cannot resolve tickets under this category.",
+      );
+      return;
+    }
     C.confirm({
       title: "Resolve ticket #" + ticket.code + "?",
       subtitle: U.esc(ticket.student) + " · " + U.esc(ticket.category),
@@ -292,6 +328,12 @@
             " · " +
             ticket.category +
             " marked as resolved by OSAS Support.",
+          actorId: session ? session.user.id : "",
+          actorName: staff,
+          targetUserId: studentIdFor(ticket),
+          action: "ticket.resolve",
+          entity: "ticket",
+          entityId: ticket.id,
         });
         C.toast("success", "Ticket resolved", ticket.code + " is now closed.");
         render();
@@ -332,9 +374,12 @@
   function render() {
     content.innerHTML =
       OSAS.shell.pageHead({
-        title: "Feedback & Student Support Core",
-        subtitle:
-          "Manage student inquiries, complaints, and feedback, and monitor the OSAS service response performance.",
+        title: OSAS.auth.isTechnicalAdmin()
+          ? "Technical Support"
+          : "Feedback & Student Support Core",
+        subtitle: OSAS.auth.isTechnicalAdmin()
+          ? "Respond to LMS access, account and portal access, and student ID verification concerns."
+          : "Manage student inquiries, complaints, and feedback, and monitor the OSAS service response performance.",
         actions:
           '<button type="button" class="btn btn--brand" data-action="new">' +
           OSAS.icons.icon("plus", 13) +

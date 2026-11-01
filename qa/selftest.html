@@ -44,7 +44,7 @@
             typeof OSAS_SEED === "object" && !OSAS_SEED._partial,
             "partial=" + OSAS_SEED._partial,
           );
-          check("users seeded", counts.users >= 20, "users=" + counts.users);
+          check("users seeded", counts.users >= 12, "users=" + counts.users);
           check(
             "announcements seeded",
             counts.announcements >= 10,
@@ -89,9 +89,16 @@
             "n=" + counts.auditLog,
           );
           check(
-            "schema version is 8",
-            store.meta().schemaVersion === 8,
+            "schema version is 9",
+            store.meta().schemaVersion === 9,
             "v=" + store.meta().schemaVersion,
+          );
+          check(
+            "three-role model is enforced",
+            store.options().roles.length === 3 &&
+              store.options().roles.join(",") ===
+                "Coordinator,Administrator,Student",
+            store.options().roles.join(","),
           );
           check(
             "metrics present",
@@ -143,15 +150,28 @@
 
           section("Auth");
           var admin = null;
+          var coordinator = null;
+          var student = null;
           store.all("users").forEach(function (row) {
             if (!admin && String(row.role) === "Administrator") {
               admin = row;
+            }
+            if (!coordinator && String(row.role) === "Coordinator") {
+              coordinator = row;
+            }
+            if (!student && String(row.role) === "Student") {
+              student = row;
             }
           });
           check(
             "an administrator account exists",
             !!admin,
             admin ? admin.email : "none",
+          );
+          check(
+            "a coordinator account exists",
+            !!coordinator,
+            coordinator ? coordinator.email : "none",
           );
           var bad = auth.login(
             "nobody@uc.edu.ph",
@@ -177,6 +197,33 @@
             auth.current() ? auth.current().user.id : "null",
           );
           check("requireAuth keeps the session", !!auth.requireAuth());
+          check(
+            "administrator handles technical ticket categories",
+            auth.canHandleCategory("LMS Access Issues") &&
+              auth.canHandleCategory("Account & Portal Access") &&
+              auth.canHandleCategory("Student ID Verification"),
+          );
+          check(
+            "administrator is blocked from non-technical categories",
+            !auth.canHandleCategory("Facilities & Services") &&
+              !auth.canHandleCategory("Enrollment & Records"),
+          );
+          check(
+            "administrator can manage student accounts",
+            auth.canManageUser(student) === true,
+          );
+          check(
+            "administrator cannot manage coordinator accounts",
+            auth.canManageUser(coordinator) === false,
+          );
+          check(
+            "administrator page access is scoped",
+            auth.canAccessPage("support") &&
+              auth.canAccessPage("users") &&
+              auth.canAccessPage("activity") &&
+              !auth.canAccessPage("broadcasts") &&
+              !auth.canAccessPage("reports"),
+          );
           var logins = store.all("auditLog").filter(function (r) {
             return r.title === "Portal Sign-In";
           }).length;
@@ -252,6 +299,26 @@
             "logActivity prepends an entry",
             store.all("auditLog").length === logBefore + 1 &&
               store.all("auditLog")[0].title === "QA probe",
+          );
+          var timelineBefore = OSAS.activity.entries(student.id).length;
+          store.logActivity({
+            title: "QA timeline probe",
+            text:
+              "linked activity for " +
+              student.firstName +
+              " " +
+              student.lastName,
+            actorId: admin.id,
+            actorName: admin.firstName + " " + admin.lastName,
+            targetUserId: student.id,
+            action: "ticket.reply",
+            entity: "ticket",
+            entityId: "TCS-QA",
+          });
+          check(
+            "activity timeline resolves linked user events",
+            OSAS.activity.entries(student.id).length === timelineBefore + 1,
+            "events=" + OSAS.activity.entries(student.id).length,
           );
 
           section("Aggregates");
@@ -454,7 +521,7 @@
           check(
             "backup round-trips",
             backup.users.length === store.all("users").length &&
-              backup.version === 8,
+              backup.version === 9,
           );
           var annCount = store.all("announcements").length,
             userCount = store.all("users").length;

@@ -669,8 +669,20 @@ OSAS.store = (function () {
       text: entry.text || "",
       at: entry.at || OSAS.util.now(),
       ago: entry.ago || "Just now",
+      actorId: entry.actorId || "",
+      actorName: entry.actorName || "",
+      targetUserId: entry.targetUserId || "",
+      action: entry.action || "",
+      entity: entry.entity || "",
+      entityId: entry.entityId || "",
     };
     insert("auditLog", record);
+    /* Keep the local audit trail bounded so localStorage never fills up. */
+    var rows = all("auditLog");
+    if (rows.length > 500) {
+      rows.length = 500;
+      persist();
+    }
     return record;
   }
 
@@ -798,6 +810,12 @@ OSAS.auth = (function () {
         " signed in to the " +
         String(user.role).toLowerCase() +
         " portal.",
+      actorId: user.id,
+      actorName: user.firstName + " " + user.lastName,
+      targetUserId: user.id,
+      action: "auth.login",
+      entity: "user",
+      entityId: user.id,
     });
     return { ok: true, user: user };
   }
@@ -820,6 +838,12 @@ OSAS.auth = (function () {
           " " +
           session.user.lastName +
           " signed out of the portal.",
+        actorId: session.user.id,
+        actorName: session.user.firstName + " " + session.user.lastName,
+        targetUserId: session.user.id,
+        action: "auth.logout",
+        entity: "user",
+        entityId: session.user.id,
       });
     }
   }
@@ -845,12 +869,166 @@ OSAS.auth = (function () {
     return session;
   }
 
+  /* --------------------------------------------------- role / permissions
+     Coordinator  → full portal, every ticket category, every account.
+     Administrator→ technical desk only: technical ticket categories,
+                    student account management and activity tracking.
+     Student      → student portal only.                                  */
+  function role() {
+    var session = current();
+    return session ? session.role : null;
+  }
+  function isCoordinator() {
+    return role() === "Coordinator";
+  }
+  function isTechnicalAdmin() {
+    return role() === "Administrator";
+  }
+  function isStaff() {
+    return isCoordinator() || isTechnicalAdmin();
+  }
+  function technicalCategories() {
+    var options = OSAS.store.options() || {};
+    return options.technicalTicketCategories || [];
+  }
+  function canHandleCategory(category) {
+    if (isCoordinator()) {
+      return true;
+    }
+    if (isTechnicalAdmin()) {
+      return technicalCategories().indexOf(String(category || "")) > -1;
+    }
+    return false;
+  }
+  function canManageUser(user) {
+    if (isCoordinator()) {
+      return true;
+    }
+    if (!isTechnicalAdmin() || !user) {
+      return false;
+    }
+    return user.role === "Student";
+  }
+  function canAccessPage(page) {
+    if (isCoordinator()) {
+      return true;
+    }
+    if (!isTechnicalAdmin()) {
+      return false;
+    }
+    return ["dashboard", "support", "users", "activity"].indexOf(page) > -1;
+  }
+
   return {
     current: current,
     login: login,
     logout: logout,
     requireAuth: requireAuth,
+    role: role,
+    isCoordinator: isCoordinator,
+    isTechnicalAdmin: isTechnicalAdmin,
+    isStaff: isStaff,
+    technicalCategories: technicalCategories,
+    canHandleCategory: canHandleCategory,
+    canManageUser: canManageUser,
+    canAccessPage: canAccessPage,
   };
+})();
+/* --------------------------------------------------- shared activity feed
+   Renders a per-user timeline from the audit log. Used by the activity page
+   and by the "Activity" action in User Management.                       */
+OSAS.activity = (function () {
+  function entries(userId) {
+    var user = OSAS.store.find("users", userId);
+    var fullName = user ? user.firstName + " " + user.lastName : "";
+    return OSAS.store
+      .all("auditLog")
+      .filter(function (row) {
+        if (row.targetUserId === userId || row.actorId === userId) {
+          return true;
+        }
+        /* Seeded audit entries predate actor/target IDs — fall back to the
+           person's name so their timeline is not empty on first load. */
+        return !!fullName && String(row.text || "").indexOf(fullName) > -1;
+      })
+      .slice()
+      .sort(function (a, b) {
+        return new Date(b.at) - new Date(a.at);
+      });
+  }
+  function timelineHtml(userId) {
+    var rows = entries(userId);
+    if (!rows.length) {
+      return OSAS.components.emptyState(
+        "No activity has been recorded for this account yet.",
+      );
+    }
+    return (
+      '<div class="log-list" style="border:1px solid var(--line);border-radius:9px;overflow:hidden">' +
+      rows
+        .map(function (row) {
+          return OSAS.components.logItem({
+            tone: row.tone,
+            icon: row.icon,
+            title: row.title,
+            text: row.text,
+            at: row.at,
+            ago: OSAS.fmt.dateTime(row.at),
+          });
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+  function open(userId) {
+    var user = OSAS.store.find("users", userId);
+    if (!user) {
+      return;
+    }
+    var rows = entries(userId);
+    var signIns = rows.filter(function (row) {
+      return row.action === "auth.login";
+    }).length;
+    var tickets = rows.filter(function (row) {
+      return row.action === "ticket.create";
+    }).length;
+    OSAS.components.modal({
+      size: "lg",
+      title: "User Activity Timeline",
+      subtitle:
+        OSAS.util.esc(user.firstName + " " + user.lastName) +
+        " &middot; " +
+        OSAS.util.esc(user.email) +
+        " &middot; " +
+        OSAS.util.esc(user.role),
+      body:
+        '<div class="stats">' +
+        OSAS.components.statCard(
+          "Sign-Ins Recorded",
+          OSAS.fmt.number(signIns),
+          '<span class="u-muted">from the local audit trail</span>',
+        ) +
+        OSAS.components.statCard(
+          "Tickets Filed",
+          OSAS.fmt.number(tickets),
+          '<span class="u-muted">account-linked support requests</span>',
+        ) +
+        OSAS.components.statCard(
+          "Account Status",
+          OSAS.components.badge(user.status),
+          '<span class="u-muted">last login ' +
+            OSAS.util.esc(OSAS.fmt.dateTime(user.lastLogin)) +
+            "</span>",
+        ) +
+        "</div>" +
+        '<div class="form-section"><div class="section-title"><span>1.</span> Recorded Activity</div>' +
+        timelineHtml(userId) +
+        "</div>",
+      footer:
+        '<button type="button" class="btn btn--ghost" data-close>Close</button>',
+    });
+  }
+  return { entries: entries, timelineHtml: timelineHtml, open: open };
 })();
 /* ------------------------------------------------------- analytics helpers
    Derived figures for dashboard cards, tables and footers. Every module page

@@ -13,7 +13,7 @@
     institution: 'Southway College of Technology',
     campusCode: 'SCT',
     academicYear: 'AY 2026-2027',
-    schemaVersion: 8,
+    schemaVersion: 9,
     seededAt: '2026-09-16T09:45:00',
     demoPassword: 'Beacon@2026'
   };
@@ -39,15 +39,13 @@
 
   /* ---------- Select options used by filters & forms ---------- */
   var OPTIONS = {
-    roles: ['Administrator', 'Faculty', 'Staff', 'Student'],
-    accountTiers: ['Student Tier', 'Faculty Tier', 'Staff Tier', 'Admin Tier'],
+    roles: ['Coordinator', 'Administrator', 'Student'],
+    accountTiers: ['Student Tier', 'Admin Tier'],
     years: ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Graduate'],
     accessLevels: [
-      'Administrator — Full System Access',
-      'Administrator — Broadcast Management',
-      'Faculty — Faculty Portal Access',
-      'Staff — Records Management Access',
-      'Staff — Case Records Access',
+      'Coordinator — Full System Access',
+      'Coordinator — Broadcast Management',
+      'Administrator — Technical Support Access',
       'Student — Portal Access'
     ],
     departments: [
@@ -113,6 +111,13 @@
       'Account & Portal Access',
       'Enrollment & Records',
       'Facilities & Services'
+    ],
+    /* Categories the technical Administrator is allowed to answer.
+       System bugs and glitches are filed under "LMS Access Issues". */
+    technicalTicketCategories: [
+      'LMS Access Issues',
+      'Account & Portal Access',
+      'Student ID Verification'
     ],
     lostFoundCategories: [
       'IDs & Documents',
@@ -195,8 +200,9 @@
      Ids are issued by a counter — deriving them from the array length gave every row the
      same id while the array literal was still being evaluated. */
   var TIER_BY_ROLE = {
-    Administrator: 'Admin Tier', Faculty: 'Faculty Tier',
-    Staff: 'Staff Tier', Student: 'Student Tier'
+    Coordinator: 'Admin Tier',
+    Administrator: 'Admin Tier',
+    Student: 'Student Tier'
   };
   var userSeq = 1000;
   function u(first, last, role, studentId, email, dept, program, access, status, created, lastLogin, phone, extra) {
@@ -215,20 +221,15 @@
     };
   }
   var USERS = [
-    u('Josefina', 'Reyes', 'Administrator', '', 'josefina.reyes@uc.edu.ph', 'Information Systems Office', '', 'Administrator — Full System Access', 'Active', '2025-06-02T08:00:00', '2026-09-16T08:12:00', '+63 917 555 0101'),
+    u('Josefina', 'Reyes', 'Coordinator', '', 'josefina.reyes@uc.edu.ph', 'Information Systems Office', '', 'Coordinator — Full System Access', 'Active', '2025-06-02T08:00:00', '2026-09-16T08:12:00', '+63 917 555 0101'),
     u('Ryan', 'Dela Cruz', 'Student', '22-00104', 'ryan.delacruz@uc.edu.ph', 'College of Computer Studies', 'BS Information Technology', 'Student — Portal Access', 'Active', '2025-06-14T09:30:00', '2026-09-16T07:48:00', '+63 918 555 0244'),
-    u('Maria', 'Alvarez', 'Faculty', '', 'maria.alvarez@uc.edu.ph', "Dean's Office", 'College of Education', 'Faculty — Faculty Portal Access', 'Active', '2025-06-18T10:15:00', '2026-09-15T16:20:00', '+63 917 555 0318'),
     u('Emmanuel', 'Mercado', 'Student', '23-00872', 'emmanuel.mercado@uc.edu.ph', 'College of Business Administration', 'BS Accountancy', 'Student — Portal Access', 'Active', '2025-07-03T11:05:00', '2026-09-15T16:41:00', '+63 919 555 0477'),
     u('Joseph', 'Gomez', 'Student', '24-01193', 'joseph.gomez@uc.edu.ph', 'College of Engineering', 'BS Civil Engineering', 'Student — Portal Access', 'Active', '2025-07-21T13:40:00', '2026-09-15T08:55:00', '+63 916 555 0529'),
     u('Julie', 'Acabado', 'Student', '24-01208', 'julie.acabado@uc.edu.ph', 'College of Arts & Sciences', 'AB Communication', 'Student — Portal Access', 'Pending', '2026-09-14T14:22:00', '', '+63 917 555 0683'),
-    u('Nathaniel', 'Cruz', 'Staff', '', 'nathaniel.cruz@uc.edu.ph', "Registrar's Office", '', 'Staff — Records Management Access', 'Active', '2025-06-20T08:45:00', '2026-09-16T07:30:00', '+63 918 555 0710'),
-    u('Andrea', 'Villanueva', 'Staff', '', 'andrea.villanueva@uc.edu.ph', 'Guidance & Testing Center', '', 'Staff — Case Records Access', 'Active', '2025-06-25T09:10:00', '2026-09-15T15:05:00', '+63 917 555 0842'),
     u('Kristine Joy', 'Tan', 'Student', '24-01455', 'kristine.tan@uc.edu.ph', 'College of Nursing', 'BS Nursing', 'Student — Portal Access', 'Active', '2025-08-05T10:00:00', '2026-09-16T06:58:00', '+63 919 555 0931'),
     u('Mark Anthony', 'Lim', 'Student', '26-00017', 'mark.lim@uc.edu.ph', 'College of Computer Studies', 'BS Information Systems', 'Student — Portal Access', 'Pending', '2026-09-15T09:12:00', '', '+63 916 555 1044'),
-    u('Pia', 'Santiago', 'Administrator', '', 'pia.santiago@uc.edu.ph', 'Office of Student Affairs & Services', '', 'Administrator — Broadcast Management', 'Active', '2025-06-09T08:20:00', '2026-09-16T08:40:00', '+63 917 555 1155'),
-    u('Dennis', 'Bautista', 'Faculty', '', 'dennis.bautista@uc.edu.ph', "Dean's Office", 'College of Engineering', 'Faculty — Faculty Portal Access', 'Inactive', '2025-07-11T13:00:00', '2026-05-28T11:15:00', '+63 918 555 1268'),
     u('Alyssa Marie', 'Uy', 'Student', '23-00741', 'alyssa.uy@uc.edu.ph', 'College of Business Administration', 'BS Management Accounting', 'Student — Portal Access', 'Active', '2025-07-15T15:35:00', '2026-09-14T11:20:00', '+63 917 555 1379'),
-    u('Samuel', 'Ortega', 'Administrator', '', 'samuel.ortega@uc.edu.ph', 'Office of the President', '', 'Administrator — Full System Access', 'Active', '2025-06-01T07:00:00', '2026-09-15T14:02:00', '+63 919 555 1480')
+    u('Miguel', 'Santos', 'Administrator', '', 'technical.admin@uc.edu.ph', 'Information Systems Office', '', 'Administrator — Technical Support Access', 'Active', '2025-06-05T08:00:00', '2026-09-16T09:10:00', '+63 917 555 0166')
   ];
 
   /* Pending self-registrations awaiting identity verification.
@@ -250,7 +251,7 @@
     log('green', 'check', 'New Ticket Resolved #TCS-2026-03',
       'Emmanuel Mercado · Orientation Content Feedback was marked as resolved by OSAS Support.', '2026-09-16T09:41:00', '41 mins ago'),
     log('brand', 'megaphone', 'Announcement Broadcast',
-      'OSAS Admin published "Scholarship & Financial Assistance Application for AY 2026-2027" to all student portals.', '2026-09-16T08:52:00', '1 hr ago'),
+      'OSAS Coordinator published "Scholarship & Financial Assistance Application for AY 2026-2027" to all student portals.', '2026-09-16T08:52:00', '1 hr ago'),
     log('amber', 'alert', 'High-Support Volume Alert',
       'Support ticket volume increased by +12% compared to last week. 5 tickets are still awaiting action.', '2026-09-16T07:44:00', '2 hrs ago'),
     log('blue', 'target', 'Batch Completion Milestone',
@@ -685,27 +686,27 @@
     t(6, 'Mark Anthony Lim', 'mark.lim@uc.edu.ph', '26-00017', 'BS Information Systems', 'Account & Portal Access',
       'Cannot activate new portal account',
       'The activation link sent to my university email keeps returning an expired token message even though I clicked it within a few minutes.',
-      'Medium', 'Open', '2026-09-16T07:42:00', 'Andrea Villanueva'),
+      'Medium', 'Open', '2026-09-16T07:42:00', 'Miguel Santos'),
     t(5, 'Joseph D. Gomez', 'joseph.gomez@uc.edu.ph', '24-01193', 'BS Civil Engineering', 'LMS Access Issues',
       'Unable to access learning portal',
       'I cannot open the learning management system since Sep 15. The portal returns a session expired error whenever I sign in from my phone.',
-      'High', 'Open', '2026-09-15T08:55:00', 'Nathaniel Cruz'),
+      'High', 'Open', '2026-09-15T08:55:00', 'Miguel Santos'),
     t(4, 'Julie Acabado', 'julie.acabado@uc.edu.ph', '24-01208', 'AB Communication', 'Student ID Verification',
       'Request for official student ID processing correction',
       'My surname was misspelled in the student ID encoding. I would like to request a correction and reprint of the official identification card.',
-      'Low', 'In Progress', '2026-09-15T10:55:00', 'Andrea Villanueva'),
+      'Low', 'In Progress', '2026-09-15T10:55:00', 'Miguel Santos'),
     t(3, 'Emmanuel Mercado', 'emmanuel.mercado@uc.edu.ph', '23-00872', 'BS Accountancy', 'Orientation Content Feedback',
       'Comments on Orientation module content',
       'The Campus Facilities module lists an outdated location for the accounting laboratory. Kindly update the module content.',
-      'Low', 'Resolved', '2026-09-15T16:41:00', 'Pia Santiago'),
+      'Low', 'Resolved', '2026-09-15T16:41:00', 'Josefina Reyes'),
     t(2, 'Alyssa Marie Uy', 'alyssa.uy@uc.edu.ph', '23-00741', 'BS Management Accounting', 'Account & Portal Access',
       'Password reset link expired twice',
       'The password reset link sent through email expired before I could use it. I have requested it twice already.',
-      'Medium', 'Open', '2026-09-14T11:20:00', 'Josefina Reyes'),
+      'Medium', 'Open', '2026-09-14T11:20:00', 'Miguel Santos'),
     t(1, 'Kristine Joy Tan', 'kristine.tan@uc.edu.ph', '24-01455', 'BS Nursing', 'Enrollment & Records',
       'Enlisted subject does not appear in my schedule',
       'NCM 101 appears as enlisted but it is missing from my official schedule of classes in the portal.',
-      'High', 'In Progress', '2026-09-12T09:05:00', 'Nathaniel Cruz')
+      'High', 'In Progress', '2026-09-12T09:05:00', 'Josefina Reyes')
   ];
   /* The demo student's own thread — the student Feedback & Support module only
      ever lists tickets filed by the signed-in student. */
@@ -713,15 +714,15 @@
     t(9, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
       'LMS Access Issues', 'Module 4 quiz video loading error',
       'The video player inside the Module 4 quiz stays at 0% buffering after the countdown starts, so I cannot answer the last two items. I have already tried Chrome, Edge and a mobile data connection with the same result.',
-      'High', 'Open', '2026-09-16T09:40:00', 'Nathaniel Cruz'),
+      'High', 'Open', '2026-09-16T09:40:00', 'Miguel Santos'),
     t(8, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
       'Orientation Content Feedback', 'Suggestion for the orientation navigation walkthrough',
       'The navigation walkthrough skips the part about requesting a replacement ID. A short clip for that step would help a lot of freshmen.',
-      'Low', 'In Progress', '2026-09-14T15:10:00', 'Pia Santiago'),
+      'Low', 'In Progress', '2026-09-14T15:10:00', 'Josefina Reyes'),
     t(7, 'Ryan Dela Cruz', 'ryan.delacruz@uc.edu.ph', '22-00104', 'BS Information Technology',
       'Enrollment & Records', 'Copy of my certificate of registration for on-the-job placement',
       'My host company needs a stamped certificate of registration for the OJT clearance. I already have the soft copy from the registrar, but the portal download shows an empty page.',
-      'Medium', 'Resolved', '2026-09-08T11:25:00', 'Andrea Villanueva')
+      'Medium', 'Resolved', '2026-09-08T11:25:00', 'Josefina Reyes')
   );
   /* Opening acknowledgement on the ticket that is still Open (mock detail). */
   TICKETS.forEach(function (row) {
@@ -844,11 +845,11 @@
   var LOST_FOUND = [
     lf(14, 'Found', 'Black leather wallet with a student ID inside', 'Bags & Wallets',
       'A black leather wallet was turned over to the OSAS office. It contains a student ID and several receipts. The owner must describe the ID number and the wallet contents when claiming.',
-      'Main Library', '2026-09-16T08:20:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Main Library', '2026-09-16T08:20:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Claim Pending', 'OSAS Office', '2026-09-16T08:35:00', ''),
     lf(13, 'Found', 'Blue Casio FX-991EX scientific calculator', 'Electronics & Gadgets',
       'Found on the second floor of the Engineering Building after the 7:30 AM class. The name "J. Gomez" is written on the back cover.',
-      'Engineering Building Lobby', '2026-09-16T07:55:00', 'Nathaniel Cruz', 'nathaniel.cruz@uc.edu.ph', '',
+      'Engineering Building Lobby', '2026-09-16T07:55:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Open', 'OSAS Office', '2026-09-16T08:05:00', ''),
     lf(12, 'Lost', 'Silver iPhone 13 with a cracked screen protector', 'Electronics & Gadgets',
       'Lost between the canteen and the College of Business Administration building during the lunch break. The lock screen shows a photo of a black cat.',
@@ -860,15 +861,15 @@
       'Open', '—', '2026-09-15T11:15:00', ''),
     lf(10, 'Found', 'Set of keys with a maroon lanyard', 'Keys & Access Cards',
       'Found near the bleachers after the PE class. The set has three keys and a small flashlight keychain.',
-      'Gymnasium', '2026-09-14T15:40:00', 'Pia Santiago', 'pia.santiago@uc.edu.ph', '',
+      'Gymnasium', '2026-09-14T15:40:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Returned', 'OSAS Office', '2026-09-14T16:00:00', ''),
     lf(9, 'Found', 'Brown prescription eyeglasses in a black case', 'Others',
       'Turned over by a student after the general assembly. The case has a small sticker of the College of Nursing.',
-      'Activity Center', '2026-09-13T11:20:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Activity Center', '2026-09-13T11:20:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Returned', 'OSAS Office', '2026-09-13T11:35:00', ''),
     lf(8, 'Found', 'Intermediate Accounting Volume 2 textbook', 'Books & School Supplies',
       'Left on the reading table on the second floor. The inside cover has a handwritten name that is partially erased.',
-      'Main Library', '2026-09-12T16:45:00', 'Nathaniel Cruz', 'nathaniel.cruz@uc.edu.ph', '',
+      'Main Library', '2026-09-12T16:45:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Unclaimed', 'OSAS Office', '2026-09-12T17:00:00', ''),
     lf(7, 'Lost', 'Navy blue Jansport backpack', 'Bags & Wallets',
       'Left under the table at the Activity Center during the organization fair. It contains two notebooks, a pencil case and a blue tumbler.',
@@ -876,7 +877,7 @@
       'Open', '—', '2026-09-11T15:00:00', ''),
     lf(6, 'Found', 'Nursing uniform jacket, size medium', 'Clothing & Uniforms',
       'Found draped over a chair in the lobby. The name tag has been removed, but a small pin from the Nursing Society is attached.',
-      'Campus Grounds', '2026-09-10T09:50:00', 'Andrea Villanueva', 'andrea.villanueva@uc.edu.ph', '',
+      'Campus Grounds', '2026-09-10T09:50:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Open', 'OSAS Office', '2026-09-10T10:10:00', ''),
     lf(5, 'Lost', 'USB flash drive with thesis drafts', 'Electronics & Gadgets',
       'A silver 32 GB flash drive with a red cap. It holds the chapter drafts for my capstone project. Last used at the CCS laboratory.',
@@ -884,7 +885,7 @@
       'Open', '—', '2026-09-09T17:05:00', ''),
     lf(4, 'Found', 'Clear water bottle covered with stickers', 'Others',
       'Left at the canteen after the lunch rush. The bottle has travel stickers and a name written in marker that has faded.',
-      'Canteen & Food Court', '2026-09-08T13:30:00', 'Pia Santiago', 'pia.santiago@uc.edu.ph', '',
+      'Canteen & Food Court', '2026-09-08T13:30:00', 'Josefina Reyes', 'josefina.reyes@uc.edu.ph', '',
       'Open', 'OSAS Office', '2026-09-08T13:45:00', ''),
     lf(3, 'Lost', 'PE uniform shirt with embroidered initials', 'Clothing & Uniforms',
       'Lost during the intramurals. Already recovered and turned over to the owner, so this report is kept for records only.',
@@ -912,7 +913,7 @@
         'Student ID 24-01455 and the PE class schedule',
         'These are my keys — the small flashlight keychain was a gift from my org.',
         '2026-09-14T16:20:00', 'Verified'));
-      row.claims[0].verifiedBy = 'Andrea Villanueva';
+      row.claims[0].verifiedBy = 'Josefina Reyes';
       row.claims[0].verifiedAt = '2026-09-15T08:15:00';
       row.returnedTo = 'Kristine Joy Tan';
       row.returnedAt = '2026-09-15T08:20:00';
@@ -923,13 +924,13 @@
         'Student ID 26-00017 and a photo wearing the eyeglasses',
         'The eyeglasses are mine. The black case has the Nursing Society sticker because my sister lent it to me.',
         '2026-09-13T14:05:00', 'Verified'));
-      row.claims[0].verifiedBy = 'Andrea Villanueva';
+      row.claims[0].verifiedBy = 'Josefina Reyes';
       row.claims[0].verifiedAt = '2026-09-14T09:40:00';
       row.claims.push(claim(4, 'Julie Acabado', 'julie.acabado@uc.edu.ph', '24-01208',
         'Student ID 24-01208',
         'I think these are mine. I lost a similar pair last week.',
         '2026-09-13T16:30:00', 'Rejected'));
-      row.claims[1].verifiedBy = 'Andrea Villanueva';
+      row.claims[1].verifiedBy = 'Josefina Reyes';
       row.claims[1].verifiedAt = '2026-09-14T09:42:00';
       row.returnedTo = 'Mark Anthony Lim';
       row.returnedAt = '2026-09-14T09:50:00';
@@ -1003,28 +1004,28 @@
       2, 'Email PDF', 'Cancelled', 'Low', '2026-09-15T14:10:00', ''),
     dr(10, 'Mark Anthony Lim', '26-00017', 'mark.lim@uc.edu.ph', 'BS Information Systems', 'First Year',
       'Student ID Replacement', 'Lost the original ID card and needs a replacement for library access.',
-      1, 'Pick-up at OSAS', 'Rejected', 'High', '2026-09-15T09:30:00', 'Nathaniel Cruz'),
+      1, 'Pick-up at OSAS', 'Rejected', 'High', '2026-09-15T09:30:00', 'Josefina Reyes'),
     dr(9, 'Emmanuel Mercado', '23-00872', 'emmanuel.mercado@uc.edu.ph', 'BS Accountancy', 'Third Year',
       'Certificate of Registration (OJT)', 'Host company requires a stamped certificate of registration for the OJT clearance.',
-      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-10T08:15:00', 'Andrea Villanueva'),
+      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-10T08:15:00', 'Josefina Reyes'),
     dr(8, 'Kristine Joy Tan', '24-01455', 'kristine.tan@uc.edu.ph', 'BS Nursing', 'Second Year',
       'Certificate of Good Moral Character', 'Requirement for the clinical affiliation application.',
-      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-12T10:40:00', 'Pia Santiago'),
+      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-12T10:40:00', 'Josefina Reyes'),
     dr(7, 'Joseph D. Gomez', '24-01193', 'joseph.gomez@uc.edu.ph', 'BS Civil Engineering', 'Second Year',
       'Certificate of Enrollment', 'Requirement for a student assistance grant.',
-      1, 'Email PDF', 'Under Review', 'Medium', '2026-09-14T15:20:00', 'Nathaniel Cruz'),
+      1, 'Email PDF', 'Under Review', 'Medium', '2026-09-14T15:20:00', 'Josefina Reyes'),
     dr(6, 'Julie Acabado', '24-01208', 'julie.acabado@uc.edu.ph', 'AB Communication', 'Second Year',
       'Certificate of No Disciplinary Record', 'Requirement for a media internship at a local network.',
-      1, 'Pick-up at OSAS', 'Under Review', 'Low', '2026-09-14T11:05:00', 'Andrea Villanueva'),
+      1, 'Pick-up at OSAS', 'Under Review', 'Low', '2026-09-14T11:05:00', 'Josefina Reyes'),
     dr(5, 'Alyssa Marie Uy', '23-00741', 'alyssa.uy@uc.edu.ph', 'BS Management Accounting', 'Third Year',
       'Scholarship Certification', 'Renewal of the university academic scholarship for the second semester.',
-      1, 'Email PDF', 'Released', 'Medium', '2026-09-11T13:35:00', 'Pia Santiago'),
+      1, 'Email PDF', 'Released', 'Medium', '2026-09-11T13:35:00', 'Josefina Reyes'),
     dr(4, 'Ryan Dela Cruz', '22-00104', 'ryan.delacruz@uc.edu.ph', 'BS Information Technology', 'Fourth Year',
       'Certificate of Registration (OJT)', 'OJT clearance requirement for the host company.',
-      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-08T11:25:00', 'Andrea Villanueva'),
+      2, 'Pick-up at OSAS', 'Released', 'High', '2026-09-08T11:25:00', 'Josefina Reyes'),
     dr(3, 'Ryan Dela Cruz', '22-00104', 'ryan.delacruz@uc.edu.ph', 'BS Information Technology', 'Fourth Year',
       'Certificate of Good Moral Character', 'Requirement for a graduate school application.',
-      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-13T09:50:00', 'Pia Santiago'),
+      1, 'Email PDF', 'Ready for Pick-up', 'Medium', '2026-09-13T09:50:00', 'Josefina Reyes'),
     dr(2, 'Mark Anthony Lim', '26-00017', 'mark.lim@uc.edu.ph', 'BS Information Systems', 'First Year',
       'Certificate of Enrollment', 'Proof of enrollment for a barangay scholarship.',
       1, 'Email PDF', 'Submitted', 'Medium', '2026-09-16T08:40:00', ''),

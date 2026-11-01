@@ -72,6 +72,19 @@ OSAS.forms = (function () {
     var user = opts.user || {};
     var meta = OSAS.store.meta();
     var optionList = OSAS.store.options();
+    var auth = OSAS.auth;
+    var session = OSAS.auth.current();
+    if (editing && !auth.canManageUser(user)) {
+      C().toast('error', 'Not permitted',
+        'Your account cannot edit this user. Only Coordinators can manage staff accounts.');
+      return;
+    }
+    var roleOptions = studentOnly ? ['Student'] : optionList.roles.filter(function (role) {
+      if (auth.isCoordinator()) { return true; }
+      return role === 'Student';
+    });
+    var accessOptions = auth.isCoordinator() ? optionList.accessLevels :
+      optionList.accessLevels.filter(function (level) { return /^Student/.test(level); });
 
     var body =
       '<div id="user-form-alert"></div>' +
@@ -85,9 +98,9 @@ OSAS.forms = (function () {
         { id: 'uf-email', required: true, hint: 'Must be an official @uc.edu.ph university email address.' }) +
       '<div class="form-grid form-grid--2">' +
       field('UC Student ID', textInput('uf-student-id', user.studentId, '26-00000'),
-        { id: 'uf-student-id', hint: 'Leave blank for faculty, staff and administrator accounts.' }) +
-      field('User Role', selectInput('uf-role', studentOnly ? ['Student'] : optionList.roles,
-        studentOnly ? 'Student' : user.role, 'Select a role'),
+        { id: 'uf-student-id', hint: 'Leave blank for coordinator and administrator accounts.' }) +
+      field('User Role', selectInput('uf-role', roleOptions,
+        studentOnly || auth.isTechnicalAdmin() ? 'Student' : user.role, 'Select a role'),
         { id: 'uf-role', required: true }) +
       '</div></div>' +
       '<div class="form-section">' +
@@ -97,7 +110,7 @@ OSAS.forms = (function () {
       field('Program (students only)', selectInput('uf-program', optionList.programs, user.program, 'Select a program'), { id: 'uf-program' }) +
       '</div>' +
       '<div class="form-grid form-grid--2">' +
-      field('Access Level', selectInput('uf-access', optionList.accessLevels, user.accessLevel, 'Select an access level'), { id: 'uf-access' }) +
+      field('Access Level', selectInput('uf-access', accessOptions, user.accessLevel, 'Select an access level'), { id: 'uf-access' }) +
       field('Account Status', selectInput('uf-status', ['Active', 'Pending', 'Inactive'],
         studentOnly ? 'Pending' : (user.status || 'Active'), 'Select status'), { id: 'uf-status' }) +
       '</div>' +
@@ -133,7 +146,7 @@ OSAS.forms = (function () {
       subtitle: editing
         ? 'Update the portal identity, role assignment and access level of this account.'
         : (studentOnly ? 'Register a student account for portal access.' :
-          'Create a university portal account for students, staff, or administrators.'),
+          'Create a portal account for a student, coordinator, or technical administrator.'),
       body: body,
       footer: '<button type="button" class="btn btn--ghost" data-close>Cancel</button>' +
         '<button type="button" class="btn btn--primary" id="user-form-save">' +
@@ -190,7 +203,12 @@ OSAS.forms = (function () {
           OSAS.store.logActivity({
             tone: 'brand', icon: 'users',
             title: editing ? 'User Account Updated' : 'New User Account Created',
-            text: record.firstName + ' ' + record.lastName + ' (' + record.role + ') — ' + record.email
+            text: record.firstName + ' ' + record.lastName + ' (' + record.role + ') — ' + record.email,
+            actorId: session ? session.user.id : '',
+            actorName: session ? session.user.firstName + ' ' + session.user.lastName : '',
+            targetUserId: record.id,
+            action: editing ? 'user.update' : 'user.create',
+            entity: 'user', entityId: record.id
           });
           C().toast('success', message, record.email);
           if (typeof opts.onSaved === 'function') { opts.onSaved(record); }
@@ -210,6 +228,9 @@ OSAS.forms = (function () {
           if (!first || !last) { errors.push('First name and last name are required.'); }
           if (!email || !validEmail(email)) { errors.push('A valid university email address is required.'); }
           if (!role) { errors.push('Select the portal role for this account.'); }
+          if (role && roleOptions.indexOf(role) === -1) {
+            errors.push('Your account is not permitted to assign this role.');
+          }
           if (!editing && !password) { errors.push('A temporary password is required.'); }
           if (password && password.length < 10) { errors.push('The password must be at least 10 characters long.'); }
           if (password !== confirmPassword) { errors.push('The password confirmation does not match.'); }
@@ -252,6 +273,34 @@ OSAS.forms = (function () {
     var ticket = options.ticket;
     var session = OSAS.auth.current();
     var staffName = session ? session.user.firstName + ' ' + session.user.lastName : 'OSAS Support';
+    var canReply = OSAS.auth.canHandleCategory(ticket.category);
+
+    function assigneeOptions() {
+      var coordinator = OSAS.auth.isCoordinator();
+      var names = OSAS.store.all('users').filter(function (row) {
+        if (coordinator) {
+          return row.role === 'Coordinator' || row.role === 'Administrator';
+        }
+        return row.role === 'Administrator';
+      }).map(function (row) {
+        return row.firstName + ' ' + row.lastName;
+      });
+      if (ticket.assignedTo && names.indexOf(ticket.assignedTo) === -1) {
+        names.push(ticket.assignedTo);
+      }
+      return names;
+    }
+
+    function studentUserId() {
+      var email = String(ticket.studentEmail || '').toLowerCase();
+      var rows = OSAS.store.all('users');
+      for (var i = 0; i < rows.length; i++) {
+        if (String(rows[i].email || '').toLowerCase() === email) {
+          return rows[i].id;
+        }
+      }
+      return '';
+    }
 
     function details() {
       var t = ticket;
@@ -285,30 +334,37 @@ OSAS.forms = (function () {
         '<div class="section-title"><span>2.</span> Conversation Thread</div>' +
         '<div class="thread">' + ticket.messages.map(function (message) {
           var isStaff = message.role !== 'Student';
+          var isInternal = message.visibility === 'internal';
           return '<div class="msg' + (isStaff ? ' msg--staff' : '') + '">' +
             C().avatarOf(message.author, isStaff ? undefined : 'grey') +
             '<div class="u-grow"><div class="msg__head"><span class="msg__name">' + U().esc(message.author) +
-            '</span><span class="msg__role">' + U().esc(message.role) + '</span>' +
+            '</span><span class="msg__role">' + U().esc(message.role) +
+            (isInternal ? ' · Internal note' : '') + '</span>' +
             '<span class="msg__time">' + OSAS.fmt.dateTime(message.at) + '</span></div>' +
             '<div class="msg__body">' + U().esc(message.body) + '</div></div></div>';
         }).join('') + '</div>' +
+        (canReply ?
         '<div class="field"><label for="ticket-reply">Reply to the Student</label>' +
         '<textarea class="input" id="ticket-reply" rows="3" placeholder="Type your response or the action taken…"></textarea>' +
+        '<label class="check u-mt-8"><input type="checkbox" id="ticket-internal">' +
+        '<span>Internal note — visible to staff only, never shown in the student portal.</span></label>' +
         '<div class="u-between u-mt-8"><span class="hint">Replies are visible to the student in the portal.</span>' +
         '<button type="button" class="btn btn--outline btn--sm" id="ticket-reply-send">' +
-        OSAS.icons.icon('send', 12) + ' Send Reply</button></div></div>' +
+        OSAS.icons.icon('send', 12) + ' Send Reply</button></div></div>' :
+        C().alert('warning', 'Read-only access',
+          'Your account can view this ticket but cannot reply to the ' + U().esc(ticket.category) + ' category.')) +
         '</div>' +
+        (canReply ?
         '<div class="form-section">' +
         '<div class="section-title"><span>3.</span> Resolution Controls</div>' +
         '<div class="form-grid form-grid--3">' +
         field('Ticket Status', selectInput('ticket-status', OSAS.store.options().ticketStatuses, ticket.status, 'Select status')) +
         field('Priority', selectInput('ticket-priority', OSAS.store.options().priorities, ticket.priority, 'Select priority')) +
-        field('Assigned To', selectInput('ticket-assignee',
-          ['Josefina Reyes', 'Pia Santiago', 'Nathaniel Cruz', 'Andrea Villanueva'], ticket.assignedTo, 'Select staff member')) +
+        field('Assigned To', selectInput('ticket-assignee', assigneeOptions(), ticket.assignedTo, 'Select staff member')) +
         '</div>' +
         C().alert('info', 'Service level reminder',
           'High priority inquiries must be acknowledged within 1 hour and resolved within 24 hours.') +
-        '</div>';
+        '</div>' : '');
     }
     return C().modal({
       size: 'lg',
@@ -317,9 +373,10 @@ OSAS.forms = (function () {
       body: body(),
       footerClass: ' modal__foot--split',
       footer: '<button type="button" class="btn btn--ghost" data-close>Close Window</button>' +
-        '<div class="btn-row">' +
+        (canReply ? '<div class="btn-row">' +
         '<button type="button" class="btn btn--outline" id="ticket-resolve">Mark as Resolved</button>' +
-        '<button type="button" class="btn btn--primary" id="ticket-update">Update Ticket</button></div>',
+        '<button type="button" class="btn btn--primary" id="ticket-update">Update Ticket</button></div>' :
+        '<span class="hint">Read-only access for your account.</span>'),
       onMount: function (el, close) {
         function alertBox(tone, title, text) {
           el.querySelector('#ticket-alert').innerHTML = C().alert(tone, title, text);
@@ -337,61 +394,104 @@ OSAS.forms = (function () {
         function notify() { if (typeof options.onUpdated === 'function') { options.onUpdated(ticket); } }
 
         function bind() {
-          el.querySelector('#ticket-reply-send').addEventListener('click', function () {
+          var send = el.querySelector('#ticket-reply-send');
+          if (!send) { return; }
+          send.addEventListener('click', function () {
+            if (!OSAS.auth.canHandleCategory(ticket.category)) {
+              alertBox('danger', 'Not permitted', 'Your account cannot reply to this ticket category.');
+              return;
+            }
             var textarea = el.querySelector('#ticket-reply');
             var message = String(textarea.value || '').trim();
             if (!message) {
               alertBox('warning', 'Nothing to send', 'Type a reply before sending it to the student.');
               return;
             }
-            ticket.messages.push({ author: staffName, role: 'OSAS Support', at: U().now(), body: message });
+            var internalBox = el.querySelector('#ticket-internal');
+            var isInternal = !!(internalBox && internalBox.checked);
+            ticket.messages.push({
+              author: staffName, role: 'OSAS Support', at: U().now(), body: message,
+              visibility: isInternal ? 'internal' : 'student'
+            });
             ticket.updatedAt = U().now();
             if (ticket.status === 'Open') { ticket.status = 'In Progress'; }
             persistTicket();
             OSAS.store.logActivity({
-              tone: 'blue', icon: 'headset', title: 'Support Reply Sent',
-              text: staffName + ' replied to ' + ticket.code + ' (' + ticket.student + ').'
+              tone: isInternal ? 'slate' : 'blue', icon: 'headset',
+              title: isInternal ? 'Internal Note Added' : 'Support Reply Sent',
+              text: staffName + (isInternal ? ' added an internal note to ' : ' replied to ') +
+                ticket.code + ' (' + ticket.student + ').',
+              actorId: session ? session.user.id : '',
+              actorName: staffName,
+              targetUserId: studentUserId(),
+              action: isInternal ? 'ticket.internalNote' : 'ticket.reply',
+              entity: 'ticket', entityId: ticket.id
             });
             refresh();
-            C().toast('success', 'Reply sent', 'The student was notified through the portal and university email.');
+            C().toast('success', isInternal ? 'Internal note saved' : 'Reply sent',
+              isInternal ? 'This note is visible to staff only.' : 'The student was notified through the portal and university email.');
             notify();
           });
         }
         bind();
 
-        el.querySelector('#ticket-update').addEventListener('click', function () {
-          ticket.status = el.querySelector('#ticket-status').value || ticket.status;
-          ticket.priority = el.querySelector('#ticket-priority').value || ticket.priority;
-          ticket.assignedTo = el.querySelector('#ticket-assignee').value || ticket.assignedTo;
-          ticket.updatedAt = U().now();
-          persistTicket();
-          OSAS.store.logActivity({
-            tone: ticket.status === 'Resolved' ? 'green' : 'amber', icon: 'headset',
-            title: 'Ticket Updated #' + ticket.code,
-            text: ticket.student + ' · ' + ticket.category + ' — now ' + ticket.status +
-              ' (' + ticket.priority + ' priority), assigned to ' + ticket.assignedTo + '.'
+        var updateBtn = el.querySelector('#ticket-update');
+        if (updateBtn) {
+          updateBtn.addEventListener('click', function () {
+            if (!OSAS.auth.canHandleCategory(ticket.category)) {
+              alertBox('danger', 'Not permitted', 'Your account cannot update this ticket category.');
+              return;
+            }
+            ticket.status = el.querySelector('#ticket-status').value || ticket.status;
+            ticket.priority = el.querySelector('#ticket-priority').value || ticket.priority;
+            ticket.assignedTo = el.querySelector('#ticket-assignee').value || ticket.assignedTo;
+            ticket.updatedAt = U().now();
+            persistTicket();
+            OSAS.store.logActivity({
+              tone: ticket.status === 'Resolved' ? 'green' : 'amber', icon: 'headset',
+              title: 'Ticket Updated #' + ticket.code,
+              text: ticket.student + ' · ' + ticket.category + ' — now ' + ticket.status +
+                ' (' + ticket.priority + ' priority), assigned to ' + ticket.assignedTo + '.',
+              actorId: session ? session.user.id : '',
+              actorName: staffName,
+              targetUserId: studentUserId(),
+              action: 'ticket.update',
+              entity: 'ticket', entityId: ticket.id
+            });
+            C().toast('success', 'Ticket updated', ticket.code + ' is now marked as ' + ticket.status + '.');
+            refresh();
+            notify();
           });
-          C().toast('success', 'Ticket updated', ticket.code + ' is now marked as ' + ticket.status + '.');
-          refresh();
-          notify();
-        });
+        }
 
-        el.querySelector('#ticket-resolve').addEventListener('click', function () {
-          ticket.status = 'Resolved';
-          ticket.updatedAt = U().now();
-          ticket.messages.push({
-            author: staffName, role: 'OSAS Support', at: U().now(),
-            body: 'Your concern has been addressed and verified. We are closing this ticket as resolved — please reopen it if the issue recurs.'
+        var resolveBtn = el.querySelector('#ticket-resolve');
+        if (resolveBtn) {
+          resolveBtn.addEventListener('click', function () {
+            if (!OSAS.auth.canHandleCategory(ticket.category)) {
+              alertBox('danger', 'Not permitted', 'Your account cannot resolve this ticket category.');
+              return;
+            }
+            ticket.status = 'Resolved';
+            ticket.updatedAt = U().now();
+            ticket.messages.push({
+              author: staffName, role: 'OSAS Support', at: U().now(),
+              body: 'Your concern has been addressed and verified. We are closing this ticket as resolved — please reopen it if the issue recurs.'
+            });
+            persistTicket();
+            OSAS.store.logActivity({
+              tone: 'green', icon: 'check', title: 'New Ticket Resolved #' + ticket.code,
+              text: ticket.student + ' · ' + ticket.category + ' marked as resolved by OSAS Support.',
+              actorId: session ? session.user.id : '',
+              actorName: staffName,
+              targetUserId: studentUserId(),
+              action: 'ticket.resolve',
+              entity: 'ticket', entityId: ticket.id
+            });
+            C().toast('success', 'Ticket resolved', ticket.code + ' was closed and the student was notified.');
+            close();
+            notify();
           });
-          persistTicket();
-          OSAS.store.logActivity({
-            tone: 'green', icon: 'check', title: 'New Ticket Resolved #' + ticket.code,
-            text: ticket.student + ' · ' + ticket.category + ' marked as resolved by OSAS Support.'
-          });
-          C().toast('success', 'Ticket resolved', ticket.code + ' was closed and the student was notified.');
-          close();
-          notify();
-        });
+        }
       }
     });
   }
@@ -414,7 +514,7 @@ OSAS.forms = (function () {
       field('Student', selectInput('tc-student', studentOptions, '', 'Select the student filing the inquiry'),
         { id: 'tc-student', required: true, hint: 'Only accounts with the Student role can file portal inquiries.' }) +
       field('Concern Category', selectInput('tc-category', optionList.ticketCategories.filter(function (category) {
-        return category !== 'Enrollment & Records';
+        return OSAS.auth.canHandleCategory(category);
       }), '', 'Select a category'),
         { id: 'tc-category', required: true }) +
       '</div></div>' +
@@ -455,6 +555,9 @@ OSAS.forms = (function () {
 
           if (!studentLabel) { errors.push('Select the student who filed the inquiry.'); }
           if (!category) { errors.push('Select a concern category.'); }
+          if (category && !OSAS.auth.canHandleCategory(category)) {
+            errors.push('Your account is not permitted to log tickets under this category.');
+          }
           if (!subject) { errors.push('A ticket subject is required.'); }
           if (!description) { errors.push('A detailed description is required.'); }
           if (!el.querySelector('#tc-consent').checked) {
@@ -493,7 +596,12 @@ OSAS.forms = (function () {
           OSAS.store.insert('tickets', record);
           OSAS.store.logActivity({
             tone: 'amber', icon: 'headset', title: 'New Support Ticket Logged',
-            text: record.code + ' · ' + studentName + ' — ' + record.category + ' (' + record.priority + ' priority).'
+            text: record.code + ' · ' + studentName + ' — ' + record.category + ' (' + record.priority + ' priority).',
+            actorId: session ? session.user.id : '',
+            actorName: session ? session.user.firstName + ' ' + session.user.lastName : 'OSAS Support',
+            targetUserId: student ? student.id : '',
+            action: 'ticket.create',
+            entity: 'ticket', entityId: record.id
           });
           alertHost.innerHTML = C().alert('success', 'Ticket Created Successfully!',
             'Reference <b>' + record.code + '</b> was logged and assigned to <b>' +

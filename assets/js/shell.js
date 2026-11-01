@@ -85,6 +85,13 @@ OSAS.shell = (function () {
       page: "reports",
       icon: "fileText",
     },
+    {
+      n: 12,
+      label: "User Activity",
+      href: "activity.html",
+      page: "activity",
+      icon: "clock",
+    },
   ];
 
   var STUDENT_NAV = [
@@ -182,6 +189,11 @@ OSAS.shell = (function () {
       subtitle:
         "Process certificate and document requests submitted by students through the portal.",
     },
+    activity: {
+      title: "User Activity & Tracking",
+      subtitle:
+        "Review sign-in history, support activity and account changes for every portal user.",
+    },
   };
 
   function badgeCounts() {
@@ -196,11 +208,27 @@ OSAS.shell = (function () {
       docRequests: OSAS.store.all("documentRequests").filter(function (row) {
         return row.status === "Submitted" || row.status === "Under Review";
       }).length,
+      activities: OSAS.store.all("auditLog").length,
     };
+  }
+  function allowedNav(role) {
+    if (role === "Coordinator") {
+      return NAV;
+    }
+    if (role === "Administrator") {
+      return NAV.filter(function (item) {
+        return (
+          ["dashboard", "support", "users", "activity"].indexOf(item.page) > -1
+        );
+      });
+    }
+    return [];
   }
   function sidebarHtml(activePage, session) {
     var counts = badgeCounts();
-    var items = NAV.map(function (item) {
+    var portalLabel =
+      session.role === "Administrator" ? "Technical Console" : "Coordinator Portal";
+    var items = allowedNav(session.role).map(function (item) {
       var badge =
         item.badge && counts[item.badge]
           ? '<span class="nav__badge">' + counts[item.badge] + "</span>"
@@ -230,7 +258,9 @@ OSAS.shell = (function () {
       '<div class="sidebar__brand">' +
       OSAS.icons.beacon(26, 2.2) +
       '<div><div class="sidebar__wordmark">BEACON</div>' +
-      '<div class="sidebar__tag">Coordinator Portal</div></div>' +
+      '<div class="sidebar__tag">' +
+      OSAS.util.esc(portalLabel) +
+      "</div></div>" +
       '<button type="button" class="sidebar__close" id="sidebar-close" aria-label="Close navigation">' +
       OSAS.icons.icon("close", 16) +
       "</button></div>" +
@@ -269,15 +299,15 @@ OSAS.shell = (function () {
       OSAS.util.esc(meta.title) +
       "</h1>" +
       '<div class="topbar__actions">' +
-      '<a class="icon-btn topbar__bell" href="broadcasts.html" title="Notification hub (' +
-      counts.broadcasts +
-      ' queued)" aria-label="Notifications">' +
+      '<button type="button" class="icon-btn topbar__bell" id="top-bell" title="Recent activities (' +
+      counts.activities +
+      ')" aria-label="Recent activities">' +
       OSAS.icons.icon("bell", 18) +
       '<span class="topbar__bell-count"' +
-      (counts.broadcasts ? "" : " hidden") +
+      (counts.activities ? "" : " hidden") +
       ">" +
-      counts.broadcasts +
-      "</span></a>" +
+      counts.activities +
+      "</span></button>" +
       '<button type="button" class="topbar__avatar" id="top-avatar" aria-label="Account menu">' +
       OSAS.util.esc(initials) +
       "</button>" +
@@ -336,15 +366,58 @@ OSAS.shell = (function () {
     );
   }
 
+  function restrictedHtml(session) {
+    var name = session.user.firstName + " " + session.user.lastName;
+    return (
+      '<div class="main">' +
+      '<header class="topbar"><h1 class="topbar__title">Access Restricted</h1></header>' +
+      '<main class="content"><div class="panel" style="max-width:620px;margin:48px auto;padding:32px;text-align:center">' +
+      '<div style="color:var(--muted)">' +
+      OSAS.icons.icon("lock", 28) +
+      "</div>" +
+      '<h2 class="page-head__title" style="margin-top:10px">This module is not available for your account</h2>' +
+      '<p class="page-head__sub">You are signed in as <b>' +
+      OSAS.util.esc(name) +
+      "</b> (" +
+      OSAS.util.esc(session.role) +
+      "). Technical Administrators can open the Dashboard, Support &amp; Concerns, User Accounts and User Activity.</p>" +
+      '<div style="display:flex;gap:8px;justify-content:center;margin-top:18px">' +
+      '<a class="btn btn--primary" href="dashboard.html">Back to dashboard</a>' +
+      '<button type="button" class="btn btn--ghost" id="restricted-signout">Sign out</button>' +
+      "</div></div></main></div>"
+    );
+  }
+
   function mount() {
     var page = document.body.getAttribute("data-page");
     var session = OSAS.auth.requireAuth();
     if (!session) {
       return null;
     }
+    /* The coordinator shell is for staff only — send students to their portal. */
+    if (session.role === "Student") {
+      window.location.replace("../student/dashboard.html");
+      return null;
+    }
 
     var meta = PAGE_META[page] || { title: "OSAS Portal", subtitle: "" };
     var shell = document.getElementById("shell");
+    if (!OSAS.auth.canAccessPage(page)) {
+      shell.className = "app";
+      shell.innerHTML = restrictedHtml(session);
+      var restrictedBtn = document.getElementById("restricted-signout");
+      if (restrictedBtn) {
+        restrictedBtn.addEventListener("click", function () {
+          OSAS.auth.logout();
+          window.location.href = "../index.html";
+        });
+      }
+      return null;
+    }
+
+    OSAS.store.update("users", session.user.id, {
+      lastSeen: OSAS.util.now(),
+    });
     shell.className = "app";
     shell.innerHTML =
       sidebarHtml(page, session) +
@@ -399,6 +472,29 @@ OSAS.shell = (function () {
       .getElementById("top-avatar")
       .addEventListener("click", function () {
         openAccount(session, signOut);
+      });
+
+    document
+      .getElementById("top-bell")
+      .addEventListener("click", function () {
+        var entries = OSAS.store.all("auditLog");
+        OSAS.components.modal({
+          size: "lg",
+          title: "Recent Activities",
+          subtitle: OSAS.auth.isTechnicalAdmin()
+            ? "Technical desk activity feed — latest actions across the portal."
+            : "Coordinator activity feed — latest actions across the portal.",
+          body:
+            '<div class="log-list" style="border:1px solid var(--line);border-radius:9px;overflow:hidden">' +
+            (entries.length
+              ? entries.map(OSAS.components.logItem).join("")
+              : OSAS.components.emptyState(
+                  "No recent activities yet.",
+                )) +
+            "</div>",
+          footer:
+            '<button type="button" class="btn btn--ghost" data-close>Close</button>',
+        });
       });
 
     OSAS.components.flashFromQuery();

@@ -110,6 +110,19 @@
     if (!row) {
       return;
     }
+    if (!OSAS.auth.canManageUser(row)) {
+      C.toast(
+        "error",
+        "Not permitted",
+        "Your account cannot verify or edit this user.",
+      );
+      return;
+    }
+    var roleOptions = OSAS.auth.isCoordinator()
+      ? OPTIONS.roles
+      : OPTIONS.roles.filter(function (role) {
+          return role === "Student";
+        });
     var alertHost = null;
 
     C.modal({
@@ -169,7 +182,7 @@
           "User Roles",
           OSAS.forms.selectInput(
             "vm-role",
-            OPTIONS.roles,
+            roleOptions,
             row.role,
             "Select a role",
           ),
@@ -215,6 +228,8 @@
             problem = "A valid email address is required.";
           } else if (!role) {
             problem = "Select the portal role for this account.";
+          } else if (roleOptions.indexOf(role) === -1) {
+            problem = "Your account is not permitted to assign this role.";
           } else if (pass.length < 10) {
             problem =
               "The temporary password must be at least 10 characters long.";
@@ -262,6 +277,14 @@
               " — " +
               email +
               " identity confirmed and portal access granted.",
+            actorId: shell.session ? shell.session.user.id : "",
+            actorName: shell.session
+              ? shell.session.user.firstName + " " + shell.session.user.lastName
+              : "",
+            targetUserId: row.id,
+            action: "user.verify",
+            entity: "user",
+            entityId: row.id,
           });
           C.toast(
             "success",
@@ -280,7 +303,25 @@
     if (!row) {
       return;
     }
+    if (!OSAS.auth.canManageUser(row)) {
+      C.toast("error", "Not permitted", "Your account cannot verify this user.");
+      return;
+    }
     OSAS.store.update("users", id, { status: "Active" });
+    OSAS.store.logActivity({
+      tone: "green",
+      icon: "check",
+      title: "Registration Request Verified",
+      text: fullName(row) + " — portal access granted.",
+      actorId: shell.session ? shell.session.user.id : "",
+      actorName: shell.session
+        ? shell.session.user.firstName + " " + shell.session.user.lastName
+        : "",
+      targetUserId: row.id,
+      action: "user.verify",
+      entity: "user",
+      entityId: row.id,
+    });
     C.toast(
       "success",
       "Request verified",
@@ -294,6 +335,10 @@
     if (!row) {
       return;
     }
+    if (!OSAS.auth.canManageUser(row)) {
+      C.toast("error", "Not permitted", "Your account cannot reject this user.");
+      return;
+    }
     C.confirm({
       title: "Reject this registration request?",
       subtitle: U.esc(fullName(row)) + " &middot; " + U.esc(row.email),
@@ -305,6 +350,20 @@
       confirmClass: "btn--danger",
       onConfirm: function () {
         OSAS.store.remove("users", id);
+        OSAS.store.logActivity({
+          tone: "amber",
+          icon: "close",
+          title: "Registration Request Rejected",
+          text: fullName(row) + " — request discarded from the queue.",
+          actorId: shell.session ? shell.session.user.id : "",
+          actorName: shell.session
+            ? shell.session.user.firstName + " " + shell.session.user.lastName
+            : "",
+          targetUserId: row.id,
+          action: "user.reject",
+          entity: "user",
+          entityId: row.id,
+        });
         C.toast(
           "info",
           "Request rejected",
@@ -343,13 +402,11 @@
       C.statCard(
         "Administrative Staff",
         OSAS.fmt.number(stats.administrativeStaff),
-        '<span class="u-muted">' +
-          stats.byRole.Administrator +
-          " admin &middot; " +
-          (stats.byRole.Faculty || 0) +
-          " faculty &middot; " +
-          (stats.byRole.Staff || 0) +
-          " staff in directory</span>",
+        '<span class="u-muted">institution-wide &middot; ' +
+          (stats.byRole.Coordinator || 0) +
+          " coordinator &middot; " +
+          (stats.byRole.Administrator || 0) +
+          " administrator in this directory</span>",
       ) +
       "</div>"
     );
@@ -567,16 +624,22 @@
         label: "Actions",
         align: "right",
         render: function (row) {
+          var canManage = OSAS.auth.canManageUser(row);
           return (
             '<div class="cell-actions">' +
-            '<button type="button" class="btn btn--outline btn--sm" data-action="edit" data-id="' +
+            (canManage
+              ? '<button type="button" class="btn btn--outline btn--sm" data-action="edit" data-id="' +
+                U.esc(row.id) +
+                '">Manage</button>' +
+                '<button type="button" class="btn btn--ghost btn--sm" data-action="toggle" data-id="' +
+                U.esc(row.id) +
+                '">' +
+                (row.status === "Active" ? "Deactivate" : "Activate") +
+                "</button>"
+              : "") +
+            '<button type="button" class="btn btn--ghost btn--sm" data-action="activity" data-id="' +
             U.esc(row.id) +
-            '">Manage</button>' +
-            '<button type="button" class="btn btn--ghost btn--sm" data-action="toggle" data-id="' +
-            U.esc(row.id) +
-            '">' +
-            (row.status === "Active" ? "Deactivate" : "Activate") +
-            "</button></div>"
+            '" title="View activity timeline">Activity</button></div>'
           );
         },
       },
@@ -713,18 +776,63 @@
         return;
       }
       if (action === "edit") {
+        var editUser = OSAS.store.find("users", id);
+        if (!editUser) {
+          return;
+        }
+        if (!OSAS.auth.canManageUser(editUser)) {
+          C.toast(
+            "error",
+            "Not permitted",
+            "Only Coordinators can edit staff and administrator accounts.",
+          );
+          return;
+        }
         OSAS.forms.userForm({
-          user: OSAS.store.find("users", id),
+          user: editUser,
           onSaved: function () {
             page.render();
           },
         });
         return;
       }
+      if (action === "activity") {
+        OSAS.activity.open(id);
+        return;
+      }
       if (action === "toggle") {
         var user = OSAS.store.find("users", id);
+        if (!user) {
+          return;
+        }
+        if (!OSAS.auth.canManageUser(user)) {
+          C.toast(
+            "error",
+            "Not permitted",
+            "Only Coordinators can deactivate staff and administrator accounts.",
+          );
+          return;
+        }
         OSAS.store.update("users", id, {
           status: user.status === "Active" ? "Inactive" : "Active",
+        });
+        OSAS.store.logActivity({
+          tone: "amber",
+          icon: "users",
+          title: "Account Status Changed",
+          text:
+            fullName(user) +
+            " is now " +
+            (user.status === "Active" ? "active" : "inactive") +
+            ".",
+          actorId: shell.session ? shell.session.user.id : "",
+          actorName: shell.session
+            ? shell.session.user.firstName + " " + shell.session.user.lastName
+            : "",
+          targetUserId: user.id,
+          action: "user.status",
+          entity: "user",
+          entityId: user.id,
         });
         C.toast(
           "success",

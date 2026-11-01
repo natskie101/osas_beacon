@@ -116,7 +116,9 @@
     return shell.fullName(shell.user);
   }
   function messages(row) {
-    return row.messages || [];
+    return (row.messages || []).filter(function (message) {
+      return message.visibility !== "internal";
+    });
   }
   function t12(value) {
     /* 8:41 AM -> 08:41 AM */
@@ -589,6 +591,12 @@
         category +
         ")",
       at: stamp,
+      actorId: shell.user ? shell.user.id : "",
+      actorName: fullName(),
+      targetUserId: shell.user ? shell.user.id : "",
+      action: "ticket.create",
+      entity: "ticket",
+      entityId: record.id,
     });
     C.toast("success", "Ticket submitted", code + " — " + subject);
     state.rating = 0;
@@ -653,6 +661,12 @@
       title: "Ticket Follow-up Sent",
       text: fullName() + " replied to " + row.code + ' — "' + row.subject + '"',
       at: stamp,
+      actorId: shell.user ? shell.user.id : "",
+      actorName: fullName(),
+      targetUserId: shell.user ? shell.user.id : "",
+      action: "ticket.reply",
+      entity: "ticket",
+      entityId: row.id,
     });
     C.toast(
       "success",

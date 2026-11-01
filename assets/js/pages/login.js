@@ -30,19 +30,22 @@
   }
   if (existing) {
     window.location.replace(
-      existing.role === "Student"
-        ? "student/dashboard.html"
-        : next || "coordinator/dashboard.html",
+      next ||
+        (existing.role === "Student"
+          ? "student/dashboard.html"
+          : existing.role === "Administrator"
+            ? "coordinator/support.html"
+            : "coordinator/dashboard.html"),
     );
     return;
   }
 
   if (OSAS.CONFIG.autoAdmin) {
     var admin = OSAS.store.all("users").filter(function (row) {
-      return row.role === "Administrator";
+      return row.role === "Coordinator";
     })[0];
     if (admin) {
-      /* Prototype: the administrator account is already in the form, so the
+      /* Prototype: the coordinator account is already in the form, so the
          reviewer only has to press Login. */
       document.getElementById("email").value = admin.email;
       document.getElementById("password").value = OSAS.CONFIG.demoPassword;
@@ -145,9 +148,12 @@
           "! Opening the portal dashboard…",
       );
       var destination =
-        result.user.role === "Student"
+        next ||
+        (result.user.role === "Student"
           ? "student/dashboard.html"
-          : next || "coordinator/dashboard.html";
+          : result.user.role === "Administrator"
+            ? "coordinator/support.html"
+            : "coordinator/dashboard.html");
       window.setTimeout(function () {
         window.location.href = destination;
       }, 650);
@@ -232,16 +238,21 @@
 
   /* Demo credentials helper */
   var demoUser = OSAS.store.all("users").filter(function (u) {
+    return u.role === "Coordinator";
+  })[0];
+  var technicalUser = OSAS.store.all("users").filter(function (u) {
     return u.role === "Administrator";
   })[0];
   var demoEmail = demoUser ? demoUser.email : "josefina.reyes@uc.edu.ph";
   var hint = document.getElementById("auth-hint");
   if (hint) {
     hint.innerHTML = OSAS.CONFIG.autoAdmin
-      ? "Administrator account is already filled in &mdash; press <b>Login</b> to open the dashboard."
-      : "Administrator account: <b>" +
+      ? "Coordinator account is already filled in &mdash; press <b>Login</b> to open the dashboard."
+      : "Coordinator: <b>" +
         OSAS.util.esc(demoEmail) +
-        "</b> &middot; password <b>" +
+        "</b> &middot; Technical Administrator: <b>" +
+        OSAS.util.esc(technicalUser ? technicalUser.email : "technical.admin@uc.edu.ph") +
+        "</b><br>Password for both: <b>" +
         OSAS.util.esc(OSAS.CONFIG.demoPassword) +
         "</b>";
   }
