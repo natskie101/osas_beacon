@@ -1,0 +1,22 @@
+# Environment
+.env
+.env.local
+
+# Dependencies / tooling
+node_modules/
+.vite/
+
+# Runtime files
+storage/logs/*
+!storage/logs/.gitkeep
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+storage/uploads/*
+!storage/uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
