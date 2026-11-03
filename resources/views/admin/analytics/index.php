@@ -10,10 +10,10 @@
 </div>
 
 <div class="stats">
-    <div class="stat"><div class="stat__label">Total Views</div><div class="stat__value"><?= number_format($totals['total_views']) ?></div><div class="stat__sub">Across tracked content</div></div>
-    <div class="stat"><div class="stat__label">Unique Visitors</div><div class="stat__value"><?= number_format($totals['unique_visitors']) ?></div><div class="stat__sub">Distinct viewer sessions</div></div>
-    <div class="stat"><div class="stat__label">Avg Engagement</div><div class="stat__value"><?= number_format($totals['avg_engagement'], 1) ?>%</div><div class="stat__sub">Content interaction score</div></div>
-    <div class="stat"><div class="stat__label">Tracked Items</div><div class="stat__value"><?= number_format($totals['items']) ?></div><div class="stat__sub"><?= number_format($audience['active'] ?? 0) ?> active accounts</div></div>
+    <div class="stat"><div class="stat__label">Total Views</div><div class="stat__value"><?= number_format($totals['total_views']) ?></div><div class="stat__sub"></div></div>
+    <div class="stat"><div class="stat__label">Unique Visitors</div><div class="stat__value"><?= number_format($totals['unique_visitors']) ?></div><div class="stat__sub"></div></div>
+    <div class="stat"><div class="stat__label">Avg Engagement</div><div class="stat__value"><?= number_format($totals['avg_engagement'], 1) ?>%</div><div class="stat__sub"></div></div>
+    <div class="stat"><div class="stat__label">Tracked Items</div><div class="stat__value"><?= number_format($totals['items']) ?></div><div class="stat__sub"><?= number_format($audience['active'] ?? 0) ?></div></div>
 </div>
 
 <div class="dash-grid">

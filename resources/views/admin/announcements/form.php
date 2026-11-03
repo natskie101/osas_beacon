@@ -123,6 +123,6 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
 
     <div class="form-actions">
         <a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : url('/admin/announcements') ?>">Cancel</a>
-        <button class="btn btn--primary" type="submit"><?= $isEdit ? 'Save Changes' : 'Create Announcement' ?></button>
+        <button class="btn btn--primary" type="submit"><?= $isEdit ? 'Create Announcement' : 'Save Changes' ?></button>
     </div>
 </form>
