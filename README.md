@@ -39,6 +39,25 @@ Demo password: `Beacon@2026`
 | Administrator | `technical.admin@uc.edu.ph` |
 | Student | `ryan.delacruz@uc.edu.ph` |
 
+### Clean hosting test setup
+
+For a new, empty hosting database, configure unique passwords of at least 12
+characters for `SEED_COORDINATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and
+`SEED_ADMIN_PASSWORD`, then run:
+
+```bash
+php database/migrate.php
+php database/seed.php --fresh --minimal
+```
+
+Minimal seeding creates only the Coordinator (`josefina.reyes@uc.edu.ph`),
+Ryan Dela Cruz's student account (`ryan.delacruz@uc.edu.ph`), and the
+Administrator (`technical.admin@uc.edu.ph`). It skips all sample content,
+synthetic progress, notifications, and activity records. Remove the temporary
+`SEED_*_PASSWORD` values from the hosting environment after seeding. The
+`--fresh` option deletes existing database records, so use it only with a new
+test database. The regular `--fresh` command still loads the full demo dataset.
+
 ## Features
 
 - Coordinator and Administrator dashboards with role-scoped navigation

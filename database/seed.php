@@ -7,9 +7,10 @@ require __DIR__ . '/../bootstrap/console.php';
 use Database\Seeders\DatabaseSeeder;
 
 $fresh = in_array('--fresh', $argv ?? [], true);
+$minimal = in_array('--minimal', $argv ?? [], true);
 
 try {
-    (new DatabaseSeeder())->run($fresh);
+    (new DatabaseSeeder())->run($fresh, $minimal);
 } catch (Throwable $exception) {
     fwrite(STDERR, 'Seeding failed: ' . $exception->getMessage() . "\n");
     exit(1);

@@ -8,7 +8,7 @@ use App\Support\DB;
 
 final class DatabaseSeeder
 {
-    public function run(bool $fresh = false): void
+    public function run(bool $fresh = false, bool $minimal = false): void
     {
         $path = BASE_PATH . '/database/data/seed.json';
 
@@ -17,6 +17,42 @@ final class DatabaseSeeder
         }
 
         $data = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        $minimalPasswords = [];
+
+        if ($minimal) {
+            $requiredAccounts = [
+                'josefina.reyes@uc.edu.ph' => ['Coordinator', 'SEED_COORDINATOR_PASSWORD'],
+                'ryan.delacruz@uc.edu.ph' => ['Student', 'SEED_STUDENT_PASSWORD'],
+                'technical.admin@uc.edu.ph' => ['Administrator', 'SEED_ADMIN_PASSWORD'],
+            ];
+            $usersByEmail = [];
+            foreach ($data['users'] ?? [] as $user) {
+                $usersByEmail[mb_strtolower((string) ($user['email'] ?? ''))] = $user;
+            }
+
+            $minimalUsers = [];
+            foreach ($requiredAccounts as $email => [$role, $passwordVariable]) {
+                $user = $usersByEmail[$email] ?? null;
+                if ($user === null || ($user['role'] ?? '') !== $role) {
+                    throw new \RuntimeException('Minimal seed account is missing or has an unexpected role: ' . $email);
+                }
+
+                $password = (string) env($passwordVariable, '');
+                if (\strlen($password) < 12) {
+                    throw new \RuntimeException($passwordVariable . ' must be set to a password of at least 12 characters.');
+                }
+
+                $user['attendedEvents'] = [];
+                $user['orientationModules'] = [];
+                $user['createdAt'] = date('Y-m-d H:i:s');
+                $user['requestedAt'] = $user['createdAt'];
+                $user['lastLogin'] = null;
+                $minimalUsers[] = $user;
+                $minimalPasswords[$email] = password_hash($password, PASSWORD_DEFAULT);
+            }
+
+            $data['users'] = $minimalUsers;
+        }
 
         if ($fresh) {
             DB::statement('DELETE FROM support_messages');
@@ -52,14 +88,14 @@ final class DatabaseSeeder
             DB::statement('ALTER TABLE notifications AUTO_INCREMENT = 1');
         }
 
-        DB::transaction(function () use ($data): void {
+        DB::transaction(function () use ($data, $minimal, $minimalPasswords): void {
             if ((int) DB::value('SELECT COUNT(*) FROM users') > 0) {
                 echo "Users already exist — skipped. Use --fresh to reseed.\n";
 
                 return;
             }
 
-            $passwordHash = password_hash((string) ($data['meta']['demoPassword'] ?? 'Beacon@2026'), PASSWORD_DEFAULT);
+            $defaultPasswordHash = password_hash((string) ($data['meta']['demoPassword'] ?? 'Beacon@2026'), PASSWORD_DEFAULT);
             $toDb = static function (?string $value): ?string {
                 if ($value === null || trim($value) === '') {
                     return null;
@@ -74,6 +110,7 @@ final class DatabaseSeeder
                 : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             foreach ($data['users'] ?? [] as $user) {
+                $email = mb_strtolower((string) $user['email']);
                 DB::insert(
                     'INSERT INTO users
                         (public_id, first_name, last_name, email, username, password_hash, role, student_id,
@@ -84,9 +121,9 @@ final class DatabaseSeeder
                         $user['id'],
                         $user['firstName'],
                         $user['lastName'],
-                        mb_strtolower((string) $user['email']),
+                        $email,
                         $user['username'],
-                        $passwordHash,
+                        $minimal ? $minimalPasswords[$email] : $defaultPasswordHash,
                         $user['role'],
                         $user['studentId'] ?: null,
                         $user['department'] ?: null,
@@ -102,6 +139,12 @@ final class DatabaseSeeder
                         $user['lastLogin'] ?: null,
                     ],
                 );
+            }
+
+            if ($minimal) {
+                echo 'Seeded ' . count($data['users'] ?? []) . " accounts only; demo content and activity records were skipped.\n";
+
+                return;
             }
 
             foreach ($data['auditLog'] ?? [] as $entry) {
