@@ -141,7 +141,11 @@ final class User
         DB::update('UPDATE users SET last_seen_at = ? WHERE id = ?', [date('Y-m-d H:i:s'), $id]);
     }
 
+<<<<<<< HEAD
     /** @return array{total: int, students: int, active: int, active_students: int, signed_in_students: int, pending: int, inactive: int, staff: int, coordinators: int, administrators: int, latest_created_at: string|null} */
+=======
+    /** @return array{total: int, students: int, active: int, pending: int, inactive: int, staff: int} */
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public static function counts(): array
     {
         $row = DB::first(
@@ -149,6 +153,7 @@ final class User
                 COUNT(*) AS total,
                 SUM(role = "Student") AS students,
                 SUM(status = "Active") AS active,
+<<<<<<< HEAD
                 SUM(role = "Student" AND status = "Active") AS active_students,
                 SUM(role = "Student" AND last_login_at IS NOT NULL) AS signed_in_students,
                 SUM(status = "Pending") AS pending,
@@ -157,6 +162,11 @@ final class User
                 SUM(role = "Coordinator") AS coordinators,
                 SUM(role = "Administrator") AS administrators,
                 MAX(created_at) AS latest_created_at
+=======
+                SUM(status = "Pending") AS pending,
+                SUM(status = "Inactive") AS inactive,
+                SUM(role <> "Student") AS staff
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
              FROM users',
         );
 
@@ -164,6 +174,7 @@ final class User
             'total' => (int) ($row['total'] ?? 0),
             'students' => (int) ($row['students'] ?? 0),
             'active' => (int) ($row['active'] ?? 0),
+<<<<<<< HEAD
             'active_students' => (int) ($row['active_students'] ?? 0),
             'signed_in_students' => (int) ($row['signed_in_students'] ?? 0),
             'pending' => (int) ($row['pending'] ?? 0),
@@ -172,6 +183,11 @@ final class User
             'coordinators' => (int) ($row['coordinators'] ?? 0),
             'administrators' => (int) ($row['administrators'] ?? 0),
             'latest_created_at' => $row['latest_created_at'] ?? null,
+=======
+            'pending' => (int) ($row['pending'] ?? 0),
+            'inactive' => (int) ($row['inactive'] ?? 0),
+            'staff' => (int) ($row['staff'] ?? 0),
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ];
     }
 
@@ -216,11 +232,14 @@ final class User
             $bindings[] = 'Student';
         }
 
+<<<<<<< HEAD
         if (!empty($filters['exclude_pending'])) {
             $where[] = 'status <> ?';
             $bindings[] = 'Pending';
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
         $total = (int) DB::value('SELECT COUNT(*) FROM users' . $whereSql, $bindings);
         $lastPage = max(1, (int) ceil($total / $perPage));

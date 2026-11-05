@@ -43,6 +43,7 @@
       });
     });
 
+<<<<<<< HEAD
     /* Filter bars submit automatically as the user searches or changes filters. */
     document.querySelectorAll("form.filter-bar").forEach(function (form) {
       var timer = null;
@@ -249,6 +250,8 @@
       });
     });
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     /* Destructive/session actions ask once before submitting */
     document.querySelectorAll("form[data-confirm]").forEach(function (form) {
       form.addEventListener("submit", function (event) {

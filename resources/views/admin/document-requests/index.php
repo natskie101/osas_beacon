@@ -13,7 +13,11 @@
 <form class="filter-bar filter-bar--2" method="GET" action="<?= url('/admin/document-requests') ?>">
     <div class="field"><label for="search">Search requests</label><span class="input-group"><span class="input-group__ico"><?= App\Support\Icons::render('search', 15) ?></span><input class="input" id="search" name="search" value="<?= e($filters['search'] ?? '') ?>" placeholder="Student, document or reference"></span></div>
     <div class="field"><label for="status">Status</label><select class="input" id="status" name="status"><option value="">All statuses</option><?php foreach (App\Models\DocumentRequest::statuses() as $status): ?><option value="<?= e($status) ?>"<?= ($filters['status'] ?? '') === $status ? ' selected' : '' ?>><?= e($status) ?></option><?php endforeach; ?></select></div>
+<<<<<<< HEAD
     
+=======
+    <div class="filter-bar__actions"><button class="btn btn--primary" type="submit">Apply</button><a class="btn btn--ghost" href="<?= url('/admin/document-requests') ?>">Reset</a></div>
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 </form>
 <div class="table-wrap">
     <div class="table-toolbar"><div><div class="panel-title">Request Queue</div><div class="cell-sub">Showing <?= number_format($pagination['from']) ?>–<?= number_format($pagination['to']) ?> of <?= number_format($pagination['total']) ?> requests</div></div><span class="badge badge--brand"><?= number_format($pagination['total']) ?> requests</span></div>

@@ -58,6 +58,7 @@ final class RegulationController extends Controller
     {
         $actor = Auth::user();
         $data = $this->validated($request);
+<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
@@ -65,6 +66,8 @@ final class RegulationController extends Controller
             $data['status'] = 'Published';
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
         $sanctions = $this->sanctions($request->string('sanctions'));
@@ -112,6 +115,7 @@ final class RegulationController extends Controller
     {
         $regulation = $this->find($publicId);
         $data = $this->validated($request);
+<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
@@ -119,6 +123,8 @@ final class RegulationController extends Controller
             $data['status'] = 'Published';
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
         $sanctions = $this->sanctions($request->string('sanctions'));
@@ -177,7 +183,10 @@ final class RegulationController extends Controller
             'reference_code' => '',
             'title' => '',
             'category' => '',
+<<<<<<< HEAD
             'severity' => 'Minor Offense (Level 1)',
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'audience' => 'All Students',
             'status' => 'Draft',
             'effective_date' => '',
@@ -214,13 +223,20 @@ final class RegulationController extends Controller
             'reference_code' => 'required|string|max:50',
             'title' => 'required|string|max:200',
             'category' => 'required|string|max:100',
+<<<<<<< HEAD
             'severity' => 'required|in:Minor Offense (Level 1),Major Offense (Level 2),Serious Offense (Level 3),Grave Offense (Level 4)',
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'audience' => 'required|string|max:100',
             'status' => 'required|in:Draft,Pending Review,Published,Archived',
             'effective_date' => 'required|string|max:100',
             'review_schedule' => 'nullable|string|max:150',
             'approval_body' => 'nullable|string|max:200',
+<<<<<<< HEAD
             'summary' => 'required|string|max:1000',
+=======
+            'summary' => 'nullable|string|max:1000',
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'body' => 'required|string',
         ]);
     }

@@ -27,7 +27,10 @@ final class DashboardController extends Controller
 
         $announcements = Announcement::published(4);
         $events = Event::upcoming(3);
+<<<<<<< HEAD
         $featuredModule = $modules[0] ?? null;
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
         $tickets = SupportTicket::forStudent($userId);
         $activeTickets = count(array_filter(
@@ -51,7 +54,10 @@ final class DashboardController extends Controller
             'orientation' => $orientation,
             'announcementCount' => Announcement::publishedCount(),
             'announcements' => $announcements,
+<<<<<<< HEAD
             'featuredModule' => $featuredModule,
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'events' => $events,
             'ticketCount' => count($tickets),
             'activeTickets' => $activeTickets,

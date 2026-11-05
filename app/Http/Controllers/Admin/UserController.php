@@ -29,6 +29,7 @@ final class UserController extends Controller
     public function index(Request $request): Response
     {
         $actor = Auth::user();
+<<<<<<< HEAD
         $tab = $request->string('tab', 'directory') === 'queue' ? 'queue' : 'directory';
         $status = $request->string('status');
 
@@ -47,6 +48,15 @@ final class UserController extends Controller
             'direction' => $request->string('direction', 'asc'),
             'tab' => $tab,
             'exclude_pending' => $tab === 'directory' && $status === '',
+=======
+        $filters = [
+            'search' => $request->string('search'),
+            'role' => $request->string('role'),
+            'status' => $request->string('status'),
+            'group' => $request->string('group'),
+            'sort' => $request->string('sort', 'name'),
+            'direction' => $request->string('direction', 'asc'),
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ];
 
         $pagination = User::paginate($filters, max(1, (int) $request->input('page', 1)), 10);
@@ -54,7 +64,11 @@ final class UserController extends Controller
         return $this->page('layouts.app', 'admin/users/index', [
             'title' => 'User Account & Access Management',
             'pageTitle' => 'User Account & Access Management',
+<<<<<<< HEAD
             'pageSubtitle' => 'Verify pending registrations and manage portal access and system roles.',
+=======
+            'pageSubtitle' => 'Manage portal access and system roles for all students and staff.',
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'pageKey' => 'users',
             'user' => $actor,
             'role' => $actor['role'],
@@ -63,7 +77,10 @@ final class UserController extends Controller
             'filters' => $filters,
             'counts' => User::counts(),
             'canCreate' => UserPolicy::canManageAccounts($actor),
+<<<<<<< HEAD
             'tab' => $tab,
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ]);
     }
 

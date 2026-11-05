@@ -63,11 +63,14 @@ final class AnnouncementController extends Controller
     {
         $actor = Auth::user();
         $data = $this->validated($request);
+<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
         $data['attachments'] = json_encode($this->storeAttachments($request, null, $actor), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -135,11 +138,14 @@ final class AnnouncementController extends Controller
         $actor = Auth::user();
         $announcement = $this->find($publicId);
         $data = $this->validated($request);
+<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
         $existing = BaseAnnouncementAttachments::from($announcement);

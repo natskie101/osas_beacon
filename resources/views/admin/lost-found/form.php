@@ -2,14 +2,21 @@
 /** @var array<string, mixed>|null $item */
 /** @var array<string, mixed> $values */
 /** @var array<string, string> $errors */
+<<<<<<< HEAD
 /** @var array<string, mixed>|null $imageFile */
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $isEdit = $item !== null;
 $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
 $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input--error' : '';
 $action = $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin/lost-found');
 ?><div class="page-head"><div><div class="page-head__eyebrow"><a href="<?= url('/admin/lost-found') ?>">Lost & Found</a> / <?= $isEdit ? 'Edit' : 'Post' ?></div><h2 class="page-head__title"><?= e($pageTitle) ?></h2><p class="page-head__sub"><?= e($pageSubtitle) ?></p></div><a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin/lost-found') ?>">Cancel</a></div>
 <?php if ($errors !== []): ?><div class="alert alert--danger"><span class="alert__ico"><?= App\Support\Icons::render('alert', 18) ?></span><div><div class="alert__title">Please correct the highlighted fields</div><div class="alert__text"><?= e(reset($errors)) ?></div></div></div><?php endif; ?>
+<<<<<<< HEAD
 <form class="card form-card" method="POST" action="<?= e($action) ?>" enctype="multipart/form-data">
+=======
+<form class="card form-card" method="POST" action="<?= e($action) ?>">
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     <?= csrf_field() ?><?php if ($isEdit): ?><input type="hidden" name="_method" value="PUT"><?php endif; ?>
     <section class="form-section"><div class="section-title"><?= App\Support\Icons::render('search', 14) ?> Item Details</div>
         <div class="form-grid">
@@ -33,6 +40,7 @@ $action = $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin
                 <div class="field"><label for="contact">Contact</label><input class="input" id="contact" name="contact" value="<?= e($values['contact'] ?? '') ?>"></div>
                 <div class="field"><label for="custody">Custody</label><input class="input" id="custody" name="custody" value="<?= e($values['custody'] ?? 'OSAS Office') ?>"></div>
             </div>
+<<<<<<< HEAD
             <div class="field">
                 <label>Item photo</label>
                 <label class="upload-drop" for="image">
@@ -55,6 +63,9 @@ $action = $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin
                     </div>
                 <?php endif; ?>
             </div>
+=======
+            <div class="field"><label for="attachment">Attachment reference</label><input class="input" id="attachment" name="attachment" value="<?= e($values['attachment'] ?? '') ?>" placeholder="Optional file name or reference"></div>
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         </div>
     </section>
     <div class="form-actions"><a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin/lost-found') ?>">Cancel</a><button class="btn btn--primary" type="submit"><?= $isEdit ? 'Save Changes' : 'Post Item' ?></button></div>

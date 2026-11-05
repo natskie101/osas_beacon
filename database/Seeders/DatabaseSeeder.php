@@ -25,11 +25,14 @@ final class DatabaseSeeder
             DB::statement('DELETE FROM document_requests');
             DB::statement('DELETE FROM lost_found_claims');
             DB::statement('DELETE FROM lost_found_items');
+<<<<<<< HEAD
             DB::statement('DELETE FROM orientation_quiz_answers');
             DB::statement('DELETE FROM orientation_quiz_attempts');
             DB::statement('DELETE FROM orientation_quiz_options');
             DB::statement('DELETE FROM orientation_quiz_questions');
             DB::statement('DELETE FROM orientation_quizzes');
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             DB::statement('DELETE FROM orientation_progress');
             DB::statement('DELETE FROM orientation_modules');
             DB::statement('DELETE FROM announcements');
@@ -39,7 +42,10 @@ final class DatabaseSeeder
             DB::statement('DELETE FROM reports');
             DB::statement('DELETE FROM tracking');
             DB::statement('DELETE FROM audit_log');
+<<<<<<< HEAD
             DB::statement('DELETE FROM event_attendance');
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             DB::statement('DELETE FROM remember_tokens');
             DB::statement('DELETE FROM password_resets');
             DB::statement('DELETE FROM login_attempts');
@@ -142,6 +148,7 @@ final class DatabaseSeeder
 
             $now = date('Y-m-d H:i:s');
 
+<<<<<<< HEAD
             foreach ($data['users'] ?? [] as $user) {
                 $email = mb_strtolower((string) ($user['email'] ?? ''));
                 $userId = (int) ($userByEmail[$email]['id'] ?? 0);
@@ -167,6 +174,8 @@ final class DatabaseSeeder
                 }
             }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             foreach ($data['announcements'] ?? [] as $announcement) {
                 DB::insert(
                     'INSERT INTO announcements
@@ -225,10 +234,17 @@ final class DatabaseSeeder
             foreach ($data['modules'] ?? [] as $module) {
                 DB::insert(
                     'INSERT INTO orientation_modules
+<<<<<<< HEAD
                         (public_id, title, category, status, audience, version, duration_minutes, verification_method,
                          passing_rate, mandatory, learners, completions, completion_rate, description, objectives, body,
                          department, attachments_count, created_by, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, "Quiz Assessment", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+=======
+                        (public_id, title, category, status, audience, version, duration_minutes, mandatory,
+                         learners, completions, completion_rate, description, objectives, body, department,
+                         attachments_count, created_by, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
                     [
                         $module['id'],
                         $module['title'],
@@ -237,7 +253,10 @@ final class DatabaseSeeder
                         $module['audience'] ?? 'Incoming Freshmen',
                         $module['version'] ?? 'v1.0',
                         (int) ($module['duration'] ?? 0),
+<<<<<<< HEAD
                         80,
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
                         !empty($module['mandatory']) ? 1 : 0,
                         (int) ($module['learners'] ?? 0),
                         (int) ($module['completions'] ?? 0),
@@ -254,6 +273,7 @@ final class DatabaseSeeder
                 );
             }
 
+<<<<<<< HEAD
             DB::insert(
                 'INSERT INTO orientation_modules
                     (public_id, title, category, status, audience, version, duration_minutes, verification_method,
@@ -285,6 +305,8 @@ final class DatabaseSeeder
                 ],
             );
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             $moduleRows = DB::select('SELECT id, public_id FROM orientation_modules ORDER BY id ASC');
             $studentRows = array_values(array_filter(
                 $userRows,
@@ -315,6 +337,7 @@ final class DatabaseSeeder
                 }
             }
 
+<<<<<<< HEAD
             $demoModule = DB::first('SELECT id FROM orientation_modules WHERE public_id = "ORIENT-012" LIMIT 1');
             $ryan = DB::first('SELECT id FROM users WHERE email = "ryan.delacruz@uc.edu.ph" LIMIT 1');
 
@@ -518,6 +541,8 @@ final class DatabaseSeeder
                 }
             }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             foreach ($data['events'] ?? [] as $event) {
                 DB::insert(
                     'INSERT INTO events
@@ -786,6 +811,7 @@ final class DatabaseSeeder
             echo 'Demo password: ' . ($data['meta']['demoPassword'] ?? 'Beacon@2026') . "\n";
         });
     }
+<<<<<<< HEAD
 
     private static function publicId(string $table, string $prefix): string
     {
@@ -795,4 +821,6 @@ final class DatabaseSeeder
 
         return $candidate;
     }
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 }

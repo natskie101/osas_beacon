@@ -12,12 +12,20 @@ final class LostFoundItem extends BaseModel
     protected static string $prefix = 'LF';
     protected static array $fillable = [
         'type', 'title', 'category', 'description', 'location', 'date_occurred', 'reported_by',
+<<<<<<< HEAD
         'reporter_email', 'student_id', 'contact', 'status', 'custody', 'attachment', 'image_file_id',
         'posted_at', 'created_by',
     ];
     protected static array $searchable = ['public_id', 'title', 'description', 'location', 'reported_by', 'category'];
 
     /** @return array{total:int,lost:int,found:int,open:int,claim_pending:int,returned:int,unclaimed:int,archived:int} */
+=======
+        'reporter_email', 'student_id', 'contact', 'status', 'custody', 'attachment', 'posted_at', 'created_by',
+    ];
+    protected static array $searchable = ['public_id', 'title', 'description', 'location', 'reported_by', 'category'];
+
+    /** @return array{total:int,lost:int,found:int,open:int,claim_pending:int,returned:int,archived:int} */
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public static function counts(): array
     {
         $row = DB::first(
@@ -27,7 +35,10 @@ final class LostFoundItem extends BaseModel
                     SUM(status IN ("Open", "Unclaimed")) AS open,
                     SUM(status = "Claim Pending") AS claim_pending,
                     SUM(status = "Returned") AS returned,
+<<<<<<< HEAD
                     SUM(status = "Unclaimed") AS unclaimed,
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
                     SUM(status = "Archived") AS archived
              FROM lost_found_items',
         );
@@ -35,6 +46,7 @@ final class LostFoundItem extends BaseModel
         return array_map('intval', $row ?? []);
     }
 
+<<<<<<< HEAD
     /** @return array<int, int> item ID => pending claim count */
     public static function pendingClaimCounts(): array
     {
@@ -53,6 +65,8 @@ final class LostFoundItem extends BaseModel
         return $counts;
     }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     /** @return list<array<string, mixed>> */
     public static function visible(): array
     {

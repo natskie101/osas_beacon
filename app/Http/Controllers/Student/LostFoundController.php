@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+<<<<<<< HEAD
 use App\Models\File;
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Models\LostFoundClaim;
 use App\Models\LostFoundItem;
 use App\Models\Tracking;
 use App\Services\AuditLogger;
+<<<<<<< HEAD
 use App\Services\FileStorage;
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\DB;
@@ -27,7 +33,10 @@ final class LostFoundController extends Controller
         $items = LostFoundItem::visible();
         $type = $request->string('type');
         $status = $request->string('status');
+<<<<<<< HEAD
         $category = $request->string('category');
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $search = mb_strtolower($request->string('search'));
 
         if (in_array($type, ['Lost', 'Found'], true)) {
@@ -38,10 +47,13 @@ final class LostFoundController extends Controller
             $items = array_values(array_filter($items, static fn (array $item): bool => $item['status'] === $status));
         }
 
+<<<<<<< HEAD
         if ($category !== '') {
             $items = array_values(array_filter($items, static fn (array $item): bool => (string) $item['category'] === $category));
         }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         if ($search !== '') {
             $items = array_values(array_filter(
                 $items,
@@ -61,11 +73,16 @@ final class LostFoundController extends Controller
             'items' => $items,
             'myReports' => LostFoundItem::forReporter((string) $actor['email'], (string) ($actor['student_id'] ?? '')),
             'myClaims' => LostFoundItem::claimsByUser((int) $actor['id']),
+<<<<<<< HEAD
             'filters' => ['search' => $request->string('search'), 'type' => $type, 'status' => $status, 'category' => $category],
+=======
+            'filters' => ['search' => $request->string('search'), 'type' => $type, 'status' => $status],
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'counts' => LostFoundItem::counts(),
         ]);
     }
 
+<<<<<<< HEAD
     public function downloadImage(Request $request, string $publicId): Response
     {
         $item = LostFoundItem::findVisible($publicId);
@@ -83,6 +100,8 @@ final class LostFoundController extends Controller
         return FileStorage::download($file);
     }
 
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public function report(Request $request): Response
     {
         return $this->page('layouts.app', 'student/lost-found/report', [
@@ -167,7 +186,10 @@ final class LostFoundController extends Controller
             'myClaim' => $myClaim,
             'ownReport' => $ownReport,
             'claims' => $ownReport ? LostFoundItem::claimsFor((int) $item['id']) : [],
+<<<<<<< HEAD
             'imageFile' => !empty($item['image_file_id']) ? File::find((int) $item['image_file_id']) : null,
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'errors' => Session::errors(),
         ]);
     }

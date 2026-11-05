@@ -11,7 +11,10 @@ use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Request;
 use App\Support\Response;
+<<<<<<< HEAD
 use App\Support\Session;
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
 final class RegulationController extends Controller
 {
@@ -47,8 +50,11 @@ final class RegulationController extends Controller
             'role' => $actor['role'],
             'regulations' => $regulations,
             'categories' => Regulation::categories(),
+<<<<<<< HEAD
             'categoryCounts' => Regulation::publishedCategoryCounts(),
             'totalPublished' => count(Regulation::published()),
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'filters' => ['search' => $request->string('search'), 'category' => $category],
         ]);
     }
@@ -76,6 +82,7 @@ final class RegulationController extends Controller
             'sanctions' => json_items($regulation['sanctions'] ?? null),
         ]);
     }
+<<<<<<< HEAD
 
     public function acknowledge(Request $request, string $publicId): Response
     {
@@ -89,4 +96,6 @@ final class RegulationController extends Controller
 
         return Response::redirect(url('/student/rules/' . $regulation['public_id']));
     }
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 }

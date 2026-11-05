@@ -24,7 +24,14 @@
             <?php foreach ($categories as $category): ?><option value="<?= e($category) ?>"<?= ($filters['category'] ?? '') === $category ? ' selected' : '' ?>><?= e($category) ?></option><?php endforeach; ?>
         </select>
     </div>
+<<<<<<< HEAD
     
+=======
+    <div class="filter-bar__actions">
+        <button class="btn btn--primary" type="submit">Filter</button>
+        <a class="btn btn--ghost" href="<?= url('/student/announcements') ?>">Reset</a>
+    </div>
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 </form>
 
 <?php if ($announcements === []): ?>

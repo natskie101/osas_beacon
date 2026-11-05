@@ -11,7 +11,11 @@ final class Regulation extends BaseModel
     protected static string $table = 'regulations';
     protected static string $prefix = 'REG';
     protected static array $fillable = [
+<<<<<<< HEAD
         'reference_code', 'title', 'category', 'severity', 'audience', 'status', 'effective_date',
+=======
+        'reference_code', 'title', 'category', 'audience', 'status', 'effective_date',
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         'review_schedule', 'approval_body', 'views', 'summary', 'body', 'sanctions', 'created_by',
     ];
     protected static array $searchable = ['public_id', 'reference_code', 'title', 'summary', 'body', 'category'];
@@ -62,6 +66,7 @@ final class Regulation extends BaseModel
             DB::select('SELECT DISTINCT category FROM regulations WHERE category <> "" ORDER BY category ASC'),
         )));
     }
+<<<<<<< HEAD
 
     /** @return array<string, int> category => published count */
     public static function publishedCategoryCounts(): array
@@ -81,4 +86,6 @@ final class Regulation extends BaseModel
 
         return $counts;
     }
+=======
+>>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 }
