@@ -6,32 +6,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-<<<<<<< HEAD
 use App\Models\File;
 use App\Models\LostFoundClaim;
 use App\Models\LostFoundItem;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
-=======
-use App\Models\LostFoundClaim;
-use App\Models\LostFoundItem;
-use App\Services\AuditLogger;
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\DB;
 use App\Support\Exceptions\NotFoundHttpException;
-<<<<<<< HEAD
 use App\Support\Exceptions\ValidationException;
 use App\Support\Request;
 use App\Support\Response;
 use App\Support\Session;
 use RuntimeException;
-=======
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
 final class LostFoundController extends Controller
 {
@@ -65,15 +53,11 @@ final class LostFoundController extends Controller
             'filters' => $filters,
             'counts' => LostFoundItem::counts(),
             'pendingClaims' => LostFoundItem::pendingClaims(8),
-<<<<<<< HEAD
             'claimCounts' => LostFoundItem::pendingClaimCounts(),
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'categories' => $this->categories(),
         ]);
     }
 
-<<<<<<< HEAD
     public function export(Request $request): Response
     {
         $rows = DB::select(
@@ -109,8 +93,6 @@ final class LostFoundController extends Controller
         return Response::download('lost-found-items.csv', "\xEF\xBB\xBF" . $csv, 'text/csv; charset=UTF-8');
     }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public function create(Request $request): Response
     {
         return $this->form(Auth::user(), null);
@@ -120,28 +102,22 @@ final class LostFoundController extends Controller
     {
         $actor = Auth::user();
         $data = $this->validated($request);
-<<<<<<< HEAD
         $image = $this->storeImage($request, $actor);
 
         if ($image !== null) {
             $data['image_file_id'] = $image['file_id'];
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['date_occurred'] = db_datetime((string) ($data['date_occurred'] ?? ''));
         $data['posted_at'] = date('Y-m-d H:i:s');
         $data['created_by'] = (int) $actor['id'];
         $id = LostFoundItem::create($data);
         $item = LostFoundItem::find($id);
 
-<<<<<<< HEAD
         if ($image !== null) {
             DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$item['public_id'], $image['file_id']]);
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         AuditLogger::log('lost_found.created', 'Lost & Found Item Posted', $item['title'] . ' (' . $item['public_id'] . ') was posted.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'blue', 'icon' => 'search']);
         Session::flash('status', 'Lost & found item posted.');
 
@@ -162,10 +138,7 @@ final class LostFoundController extends Controller
             'role' => $actor['role'],
             'item' => $item,
             'claims' => LostFoundItem::claimsFor((int) $item['id']),
-<<<<<<< HEAD
             'imageFile' => !empty($item['image_file_id']) ? File::find((int) $item['image_file_id']) : null,
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'audit' => AuditLog::recent(20),
         ]);
     }
@@ -179,7 +152,6 @@ final class LostFoundController extends Controller
     {
         $item = $this->find($publicId);
         $data = $this->validated($request);
-<<<<<<< HEAD
         $image = $this->storeImage($request, Auth::user());
         $oldImage = null;
 
@@ -191,13 +163,10 @@ final class LostFoundController extends Controller
             }
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['date_occurred'] = db_datetime((string) ($data['date_occurred'] ?? ''));
         LostFoundItem::update((int) $item['id'], $data);
         $updated = LostFoundItem::find((int) $item['id']) ?? $item;
 
-<<<<<<< HEAD
         if ($image !== null) {
             DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $image['file_id']]);
 
@@ -206,8 +175,6 @@ final class LostFoundController extends Controller
             }
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         AuditLogger::log('lost_found.updated', 'Lost & Found Item Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'lost_found', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
         Session::flash('status', 'Lost & found item saved.');
 
@@ -275,7 +242,6 @@ final class LostFoundController extends Controller
         return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-<<<<<<< HEAD
     public function downloadImage(Request $request, string $publicId): Response
     {
         $item = $this->find($publicId);
@@ -290,7 +256,26 @@ final class LostFoundController extends Controller
             throw new NotFoundHttpException('No image is attached to this item.');
         }
 
-        return FileStorage::download($file);
+        $mime = (string) ($file['mime_type'] ?? '');
+
+        if (!\in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            throw new NotFoundHttpException('No image is attached to this item.');
+        }
+
+        $path = FileStorage::path($file);
+        $content = is_file($path) ? file_get_contents($path) : false;
+
+        if ($content === false) {
+            throw new NotFoundHttpException('No image is attached to this item.');
+        }
+
+        return new Response($content, 200, [
+            'Content-Type' => $mime,
+            'Content-Length' => (string) \strlen($content),
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
     /**
@@ -326,8 +311,6 @@ final class LostFoundController extends Controller
         ];
     }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $item */
     private function form(array $actor, ?array $item): Response
     {
@@ -363,10 +346,7 @@ final class LostFoundController extends Controller
             'item' => $item,
             'values' => $values,
             'errors' => Session::errors(),
-<<<<<<< HEAD
             'imageFile' => $isEdit && !empty($item['image_file_id']) ? File::find((int) $item['image_file_id']) : null,
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ]);
     }
 

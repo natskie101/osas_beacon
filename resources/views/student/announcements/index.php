@@ -24,14 +24,7 @@
             <?php foreach ($categories as $category): ?><option value="<?= e($category) ?>"<?= ($filters['category'] ?? '') === $category ? ' selected' : '' ?>><?= e($category) ?></option><?php endforeach; ?>
         </select>
     </div>
-<<<<<<< HEAD
     
-=======
-    <div class="filter-bar__actions">
-        <button class="btn btn--primary" type="submit">Filter</button>
-        <a class="btn btn--ghost" href="<?= url('/student/announcements') ?>">Reset</a>
-    </div>
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 </form>
 
 <?php if ($announcements === []): ?>
@@ -43,16 +36,15 @@
                 <div class="feed-item__icon avatar avatar--blue"><?= App\Support\Icons::render('megaphone', 16) ?></div>
                 <div class="feed-item__body">
                     <div class="feed-item__eyebrow">
-                        <span class="badge badge--info"><?= e($announcement['category']) ?></span>
-                        <?php if ($announcement['priority'] !== 'Standard Priority'): ?><span class="badge <?= e(status_class($announcement['priority'])) ?>"><?= e($announcement['priority']) ?></span><?php endif; ?>
-                        <span class="feed-item__date"><?= e(fmt_date($announcement['published_at'])) ?></span>
+                        <span class="feed-item__reference">REF: <?= e($announcement['public_id']) ?></span>
+                        <span class="badge badge--success">Published</span>
                     </div>
                     <h3 class="feed-item__title"><a href="<?= url('/student/announcements/' . $announcement['public_id']) ?>"><?= e($announcement['title']) ?></a></h3>
                     <p class="feed-item__text"><?= e($announcement['summary'] ?: App\Support\Html::summary($announcement['body'], 220)) ?></p>
                     <div class="feed-item__meta">
-                        <span><?= e($announcement['author']) ?></span>
                         <span><?= e($announcement['audience']) ?></span>
-                        <span><?= number_format((int) $announcement['views']) ?> views</span>
+                        <span><?= e(fmt_date($announcement['published_at'])) ?></span>
+                        <span><?= e($announcement['author']) ?></span>
                     </div>
                 </div>
                 <a class="btn btn--outline btn--sm" href="<?= url('/student/announcements/' . $announcement['public_id']) ?>">Read</a>

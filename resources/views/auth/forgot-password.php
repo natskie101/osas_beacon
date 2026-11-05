@@ -2,30 +2,36 @@
 /** @var array<string, string> $errors */
 /** @var string|null $status */
 /** @var array<string, mixed> $old */
+$errorMessage = !empty($errors) ? (string) reset($errors) : null;
+$notices = [];
+if (!empty($status)) {
+    $notices[] = ['text' => $status, 'error' => false];
+}
+if ($errorMessage !== null) {
+    $notices[] = ['text' => $errorMessage, 'error' => true];
+}
 ?>
+<?php foreach ($notices as $notice): ?>
+    <div class="auth-signout-toast<?= $notice['error'] ? ' auth-signout-toast--error' : '' ?>"
+         role="<?= $notice['error'] ? 'alert' : 'status' ?>"
+         aria-live="<?= $notice['error'] ? 'assertive' : 'polite' ?>"
+         data-auto-dismiss-toast>
+        <span class="auth-signout-toast__icon"><?= App\Support\Icons::render($notice['error'] ? 'alert' : 'checkCircle', 18) ?></span>
+        <span><?= e($notice['text']) ?></span>
+        <button type="button" class="auth-signout-toast__close" data-dismiss-toast aria-label="Dismiss message">&times;</button>
+    </div>
+<?php endforeach; ?>
+
 <div class="auth__header">
     <h1 class="auth__title">Reset Portal Password</h1>
     <p class="auth__subtitle">Enter the university email address on your portal account.</p>
 </div>
 
-<?php if (!empty($status)): ?>
-    <div class="alert alert--success" role="status">
-        <span class="alert__ico"><?= App\Support\Icons::render('checkCircle', 18) ?></span>
-        <div><div class="alert__text"><?= e($status) ?></div></div>
-    </div>
+<?php if (config('mail.mailer', 'log') === 'log'): ?>
+    <aside class="auth-reset-note" role="note">
+        Local email delivery is logged to <code>storage/logs/mail.log</code>.
+    </aside>
 <?php endif; ?>
-
-<?php if (!empty($errors)): ?>
-    <div class="alert alert--danger" role="alert">
-        <span class="alert__ico"><?= App\Support\Icons::render('alert', 18) ?></span>
-        <div><div class="alert__text"><?= e(reset($errors)) ?></div></div>
-    </div>
-<?php endif; ?>
-
-<div class="alert alert--info" role="note">
-    <span class="alert__ico"><?= App\Support\Icons::render('info', 18) ?></span>
-    <div><div class="alert__text">Reset links expire after 15 minutes. Locally, the link is written to <code>storage/logs/mail.log</code> instead of being emailed.</div></div>
-</div>
 
 <form class="auth__form-inner" method="POST" action="<?= url('/forgot-password') ?>" novalidate>
     <?= csrf_field() ?>

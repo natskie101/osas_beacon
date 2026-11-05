@@ -7,12 +7,8 @@ $isEdit = $announcement !== null;
 $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
 $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input--error' : '';
 $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : url('/admin/announcements');
-<<<<<<< HEAD
 ?>
 <div class="page-head">
-=======
-?><div class="page-head">
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     <div>
         <div class="page-head__eyebrow"><a href="<?= url('/admin/announcements') ?>">Announcements</a> / <?= $isEdit ? 'Edit' : 'Create' ?></div>
         <h2 class="page-head__title"><?= e($pageTitle) ?></h2>
@@ -30,7 +26,6 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
     </div>
 <?php endif; ?>
 
-<<<<<<< HEAD
 <form method="POST" action="<?= e($action) ?>" enctype="multipart/form-data" class="card form-card announcement-form">
     <?= csrf_field() ?>
     <?php if ($isEdit): ?><input type="hidden" name="_method" value="PUT"><?php endif; ?>
@@ -82,8 +77,9 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
 
         <label class="upload-drop" for="attachment">
             <span class="upload-drop__icon"><?= App\Support\Icons::render('upload', 24) ?></span>
-            <span><strong>Click to Upload</strong> or drag and drop files here</span>
-            <small>PDF, PNG or JPG &middot; up to 5 MB</small>
+            <span data-upload-prompt><strong>Click to Upload</strong> or drag and drop files here</span>
+            <small data-upload-prompt>PDF, PNG or JPG &middot; up to 5 MB</small>
+            <span class="upload-drop__filename" data-upload-filename aria-live="polite" hidden></span>
         </label>
         <input class="upload-drop__input<?= $invalid('attachment') ?>" id="attachment" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
         <?php if ($errorFor('attachment')): ?><div class="form-error"><?= e($errorFor('attachment')) ?></div><?php endif; ?>
@@ -134,64 +130,6 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
             </div>
         </div>
         <div class="form-grid form-grid--3">
-=======
-<form method="POST" action="<?= e($action) ?>" enctype="multipart/form-data" class="card form-card">
-    <?= csrf_field() ?>
-    <?php if ($isEdit): ?><input type="hidden" name="_method" value="PUT"><?php endif; ?>
-
-    <section class="form-section">
-        <div class="section-title"><?= App\Support\Icons::render('megaphone', 14) ?> Notice Details</div>
-        <div class="form-grid">
-            <div class="field">
-                <label for="title">Title <span class="req">*</span></label>
-                <input class="input<?= $invalid('title') ?>" id="title" name="title" value="<?= e($values['title'] ?? '') ?>" maxlength="200" required>
-                <?php if ($errorFor('title')): ?><div class="form-error"><?= e($errorFor('title')) ?></div><?php endif; ?>
-            </div>
-            <div class="form-grid form-grid--3">
-                <div class="field">
-                    <label for="category">Category <span class="req">*</span></label>
-                    <input class="input<?= $invalid('category') ?>" id="category" name="category" list="announcement-categories" value="<?= e($values['category'] ?? '') ?>" required>
-                    <datalist id="announcement-categories">
-                        <?php foreach (['Registrar & Enrollment', 'Scholarships & Financial Aid', 'Student Affairs', 'Academic Affairs', 'Health & Wellness', 'Campus Life', 'Safety & Security'] as $category): ?><option value="<?= e($category) ?>"><?php endforeach; ?>
-                    </datalist>
-                    <?php if ($errorFor('category')): ?><div class="form-error"><?= e($errorFor('category')) ?></div><?php endif; ?>
-                </div>
-                <div class="field">
-                    <label for="audience">Audience <span class="req">*</span></label>
-                    <select class="input<?= $invalid('audience') ?>" id="audience" name="audience">
-                        <?php foreach (['All Student Portals', 'Incoming Freshmen', 'Student Officers', 'Faculty & Staff', 'Graduating Students'] as $audience): ?>
-                            <option value="<?= e($audience) ?>"<?= ($values['audience'] ?? '') === $audience ? ' selected' : '' ?>><?= e($audience) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <?php if ($errorFor('audience')): ?><div class="form-error"><?= e($errorFor('audience')) ?></div><?php endif; ?>
-                </div>
-                <div class="field">
-                    <label for="priority">Priority</label>
-                    <select class="input" id="priority" name="priority">
-                        <?php foreach (['Standard Priority', 'Information', 'High Priority', 'Urgent'] as $priority): ?>
-                            <option value="<?= e($priority) ?>"<?= ($values['priority'] ?? '') === $priority ? ' selected' : '' ?>><?= e($priority) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="field">
-                <label for="summary">Short summary</label>
-                <textarea class="input" id="summary" name="summary" rows="2" maxlength="1000" placeholder="Shown in the announcement list and notification preview."><?= e($values['summary'] ?? '') ?></textarea>
-                <?php if ($errorFor('summary')): ?><div class="form-error"><?= e($errorFor('summary')) ?></div><?php endif; ?>
-            </div>
-            <div class="field">
-                <label for="body">Full announcement <span class="req">*</span></label>
-                <textarea class="input input--rich" id="body" name="body" rows="14" required><?= e($values['body'] ?? '') ?></textarea>
-                <div class="help-text">Basic HTML is supported: paragraphs, headings, bold, lists and links. Scripts and event attributes are removed on save.</div>
-                <?php if ($errorFor('body')): ?><div class="form-error"><?= e($errorFor('body')) ?></div><?php endif; ?>
-            </div>
-        </div>
-    </section>
-
-    <section class="form-section">
-        <div class="section-title"><?= App\Support\Icons::render('calendar', 14) ?> Publishing</div>
-        <div class="form-grid form-grid--2">
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             <div class="field">
                 <label for="status">Status</label>
                 <select class="input" id="status" name="status">
@@ -211,39 +149,12 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
                 <input class="input<?= $invalid('author') ?>" id="author" name="author" value="<?= e($values['author'] ?? 'OSAS Administration') ?>" maxlength="150">
                 <?php if ($errorFor('author')): ?><div class="form-error"><?= e($errorFor('author')) ?></div><?php endif; ?>
             </div>
-<<<<<<< HEAD
         </div>
     </section>
 
     <div class="form-actions form-actions--announcement">
         <a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : url('/admin/announcements') ?>">Cancel</a>
         <button class="btn btn--outline" type="submit" name="save_action" value="draft">Add to Drafts</button>
-        <button class="btn btn--primary" type="submit" name="save_action" value="save">Save Changes</button>
-=======
-            <div class="field">
-                <label for="attachment">Attachment</label>
-                <input class="input<?= $invalid('attachment') ?>" id="attachment" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
-                <div class="help-text">Optional PDF, JPG or PNG up to 5 MB. Files are stored outside the public web root.</div>
-                <?php if ($errorFor('attachment')): ?><div class="form-error"><?= e($errorFor('attachment')) ?></div><?php endif; ?>
-            </div>
-        </div>
-
-        <?php if ($attachments !== []): ?>
-            <div class="attachment-list">
-                <?php foreach ($attachments as $attachment): ?>
-                    <div class="attachment-chip">
-                        <?= App\Support\Icons::render('fileText', 14) ?>
-                        <span><?= e($attachment['name'] ?? 'Attachment') ?></span>
-                        <em><?= e($attachment['size'] ?? '') ?></em>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </section>
-
-    <div class="form-actions">
-        <a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : url('/admin/announcements') ?>">Cancel</a>
-        <button class="btn btn--primary" type="submit"><?= $isEdit ? 'Create Announcement' : 'Save Changes' ?></button>
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
+        <button class="btn btn--primary" type="submit" name="save_action" value="save" data-confirm="Save changes to this announcement?">Save Changes</button>
     </div>
 </form>

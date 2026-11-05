@@ -3,9 +3,14 @@
 /** @var int $unread */
 ?><div class="page-head">
     <div><h2 class="page-head__title"><?= e($pageTitle) ?></h2><p class="page-head__sub"><?= e($pageSubtitle) ?></p></div>
-    <?php if ($unread > 0): ?>
-        <form method="POST" action="<?= url('/notifications/read-all') ?>"><?= csrf_field() ?><button class="btn btn--outline" type="submit">Mark All as Read</button></form>
-    <?php endif; ?>
+    <div class="page-head__actions">
+        <?php if (in_array($role, ['Coordinator', 'Administrator'], true)): ?>
+            <a class="btn btn--outline" href="<?= url('/admin/activity') ?>">Open Audit Log</a>
+        <?php endif; ?>
+        <?php if ($unread > 0): ?>
+            <form method="POST" action="<?= url('/notifications/read-all') ?>"><?= csrf_field() ?><button class="btn btn--outline" type="submit">Mark All as Read</button></form>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="card panel-card">

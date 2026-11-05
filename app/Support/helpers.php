@@ -137,7 +137,6 @@ if (!function_exists('format_bytes')) {
     }
 }
 
-<<<<<<< HEAD
 if (!function_exists('video_embed_url')) {
     function video_embed_url(?string $url): ?string
     {
@@ -167,8 +166,6 @@ if (!function_exists('video_embed_url')) {
     }
 }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 if (!function_exists('fmt_date')) {
     function fmt_date(?string $value): string
     {

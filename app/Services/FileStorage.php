@@ -21,7 +21,6 @@ final class FileStorage
         'image/png' => 'png',
     ];
 
-<<<<<<< HEAD
     /** @var array<string, string> */
     public const ORIENTATION_MEDIA = [
         'application/pdf' => 'pdf',
@@ -33,10 +32,6 @@ final class FileStorage
     /**
      * @param array<string, mixed> $file
      * @param array<string, string>|null $allowed
-=======
-    /**
-     * @param array<string, mixed> $file
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
      * @return array<string, mixed>
      */
     public static function storeUpload(
@@ -45,11 +40,8 @@ final class FileStorage
         string $entityType,
         string $entityId,
         ?int $ownerId = null,
-<<<<<<< HEAD
         int $maxBytes = self::MAX_BYTES,
         ?array $allowed = null,
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     ): array {
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
 
@@ -62,16 +54,10 @@ final class FileStorage
         }
 
         $size = (int) ($file['size'] ?? 0);
-<<<<<<< HEAD
         $allowed = $allowed ?? self::ALLOWED;
 
         if ($size <= 0 || $size > $maxBytes) {
             throw new RuntimeException('The file is larger than the allowed upload size.');
-=======
-
-        if ($size <= 0 || $size > self::MAX_BYTES) {
-            throw new RuntimeException('The file must be 5 MB or smaller.');
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         }
 
         $temporary = (string) ($file['tmp_name'] ?? '');
@@ -82,19 +68,11 @@ final class FileStorage
 
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($temporary) ?: '';
 
-<<<<<<< HEAD
         if (!isset($allowed[$mime])) {
             throw new RuntimeException('This file type is not accepted.');
         }
 
         $extension = $allowed[$mime];
-=======
-        if (!isset(self::ALLOWED[$mime])) {
-            throw new RuntimeException('Only PDF, JPG and PNG files are accepted.');
-        }
-
-        $extension = self::ALLOWED[$mime];
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $relativeDirectory = trim(str_replace('\\', '/', $directory), '/');
         $absoluteDirectory = BASE_PATH . '/storage/uploads/' . $relativeDirectory;
 

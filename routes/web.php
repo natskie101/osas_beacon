@@ -11,10 +11,7 @@ use App\Http\Controllers\Admin\DocumentRequestController as AdminDocumentRequest
 use App\Http\Controllers\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Admin\LostFoundController as AdminLostFoundController;
 use App\Http\Controllers\Admin\OrientationController as AdminOrientationController;
-<<<<<<< HEAD
 use App\Http\Controllers\Admin\OrientationQuizController as AdminOrientationQuizController;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Http\Controllers\Admin\RegulationController as AdminRegulationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SupportController as AdminSupportController;
@@ -27,16 +24,14 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LegacyRedirectController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Student\AnnouncementController as StudentAnnouncementController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\DocumentRequestController as StudentDocumentRequestController;
 use App\Http\Controllers\Student\EventController as StudentEventController;
 use App\Http\Controllers\Student\LostFoundController as StudentLostFoundController;
 use App\Http\Controllers\Student\OrientationController as StudentOrientationController;
-<<<<<<< HEAD
 use App\Http\Controllers\Student\OrientationQuizController as StudentOrientationQuizController;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Http\Controllers\Student\RegulationController as StudentRegulationController;
 use App\Http\Controllers\Student\SupportController as StudentSupportController;
 use App\Http\Middleware\Authenticate;
@@ -86,6 +81,8 @@ $router->get('/student', [StudentDashboardController::class, 'index'], [Authenti
 $router->get('/student/dashboard', [StudentDashboardController::class, 'index'], [Authenticate::class, 'role:Student']);
 
 /* Notifications */
+$router->get('/profile', [ProfileController::class, 'show'], [Authenticate::class, 'role:Coordinator,Student']);
+$router->put('/profile', [ProfileController::class, 'update'], [Authenticate::class, 'role:Coordinator,Student']);
 $router->get('/notifications', [NotificationController::class, 'index'], [Authenticate::class]);
 $router->post('/notifications/read-all', [NotificationController::class, 'readAll'], [Authenticate::class]);
 $router->post('/notifications/{id}/read', [NotificationController::class, 'read'], [Authenticate::class]);
@@ -120,15 +117,12 @@ $router->get('/admin/orientation/{publicId}/edit', [AdminOrientationController::
 $router->put('/admin/orientation/{publicId}', [AdminOrientationController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/publish', [AdminOrientationController::class, 'publish'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/archive', [AdminOrientationController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-<<<<<<< HEAD
 $router->get('/admin/orientation/{publicId}/media', [AdminOrientationController::class, 'downloadMedia'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'saveSettings'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/quiz/questions', [AdminOrientationQuizController::class, 'storeQuestion'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/quiz/questions/{questionId}/update', [AdminOrientationQuizController::class, 'updateQuestion'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/orientation/{publicId}/quiz/questions/{questionId}/delete', [AdminOrientationQuizController::class, 'deleteQuestion'], [Authenticate::class, 'role:Coordinator']);
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/admin/orientation/{publicId}', [AdminOrientationController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
 
 /* Events */
@@ -136,16 +130,14 @@ $router->get('/admin/events', [AdminEventController::class, 'index'], [Authentic
 $router->get('/admin/events/create', [AdminEventController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/events', [AdminEventController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/events/{publicId}/edit', [AdminEventController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
+$router->get('/admin/events/{publicId}/attachment/{fileId}', [AdminEventController::class, 'downloadAttachment'], [Authenticate::class, 'role:Coordinator']);
 $router->put('/admin/events/{publicId}', [AdminEventController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/events/{publicId}/cancel', [AdminEventController::class, 'cancel'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/events/{publicId}', [AdminEventController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
 
 /* Lost & Found */
 $router->get('/admin/lost-found', [AdminLostFoundController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-<<<<<<< HEAD
 $router->get('/admin/lost-found/export', [AdminLostFoundController::class, 'export'], [Authenticate::class, 'role:Coordinator']);
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/admin/lost-found/create', [AdminLostFoundController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/lost-found', [AdminLostFoundController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/lost-found/{publicId}/edit', [AdminLostFoundController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
@@ -154,10 +146,7 @@ $router->post('/admin/lost-found/{publicId}/claims/{claimId}/approve', [AdminLos
 $router->post('/admin/lost-found/{publicId}/claims/{claimId}/reject', [AdminLostFoundController::class, 'rejectClaim'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/lost-found/{publicId}/returned', [AdminLostFoundController::class, 'markReturned'], [Authenticate::class, 'role:Coordinator']);
 $router->post('/admin/lost-found/{publicId}/archive', [AdminLostFoundController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-<<<<<<< HEAD
 $router->get('/admin/lost-found/{publicId}/image', [AdminLostFoundController::class, 'downloadImage'], [Authenticate::class, 'role:Coordinator']);
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/admin/lost-found/{publicId}', [AdminLostFoundController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
 
 /* Document requests */
@@ -173,19 +162,13 @@ $router->get('/admin/support/{publicId}', [AdminSupportController::class, 'show'
 
 /* Analytics, reports, activity and broadcasts */
 $router->get('/admin/analytics', [AnalyticsController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-<<<<<<< HEAD
+$router->post('/admin/analytics/notify', [AnalyticsController::class, 'notifyAllNonCompliant'], [Authenticate::class, 'role:Coordinator']);
+$router->post('/admin/analytics/{publicId}/notify', [AnalyticsController::class, 'notifyStudent'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/analytics/{publicId}', [AnalyticsController::class, 'showStudent'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/reports', [ReportController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/reports/orientation/{publicId}/csv', [ReportController::class, 'moduleCsv'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/reports/orientation/{publicId}/excel', [ReportController::class, 'moduleExcel'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/reports/orientation/{publicId}', [ReportController::class, 'moduleReport'], [Authenticate::class, 'role:Coordinator']);
-=======
-$router->get('/admin/reports', [ReportController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/reports/generate', [ReportController::class, 'generate'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/{publicId}/csv', [ReportController::class, 'csv'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/{publicId}/print', [ReportController::class, 'print'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/{publicId}', [ReportController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/admin/activity', [ActivityController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
 $router->get('/admin/broadcasts', [BroadcastController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
 $router->get('/admin/broadcasts/create', [BroadcastController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
@@ -201,7 +184,6 @@ $router->get('/student/announcements/{publicId}/attachment/{fileId}', [StudentAn
 $router->get('/student/announcements/{publicId}', [StudentAnnouncementController::class, 'show'], [Authenticate::class, 'role:Student']);
 
 $router->get('/student/rules', [StudentRegulationController::class, 'index'], [Authenticate::class, 'role:Student']);
-<<<<<<< HEAD
 $router->post('/student/rules/{publicId}/acknowledge', [StudentRegulationController::class, 'acknowledge'], [Authenticate::class, 'role:Student']);
 $router->get('/student/rules/{publicId}', [StudentRegulationController::class, 'show'], [Authenticate::class, 'role:Student']);
 
@@ -211,24 +193,17 @@ $router->get('/student/orientation/{publicId}/quiz', [StudentOrientationQuizCont
 $router->post('/student/orientation/{publicId}/quiz/start', [StudentOrientationQuizController::class, 'start'], [Authenticate::class, 'role:Student']);
 $router->post('/student/orientation/{publicId}/quiz/submit', [StudentOrientationQuizController::class, 'submit'], [Authenticate::class, 'role:Student']);
 $router->get('/student/orientation/{publicId}/quiz/result', [StudentOrientationQuizController::class, 'result'], [Authenticate::class, 'role:Student']);
-=======
-$router->get('/student/rules/{publicId}', [StudentRegulationController::class, 'show'], [Authenticate::class, 'role:Student']);
-
-$router->get('/student/orientation', [StudentOrientationController::class, 'index'], [Authenticate::class, 'role:Student']);
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/student/orientation/{publicId}', [StudentOrientationController::class, 'show'], [Authenticate::class, 'role:Student']);
 $router->post('/student/orientation/{publicId}/complete', [StudentOrientationController::class, 'complete'], [Authenticate::class, 'role:Student']);
 
 $router->get('/student/events', [StudentEventController::class, 'index'], [Authenticate::class, 'role:Student']);
+$router->get('/student/events/{publicId}/attachment/{fileId}', [StudentEventController::class, 'downloadAttachment'], [Authenticate::class, 'role:Student']);
 $router->get('/student/events/{publicId}', [StudentEventController::class, 'show'], [Authenticate::class, 'role:Student']);
 
 $router->get('/student/lost-found', [StudentLostFoundController::class, 'index'], [Authenticate::class, 'role:Student']);
 $router->get('/student/lost-found/report', [StudentLostFoundController::class, 'report'], [Authenticate::class, 'role:Student']);
 $router->post('/student/lost-found/report', [StudentLostFoundController::class, 'storeReport'], [Authenticate::class, 'role:Student']);
-<<<<<<< HEAD
 $router->get('/student/lost-found/{publicId}/image', [StudentLostFoundController::class, 'downloadImage'], [Authenticate::class, 'role:Student']);
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 $router->get('/student/lost-found/{publicId}', [StudentLostFoundController::class, 'show'], [Authenticate::class, 'role:Student']);
 $router->post('/student/lost-found/{publicId}/claim', [StudentLostFoundController::class, 'claim'], [Authenticate::class, 'role:Student']);
 

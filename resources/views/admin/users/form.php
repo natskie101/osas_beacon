@@ -196,6 +196,6 @@ $action = $isEdit ? url('/admin/users/' . $target['public_id']) : url('/admin/us
 
     <div class="form-actions">
         <a href="<?= $isEdit ? url('/admin/users/' . $target['public_id']) : url('/admin/users') ?>" class="btn btn--ghost">Cancel</a>
-        <button type="submit" class="btn btn--primary"><?= $isEdit ? 'Save Changes' : 'Create Account' ?></button>
+        <button type="submit" class="btn btn--primary" <?= $isEdit ? 'data-confirm="Save changes to this account?"' : '' ?>><?= $isEdit ? 'Save Changes' : 'Create Account' ?></button>
     </div>
 </form>

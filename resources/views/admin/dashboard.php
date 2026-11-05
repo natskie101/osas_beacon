@@ -50,7 +50,7 @@
                 <div class="panel-title">Live System Audit Log</div>
                 <p class="panel-card__sub">The latest security and account events recorded by the server.</p>
             </div>
-            <?php if ($isCoordinator): ?>
+            <?php if (in_array($user['role'] ?? '', ['Coordinator', 'Administrator'], true)): ?>
                 <a href="<?= url('/admin/activity') ?>" class="link">View full log</a>
             <?php endif; ?>
         </div>

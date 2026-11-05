@@ -17,13 +17,13 @@ return [
 
     'programs' => [
         'BS Information Technology',
-        'BS Computer Science',
+        'BS Criminology',
         'BS Business Administration',
-        'BS Accountancy',
+        'BS Hospitality Management',
         'BS Education',
-        'BS Civil Engineering',
-        'BS Nursing',
-        'AB Communication',
+        'BS Tourism Management',
+        'BS Midwifery',
+        'AB Real Estate Management',
     ],
 
     'year_levels' => ['First Year', 'Second Year', 'Third Year', 'Fourth Year'],

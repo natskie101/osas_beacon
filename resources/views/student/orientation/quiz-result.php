@@ -24,7 +24,7 @@ foreach ($questions as $question) {
             <span class="or-code"><?= e($module['public_id']) ?></span>
             <span class="or-quiz__tag">ASSESSMENT RESULT</span>
         </div>
-        <span class="or-badge <?= $passed ? 'or-badge--mandatory' : 'or-badge--failed' ?>"><?= $passed ? 'PASSED' : 'NOT PASSED' ?></span>
+        <span class="or-badge <?= $passed ? 'or-badge--mandatory' : 'or-badge--failed' ?>"><?= $passed ? 'Passed' : 'Not passed' ?></span>
     </div>
 
     <h1 class="or-result__title"><?= e($module['title']) ?></h1>

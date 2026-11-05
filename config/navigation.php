@@ -15,18 +15,18 @@ return [
         ['label' => 'Support & Concerns', 'path' => '/admin/support', 'page' => 'support', 'icon' => 'headset', 'roles' => ['Coordinator', 'Administrator']],
         ['label' => 'User Management', 'path' => '/admin/users', 'page' => 'users', 'icon' => 'users', 'roles' => ['Coordinator', 'Administrator']],
         ['label' => 'Reports', 'path' => '/admin/reports', 'page' => 'reports', 'icon' => 'fileText', 'roles' => ['Coordinator']],
-        ['label' => 'User Activity', 'path' => '/admin/activity', 'page' => 'activity', 'icon' => 'clock', 'roles' => ['Administrator']],
+        ['label' => 'Audit Log', 'path' => '/admin/activity', 'page' => 'activity', 'icon' => 'clock', 'roles' => ['Coordinator', 'Administrator']],
     ],
 
     'student' => [
         ['label' => 'Dashboard', 'path' => '/student/dashboard', 'page' => 'dashboard', 'icon' => 'dashboard'],
-        ['label' => 'Rules and Regulations', 'path' => '/student/rules', 'page' => 'rules', 'icon' => 'scale'],
-        ['label' => 'Orientation', 'path' => '/student/orientation', 'page' => 'orientation', 'icon' => 'graduation'],
         ['label' => 'Announcements', 'path' => '/student/announcements', 'page' => 'announcements', 'icon' => 'megaphone'],
+        ['label' => 'Rules and Regulations', 'path' => '/student/rules', 'page' => 'rules', 'icon' => 'scale'],
+        ['label' => 'Orientations', 'path' => '/student/orientation', 'page' => 'orientation', 'icon' => 'graduation'],
         ['label' => 'Events and Activities', 'path' => '/student/events', 'page' => 'events', 'icon' => 'calendar'],
         ['label' => 'Lost and Found', 'path' => '/student/lost-found', 'page' => 'lost-found', 'icon' => 'search'],
         ['label' => 'Document Requests', 'path' => '/student/document-requests', 'page' => 'document-requests', 'icon' => 'printer'],
-        ['label' => 'Feedback and Report', 'path' => '/student/support', 'page' => 'support', 'icon' => 'headset'],
+        ['label' => 'Feedback and Concerns', 'path' => '/student/support', 'page' => 'support', 'icon' => 'headset'],
     ],
 
     'meta' => [
@@ -42,7 +42,7 @@ return [
             'support' => ['title' => 'Support & Concerns', 'subtitle' => 'Manage student inquiries, complaints, and feedback, and monitor the OSAS service response performance.'],
             'users' => ['title' => 'User Account & Access Management', 'subtitle' => 'Manage portal access and system roles for all students and staff.'],
             'reports' => ['title' => 'Reports', 'subtitle' => 'Generate and export official reports for portal activity, compliance, and support operations.'],
-            'activity' => ['title' => 'User Activity & Tracking', 'subtitle' => 'Review sign-in history, support activity and account changes for every portal user.'],
+            'activity' => ['title' => 'Audit Log', 'subtitle' => 'Review server-recorded account, content and support actions.'],
             'broadcasts' => ['title' => 'Broadcasts', 'subtitle' => 'Compose and deliver portal notifications to targeted student audiences.'],
         ],
         'student' => [

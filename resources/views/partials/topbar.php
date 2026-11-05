@@ -31,6 +31,9 @@ $unreadNotifications = App\Models\Notification::unreadCount((int) ($user['id'] ?
                     </div>
                 </div>
                 <div class="account__mail"><?= e($user['email'] ?? '') ?></div>
+                <?php if (in_array($role, ['Coordinator', 'Student'], true)): ?>
+                    <a class="account__profile-link" href="<?= url('/profile') ?>">My Profile</a>
+                <?php endif; ?>
                 <form method="POST" action="<?= url('/logout') ?>" class="account__form" data-confirm="Sign out of the portal?">
                     <?= csrf_field() ?>
                     <button type="submit" class="btn btn--primary btn--block">

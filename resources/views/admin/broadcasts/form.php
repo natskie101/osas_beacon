@@ -29,5 +29,5 @@ $action = $isEdit ? url('/admin/broadcasts/' . $broadcast['public_id']) : url('/
             <div class="field"><label for="scheduled_at">Scheduled for</label><input class="input" id="scheduled_at" name="scheduled_at" type="datetime-local" value="<?= e(datetime_input($values['scheduled_at'] ?? '')) ?>"></div>
         </div>
     </section>
-    <div class="form-actions"><a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/broadcasts/' . $broadcast['public_id']) : url('/admin/broadcasts') ?>">Cancel</a><button class="btn btn--primary" type="submit"><?= $isEdit ? 'Save Broadcast' : 'Save Broadcast' ?></button></div>
+    <div class="form-actions"><a class="btn btn--ghost" href="<?= $isEdit ? url('/admin/broadcasts/' . $broadcast['public_id']) : url('/admin/broadcasts') ?>">Cancel</a><button class="btn btn--primary" type="submit" <?= $isEdit ? 'data-confirm="Save changes to this broadcast?"' : '' ?>>Save Broadcast</button></div>
 </form>

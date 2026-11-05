@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\File;
+use App\Services\FileStorage;
 use App\Models\Tracking;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
@@ -18,14 +20,40 @@ final class EventController extends Controller
     {
         $actor = Auth::user();
         $events = Event::forStudent();
+        $eventCounts = ['all' => count($events), 'upcoming' => 0, 'ongoing' => 0, 'completed' => 0];
+
+        foreach ($events as $event) {
+            $countKey = match ($event['status']) {
+                'Scheduled' => 'upcoming',
+                'Ongoing' => 'ongoing',
+                'Completed' => 'completed',
+                default => null,
+            };
+
+            if ($countKey !== null) {
+                $eventCounts[$countKey]++;
+            }
+        }
+
         $search = mb_strtolower($request->string('search'));
+        $status = $request->string('status');
+        $status = in_array($status, ['Upcoming', 'Ongoing', 'Completed'], true) ? $status : '';
 
         if ($search !== '') {
             $events = array_values(array_filter(
                 $events,
                 static fn (array $item): bool => str_contains(mb_strtolower((string) $item['title']), $search)
                     || str_contains(mb_strtolower((string) $item['description']), $search)
-                    || str_contains(mb_strtolower((string) $item['venue']), $search),
+                    || str_contains(mb_strtolower((string) $item['venue']), $search)
+                    || str_contains(mb_strtolower((string) $item['public_id']), $search),
+            ));
+        }
+
+        if ($status !== '') {
+            $eventStatus = $status === 'Upcoming' ? 'Scheduled' : $status;
+            $events = array_values(array_filter(
+                $events,
+                static fn (array $item): bool => $item['status'] === $eventStatus,
             ));
         }
 
@@ -37,7 +65,8 @@ final class EventController extends Controller
             'user' => $actor,
             'role' => $actor['role'],
             'events' => $events,
-            'filters' => ['search' => $request->string('search')],
+            'eventCounts' => $eventCounts,
+            'filters' => ['search' => $request->string('search'), 'status' => $status],
         ]);
     }
 
@@ -62,5 +91,26 @@ final class EventController extends Controller
             'event' => $event,
             'attachments' => json_items($event['attachments'] ?? null),
         ]);
+    }
+
+    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    {
+        $event = Event::findVisible($publicId);
+        $file = File::find((int) $fileId);
+
+        if ($event === null || $file === null || $file['entity_type'] !== 'event_attachment' || $file['entity_id'] !== $event['public_id']) {
+            throw new NotFoundHttpException('The requested event attachment could not be found.');
+        }
+
+        $attached = array_filter(
+            json_items($event['attachments'] ?? null),
+            static fn (array $attachment): bool => (int) ($attachment['file_id'] ?? 0) === (int) $fileId,
+        ) !== [];
+
+        if (!$attached) {
+            throw new NotFoundHttpException('The requested event attachment could not be found.');
+        }
+
+        return FileStorage::download($file);
     }
 }

@@ -112,7 +112,7 @@ final class Session
 
     public static function flashOld(array $input): void
     {
-        unset($input['password'], $input['password_confirmation'], $input['_token']);
+        unset($input['password'], $input['password_confirmation'], $input['current_password'], $input['_token']);
         self::flash('old', $input);
     }
 

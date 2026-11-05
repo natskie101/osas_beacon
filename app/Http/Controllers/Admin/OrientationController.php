@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-<<<<<<< HEAD
 use App\Models\File;
 use App\Models\OrientationModule;
 use App\Services\AuditLogger;
@@ -20,16 +19,6 @@ use App\Support\Request;
 use App\Support\Response;
 use App\Support\Session;
 use RuntimeException;
-=======
-use App\Models\OrientationModule;
-use App\Services\AuditLogger;
-use App\Support\Auth;
-use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Html;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
 final class OrientationController extends Controller
 {
@@ -74,7 +63,6 @@ final class OrientationController extends Controller
     {
         $actor = Auth::user();
         $data = $this->validated($request);
-<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
@@ -91,16 +79,12 @@ final class OrientationController extends Controller
             $data['media_file_id'] = $media['file_id'];
         }
 
-=======
-        $data['body'] = Html::clean((string) $data['body']);
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $objectives = $this->objectives($request->string('objectives'));
         $data['objectives'] = $objectives === null ? null : json_encode($objectives, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $data['created_by'] = (int) $actor['id'];
         $id = OrientationModule::create($data);
         $module = OrientationModule::find($id);
 
-<<<<<<< HEAD
         if ($media !== null) {
             DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$module['public_id'], $media['file_id']]);
         }
@@ -118,8 +102,6 @@ final class OrientationController extends Controller
             }
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         AuditLogger::log(
             'orientation.created',
             'Orientation Module Created',
@@ -136,11 +118,8 @@ final class OrientationController extends Controller
     {
         $actor = Auth::user();
         $module = $this->find($publicId);
-<<<<<<< HEAD
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $quizQuestions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
         return $this->page('layouts.app', 'admin/orientation/show', [
             'title' => $module['title'],
@@ -151,12 +130,9 @@ final class OrientationController extends Controller
             'role' => $actor['role'],
             'module' => $module,
             'objectives' => json_items($module['objectives'] ?? null),
-<<<<<<< HEAD
             'mediaFile' => !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
             'quiz' => $quiz,
             'quizQuestionCount' => count($quizQuestions),
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'audit' => AuditLog::recent(20),
         ]);
     }
@@ -170,7 +146,6 @@ final class OrientationController extends Controller
     {
         $module = $this->find($publicId);
         $data = $this->validated($request);
-<<<<<<< HEAD
 
         if ($request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
@@ -190,15 +165,11 @@ final class OrientationController extends Controller
             }
         }
 
-=======
-        $data['body'] = Html::clean((string) $data['body']);
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $objectives = $this->objectives($request->string('objectives'));
         $data['objectives'] = $objectives === null ? null : json_encode($objectives, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         OrientationModule::update((int) $module['id'], $data);
         $updated = OrientationModule::find((int) $module['id']) ?? $module;
 
-<<<<<<< HEAD
         if ($media !== null) {
             DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $media['file_id']]);
 
@@ -207,8 +178,6 @@ final class OrientationController extends Controller
             }
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         AuditLogger::log(
             'orientation.updated',
             'Orientation Module Updated',
@@ -241,7 +210,6 @@ final class OrientationController extends Controller
         return Response::redirect(url('/admin/orientation/' . $module['public_id']));
     }
 
-<<<<<<< HEAD
     public function downloadMedia(Request $request, string $publicId): Response
     {
         $module = $this->find($publicId);
@@ -406,8 +374,6 @@ final class OrientationController extends Controller
         ];
     }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $module */
     private function form(array $actor, ?array $module): Response
     {
@@ -416,30 +382,21 @@ final class OrientationController extends Controller
         $values = $isEdit ? array_merge($module, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
-<<<<<<< HEAD
             'content_type' => 'File',
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'status' => 'Draft',
             'audience' => 'Incoming Freshmen',
             'version' => 'v1.0',
             'duration_minutes' => 15,
-<<<<<<< HEAD
             'verification_method' => 'Quiz Assessment',
             'passing_rate' => 80,
             'compliance_deadline' => '',
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'mandatory' => 1,
             'description' => '',
             'objectives' => '',
             'body' => '<p></p>',
             'department' => 'Office of Student Affairs and Services',
             'attachments_count' => 0,
-<<<<<<< HEAD
             'video_url' => '',
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ], is_array($old) ? $old : []);
 
         if ($isEdit) {
@@ -458,10 +415,7 @@ final class OrientationController extends Controller
             'module' => $module,
             'values' => $values,
             'errors' => Session::errors(),
-<<<<<<< HEAD
             'mediaFile' => $isEdit && !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ]);
     }
 
@@ -471,15 +425,11 @@ final class OrientationController extends Controller
         $data = $this->validate($request, [
             'title' => 'required|string|max:200',
             'category' => 'required|string|max:120',
-<<<<<<< HEAD
             'content_type' => 'required|in:File,Link,Video Presentation,Document / PDF,Slide Deck,Web URL / Embed',
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'status' => 'required|in:Draft,Published,Archived',
             'audience' => 'required|string|max:100',
             'version' => 'required|string|max:20',
             'duration_minutes' => 'required|integer|min:1|max:600',
-<<<<<<< HEAD
             'verification_method' => 'required|in:Quiz Assessment,Digital Acknowledgement',
             'compliance_deadline' => 'nullable|date',
             'mandatory' => 'nullable|boolean',
@@ -492,15 +442,6 @@ final class OrientationController extends Controller
         $data['compliance_deadline'] = !empty($data['compliance_deadline'])
             ? date('Y-m-d', strtotime((string) $data['compliance_deadline']))
             : null;
-=======
-            'mandatory' => 'nullable|boolean',
-            'description' => 'nullable|string|max:1000',
-            'body' => 'required|string',
-            'department' => 'nullable|string|max:150',
-            'attachments_count' => 'nullable|integer|min:0|max:100',
-        ]);
-        $data['mandatory'] = !empty($data['mandatory']) ? 1 : 0;
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $data['attachments_count'] = (int) ($data['attachments_count'] ?? 0);
 
         return $data;

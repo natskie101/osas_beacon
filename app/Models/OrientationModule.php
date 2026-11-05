@@ -11,16 +11,10 @@ final class OrientationModule extends BaseModel
     protected static string $table = 'orientation_modules';
     protected static string $prefix = 'ORIENT';
     protected static array $fillable = [
-<<<<<<< HEAD
         'title', 'category', 'content_type', 'status', 'audience', 'version', 'duration_minutes',
         'verification_method', 'passing_rate', 'compliance_deadline', 'mandatory',
         'learners', 'completions', 'completion_rate', 'description', 'objectives', 'body',
         'department', 'attachments_count', 'media_file_id', 'video_url', 'created_by',
-=======
-        'title', 'category', 'status', 'audience', 'version', 'duration_minutes', 'mandatory',
-        'learners', 'completions', 'completion_rate', 'description', 'objectives', 'body',
-        'department', 'attachments_count', 'created_by',
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     ];
     protected static array $searchable = ['public_id', 'title', 'description', 'category', 'body'];
 

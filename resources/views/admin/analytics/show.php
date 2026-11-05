@@ -15,6 +15,13 @@ $statusTone = match ($trackingStatus) {
     default => 'badge--high',
 };
 $outstanding = array_values(array_filter($modules, static fn (array $module): bool => $module['status'] !== 'Completed'));
+$notifyMessage = sprintf(
+    'Hello %s, you have completed %d of %d mandatory orientation modules (%s%%). Please sign in to your student portal and continue with your remaining modules. If you have already completed them, please disregard this reminder. Contact OSAS if you need assistance.',
+    $fullName,
+    $completed,
+    $total,
+    number_format($percent, 0),
+);
 ?>
 <div class="page-head">
     <div>
@@ -23,6 +30,7 @@ $outstanding = array_values(array_filter($modules, static fn (array $module): bo
         <p class="page-head__sub"><?= e($fullName) ?> &middot; <?= e($student['student_id'] ?: $student['public_id']) ?></p>
     </div>
     <div class="page-head__actions">
+        <?php if ($trackingStatus !== 'Compliant'): ?><button class="btn btn--outline" type="button" data-notify-open data-notify-url="<?= e(url('/admin/analytics/' . $student['public_id'] . '/notify')) ?>" data-notify-name="<?= e($fullName) ?>" data-notify-message="<?= e($notifyMessage) ?>" data-notify-return="tracking">Notify Student</button><?php endif; ?>
         <a class="editor-close" href="<?= url('/admin/analytics') ?>" aria-label="Close">&times;</a>
     </div>
 </div>
@@ -129,3 +137,5 @@ $outstanding = array_values(array_filter($modules, static fn (array $module): bo
     <button type="button" class="btn btn--outline" onclick="window.print()">Print Student Summary</button>
     <a class="btn btn--primary" href="<?= url('/admin/analytics') ?>">Close Details</a>
 </div>
+
+<?= App\Support\View::render('admin/analytics/notify-modal') ?>

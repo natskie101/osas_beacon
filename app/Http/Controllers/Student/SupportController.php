@@ -20,6 +20,30 @@ final class SupportController extends Controller
     public function index(Request $request): Response
     {
         $actor = Auth::user();
+        $tickets = SupportTicket::forStudent((int) $actor['id']);
+        $counts = $this->counts($tickets);
+        $search = mb_strtolower($request->string('search'));
+        $status = $request->string('status');
+        $status = in_array($status, ['Open', 'In Progress', 'Resolved'], true) ? $status : '';
+
+        if ($search !== '') {
+            $tickets = array_values(array_filter(
+                $tickets,
+                static fn (array $ticket): bool => str_contains(mb_strtolower((string) $ticket['public_id']), $search)
+                    || str_contains(mb_strtolower((string) $ticket['subject']), $search)
+                    || str_contains(mb_strtolower((string) $ticket['description']), $search)
+                    || str_contains(mb_strtolower((string) $ticket['category']), $search),
+            ));
+        }
+
+        if ($status !== '') {
+            $tickets = array_values(array_filter(
+                $tickets,
+                static fn (array $ticket): bool => $status === 'Resolved'
+                    ? in_array($ticket['status'], ['Resolved', 'Closed'], true)
+                    : $ticket['status'] === $status,
+            ));
+        }
 
         return $this->page('layouts.app', 'student/support/index', [
             'title' => 'Feedback and Report',
@@ -28,8 +52,9 @@ final class SupportController extends Controller
             'pageKey' => 'support',
             'user' => $actor,
             'role' => $actor['role'],
-            'tickets' => SupportTicket::forStudent((int) $actor['id']),
-            'counts' => $this->counts(SupportTicket::forStudent((int) $actor['id'])),
+            'tickets' => $tickets,
+            'counts' => $counts,
+            'filters' => ['search' => $request->string('search'), 'status' => $status],
         ]);
     }
 
@@ -190,7 +215,7 @@ final class SupportController extends Controller
                 $result['open']++;
             } elseif ($ticket['status'] === 'In Progress') {
                 $result['in_progress']++;
-            } elseif ($ticket['status'] === 'Resolved') {
+            } elseif (in_array($ticket['status'], ['Resolved', 'Closed'], true)) {
                 $result['resolved']++;
             }
         }

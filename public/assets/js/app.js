@@ -43,7 +43,6 @@
       });
     });
 
-<<<<<<< HEAD
     /* Filter bars submit automatically as the user searches or changes filters. */
     document.querySelectorAll("form.filter-bar").forEach(function (form) {
       var timer = null;
@@ -73,6 +72,24 @@
 
       form.querySelectorAll("select").forEach(function (control) {
         control.addEventListener("change", submitNow);
+      });
+    });
+
+    /* Show the selected filename in custom upload areas. */
+    document.querySelectorAll(".upload-drop__input").forEach(function (input) {
+      input.addEventListener("change", function () {
+        var label = input.labels && input.labels.length ? input.labels[0] : null;
+        var filename = label ? label.querySelector("[data-upload-filename]") : null;
+        var prompts = label ? label.querySelectorAll("[data-upload-prompt]") : [];
+        var file = input.files && input.files.length ? input.files[0] : null;
+
+        if (!filename) return;
+
+        filename.textContent = file ? file.name : "";
+        filename.hidden = !file;
+        prompts.forEach(function (prompt) {
+          prompt.hidden = Boolean(file);
+        });
       });
     });
 
@@ -250,17 +267,153 @@
       });
     });
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
-    /* Destructive/session actions ask once before submitting */
-    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+    /* Confirm important actions in a portal-styled modal instead of a browser prompt. */
+    var confirmDialog = document.createElement("dialog");
+    confirmDialog.className = "app-confirm";
+    confirmDialog.setAttribute("aria-labelledby", "app-confirm-title");
+
+    var confirmCard = document.createElement("div");
+    confirmCard.className = "app-confirm__card";
+    var confirmIcon = document.createElement("span");
+    confirmIcon.className = "app-confirm__icon";
+    confirmIcon.setAttribute("aria-hidden", "true");
+    confirmIcon.textContent = "!";
+    var confirmTitle = document.createElement("h2");
+    confirmTitle.className = "app-confirm__title";
+    confirmTitle.id = "app-confirm-title";
+    confirmTitle.textContent = "Please confirm";
+    var confirmMessage = document.createElement("p");
+    confirmMessage.className = "app-confirm__message";
+    var confirmActions = document.createElement("div");
+    confirmActions.className = "app-confirm__actions";
+    var confirmCancel = document.createElement("button");
+    confirmCancel.className = "btn btn--ghost";
+    confirmCancel.type = "button";
+    confirmCancel.textContent = "Cancel";
+    var confirmAccept = document.createElement("button");
+    confirmAccept.className = "btn btn--primary";
+    confirmAccept.type = "button";
+    confirmAccept.textContent = "Confirm";
+
+    confirmActions.appendChild(confirmCancel);
+    confirmActions.appendChild(confirmAccept);
+    confirmCard.appendChild(confirmIcon);
+    confirmCard.appendChild(confirmTitle);
+    confirmCard.appendChild(confirmMessage);
+    confirmCard.appendChild(confirmActions);
+    confirmDialog.appendChild(confirmCard);
+    document.body.appendChild(confirmDialog);
+
+    var pendingConfirmation = null;
+    document.querySelectorAll("form[data-confirm], form button[data-confirm], form input[data-confirm]").forEach(function (element) {
+      var form = element.tagName === "FORM" ? element : element.form;
+      if (!form || form.dataset.confirmHandler) return;
+      form.dataset.confirmHandler = "true";
+
       form.addEventListener("submit", function (event) {
-        var message = form.getAttribute("data-confirm") || "Continue?";
-        if (!window.confirm(message)) {
-          event.preventDefault();
+        if (form.dataset.confirmApproved === "true") {
+          delete form.dataset.confirmApproved;
+          return;
         }
+
+        var submitter = event.submitter || null;
+        var message = (submitter && submitter.getAttribute("data-confirm")) || form.getAttribute("data-confirm");
+        if (!message) return;
+
+        event.preventDefault();
+        pendingConfirmation = { form: form, submitter: submitter };
+        confirmMessage.textContent = message;
+        confirmTitle.textContent = submitter && submitter.getAttribute("data-confirm-title")
+          ? submitter.getAttribute("data-confirm-title")
+          : "Please confirm";
+        var actionLabel = submitter ? submitter.textContent.trim() : "";
+        confirmAccept.textContent = actionLabel && actionLabel.length <= 24 ? actionLabel : "Confirm";
+        confirmAccept.classList.toggle("btn--danger", /delete|remove|deactivate/i.test(message));
+        confirmAccept.classList.toggle("btn--primary", !/delete|remove|deactivate/i.test(message));
+
+        if (!confirmDialog.open) confirmDialog.showModal();
+        confirmCancel.focus();
       });
     });
+
+    confirmCancel.addEventListener("click", function () {
+      pendingConfirmation = null;
+      confirmDialog.close();
+    });
+
+    confirmDialog.addEventListener("click", function (event) {
+      if (event.target === confirmDialog) {
+        pendingConfirmation = null;
+        confirmDialog.close();
+      }
+    });
+
+    confirmAccept.addEventListener("click", function () {
+      var confirmation = pendingConfirmation;
+      pendingConfirmation = null;
+      confirmDialog.close();
+
+      if (!confirmation || !confirmation.form.isConnected) return;
+      confirmation.form.dataset.confirmApproved = "true";
+      if (confirmation.submitter && confirmation.submitter.form === confirmation.form) {
+        confirmation.form.requestSubmit(confirmation.submitter);
+      } else {
+        confirmation.form.requestSubmit();
+      }
+      delete confirmation.form.dataset.confirmApproved;
+    });
+
+    confirmDialog.addEventListener("close", function () {
+      pendingConfirmation = null;
+    });
+
+    /* Dismiss short-lived status toasts without affecting page layout. */
+    document.querySelectorAll("[data-auto-dismiss-toast]").forEach(function (toast) {
+      var close = toast.querySelector("[data-dismiss-toast]");
+      var timer = window.setTimeout(function () {
+        toast.remove();
+      }, 5000);
+
+      if (close) {
+        close.addEventListener("click", function () {
+          window.clearTimeout(timer);
+          toast.remove();
+        });
+      }
+    });
+
+    /* Send a tailored orientation progress notification from tracking. */
+    var notifyDialog = document.querySelector("[data-orientation-notify-modal]");
+
+    if (notifyDialog) {
+      var notifyForm = notifyDialog.querySelector("form");
+      var notifyMessage = notifyDialog.querySelector("[data-notify-message]");
+      var notifyRecipient = notifyDialog.querySelector("[data-notify-recipient]");
+      var notifyAudience = notifyDialog.querySelector("[data-notify-audience]");
+      var notifyReturn = notifyDialog.querySelector("[data-notify-return]");
+
+      document.querySelectorAll("[data-notify-open]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          if (!notifyForm || !notifyMessage || typeof notifyDialog.showModal !== "function") return;
+
+          notifyForm.action = button.getAttribute("data-notify-url") || "";
+          notifyMessage.value = button.getAttribute("data-notify-message") || "";
+          if (notifyRecipient) notifyRecipient.textContent = button.getAttribute("data-notify-name") || "the student";
+          if (notifyAudience) notifyAudience.textContent = button.getAttribute("data-notify-audience") || "in their student portal";
+          if (notifyReturn) notifyReturn.value = button.getAttribute("data-notify-return") || "list";
+          notifyDialog.showModal();
+          notifyMessage.focus();
+        });
+      });
+
+      notifyDialog.querySelectorAll("[data-notify-close]").forEach(function (button) {
+        button.addEventListener("click", function () { notifyDialog.close(); });
+      });
+
+      notifyDialog.addEventListener("click", function (event) {
+        if (event.target === notifyDialog) notifyDialog.close();
+      });
+    }
 
     /* Close the account menu when clicking outside it */
     document.addEventListener("click", function (event) {

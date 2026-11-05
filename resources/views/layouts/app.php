@@ -30,7 +30,7 @@ $initials = initials($user['first_name'] ?? '', $user['last_name'] ?? '');
     <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
     <link rel="stylesheet" href="<?= asset('css/app-php.css') ?>">
 </head>
-<body data-page="<?= e($pageKey ?? '') ?>">
+<body data-page="<?= e($pageKey ?? '') ?>" data-portal="<?= e($portal) ?>" data-role="<?= e($role) ?>">
 <div class="app">
     <?= App\Support\View::render('partials/sidebar', compact('navItems', 'pageKey', 'portalLabel', 'user', 'initials')) ?>
     <div class="main">

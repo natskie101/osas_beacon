@@ -23,6 +23,8 @@ final class DocumentRequestController extends Controller
         $filters = [
             'search' => $request->string('search'),
             'status' => $request->string('status'),
+            'document_type' => $request->string('document_type'),
+            'delivery_mode' => $request->string('delivery_mode'),
         ];
         $pagination = DocumentRequest::paginate(
             $filters,
@@ -30,6 +32,10 @@ final class DocumentRequestController extends Controller
             10,
             DocumentRequest::statuses(),
             'newest',
+            [
+                'document_type' => 'document_type',
+                'delivery_mode' => 'delivery_mode',
+            ],
         );
 
         return $this->page('layouts.app', 'admin/document-requests/index', [
@@ -43,6 +49,7 @@ final class DocumentRequestController extends Controller
             'pagination' => $pagination,
             'filters' => $filters,
             'counts' => DocumentRequest::counts(),
+            'filterOptions' => DocumentRequest::filterOptions(),
         ]);
     }
 

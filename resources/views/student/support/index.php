@@ -1,49 +1,70 @@
 <?php
 /** @var list<array<string, mixed>> $tickets */
 /** @var array<string, int> $counts */
+/** @var array<string, string> $filters */
+$currentStatus = (string) ($filters['status'] ?? '');
+$statusUrl = static function (string $status) use ($filters): string {
+    $query = array_filter([
+        'search' => $filters['search'] ?? '',
+        'status' => $status,
+    ], static fn (string $value): bool => $value !== '');
+
+    return url('/student/support' . ($query === [] ? '' : '?' . http_build_query($query)));
+};
 ?><div class="page-head">
     <div>
         <h2 class="page-head__title"><?= e($pageTitle) ?></h2>
         <p class="page-head__sub"><?= e($pageSubtitle) ?></p>
     </div>
-    <a class="btn btn--primary" href="<?= url('/student/support/create') ?>"><?= App\Support\Icons::render('plus', 14) ?> Submit a Concern</a>
+    <a class="btn btn--primary" href="<?= url('/student/support/create') ?>"><?= App\Support\Icons::render('plus', 14) ?> Create New Ticket</a>
 </div>
 
-<div class="stats">
-    <div class="stat"><div class="stat__label">My Tickets</div><div class="stat__value"><?= number_format($counts['total']) ?></div><div class="stat__sub">All concerns submitted</div></div>
-    <div class="stat"><div class="stat__label">Open</div><div class="stat__value"><?= number_format($counts['open']) ?></div><div class="stat__sub">Waiting for OSAS</div></div>
-    <div class="stat"><div class="stat__label">In Progress</div><div class="stat__value"><?= number_format($counts['in_progress']) ?></div><div class="stat__sub">Being handled</div></div>
-    <div class="stat"><div class="stat__label">Resolved</div><div class="stat__value"><?= number_format($counts['resolved']) ?></div><div class="stat__sub">Answered concerns</div></div>
-</div>
+<form class="filter-bar support-search" method="GET" action="<?= url('/student/support') ?>">
+    <div class="field">
+        <span class="input-group"><span class="input-group__ico"><?= App\Support\Icons::render('search', 15) ?></span><input class="input" name="search" value="<?= e($filters['search'] ?? '') ?>" placeholder="Search by ticket ID, subject, or keyword..."></span>
+    </div>
+    <?php if ($currentStatus !== ''): ?><input type="hidden" name="status" value="<?= e($currentStatus) ?>"><?php endif; ?>
+</form>
+
+<nav class="support-tabs" aria-label="Filter support tickets by status">
+    <a class="support-tab<?= $currentStatus === '' ? ' support-tab--on' : '' ?>" href="<?= $statusUrl('') ?>"<?= $currentStatus === '' ? ' aria-current="page"' : '' ?>>Support Tickets</a>
+    <a class="support-tab<?= $currentStatus === 'Open' ? ' support-tab--on' : '' ?>" href="<?= $statusUrl('Open') ?>"<?= $currentStatus === 'Open' ? ' aria-current="page"' : '' ?>>Open</a>
+    <a class="support-tab<?= $currentStatus === 'In Progress' ? ' support-tab--on' : '' ?>" href="<?= $statusUrl('In Progress') ?>"<?= $currentStatus === 'In Progress' ? ' aria-current="page"' : '' ?>>In Progress</a>
+    <a class="support-tab<?= $currentStatus === 'Resolved' ? ' support-tab--on' : '' ?>" href="<?= $statusUrl('Resolved') ?>"<?= $currentStatus === 'Resolved' ? ' aria-current="page"' : '' ?>>Resolved</a>
+</nav>
 
 <?php if ($tickets === []): ?>
     <div class="card panel-card">
         <div class="empty-state">
-            <strong>You have not submitted any concerns yet.</strong>
-            <div>Use the support desk whenever you need help from OSAS.</div>
+            <strong><?= ($filters['search'] ?? '') !== '' || $currentStatus !== '' ? 'No tickets match your search or status.' : 'You have not submitted any concerns yet.' ?></strong>
+            <div><?= ($filters['search'] ?? '') !== '' || $currentStatus !== '' ? 'Try another keyword or status filter.' : 'Use the support desk whenever you need help from OSAS.' ?></div>
             <a class="btn btn--primary" href="<?= url('/student/support/create') ?>">Submit a Concern</a>
         </div>
     </div>
 <?php else: ?>
-    <div class="feed-list">
+    <div class="feed-list support-list">
         <?php foreach ($tickets as $ticket): ?>
-            <article class="feed-item">
-                <div class="feed-item__icon avatar avatar--blue"><?= App\Support\Icons::render('headset', 16) ?></div>
+            <article class="feed-item support-item">
                 <div class="feed-item__body">
-                    <div class="feed-item__eyebrow">
-                        <span class="badge <?= e(status_class($ticket['status'])) ?>"><?= e($ticket['status']) ?></span>
-                        <span class="badge badge--info"><?= e($ticket['category']) ?></span>
-                        <span class="feed-item__date"><?= e(time_ago($ticket['submitted_at'])) ?></span>
+                    <div class="support-item__head">
+                        <span class="support-item__code"><?= e($ticket['public_id']) ?></span>
+                        <span class="badge <?= e(status_class($ticket['status'])) ?>"><?= e((string) $ticket['status']) ?></span>
                     </div>
                     <h3 class="feed-item__title"><a href="<?= url('/student/support/' . $ticket['public_id']) ?>"><?= e($ticket['subject']) ?></a></h3>
-                    <p class="feed-item__text"><?= e(App\Support\Html::summary($ticket['description'], 200)) ?></p>
+                    <p class="support-item__category"><?= e($ticket['category']) ?></p>
                     <div class="feed-item__meta">
-                        <span><?= e($ticket['public_id']) ?></span>
-                        <span><?= e($ticket['priority']) ?> priority</span>
-                        <span>Assigned to <?= e($ticket['assigned_to'] ?: 'OSAS Support') ?></span>
+                        <span><?= App\Support\Icons::render('calendar', 12) ?> <?= e(fmt_date($ticket['submitted_at'])) ?></span>
+                        <span><?= e($ticket['student_name']) ?></span>
+                        <?php if ($ticket['rating'] !== null): ?>
+                            <?php $rating = max(1, min(5, (int) $ticket['rating'])); ?>
+                            <span class="support-item__rating" aria-label="Rated <?= $rating ?> out of 5">
+                                <span class="support-item__stars"><?= str_repeat('★', $rating) ?><span><?= str_repeat('★', 5 - $rating) ?></span></span>
+                                <strong><?= $rating ?>/5</strong>
+                            </span>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <a class="btn btn--outline btn--sm" href="<?= url('/student/support/' . $ticket['public_id']) ?>">Open</a>
+                <a class="btn btn--primary btn--sm support-item__action" href="<?= url('/student/support/' . $ticket['public_id']) ?>">View</a>
             </article>
         <?php endforeach; ?>
     </div>

@@ -21,6 +21,7 @@ final class ForgotPasswordController extends Controller
         return $this->page('layouts.auth', 'auth/forgot-password', [
             'title' => 'Reset Portal Password',
             'pageTitle' => 'Reset Portal Password',
+            'authLogoRight' => true,
             'errors' => Session::errors(),
             'status' => Session::getFlash('status'),
             'old' => ['email' => Session::old('email', '')],
@@ -60,7 +61,7 @@ final class ForgotPasswordController extends Controller
             );
         }
 
-        Session::flash('status', 'If that email belongs to a portal account, a reset link has been sent. The link expires in 15 minutes.');
+        Session::flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
 
         return Response::redirect(url('/forgot-password'));
     }

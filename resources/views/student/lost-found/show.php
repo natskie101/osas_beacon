@@ -3,19 +3,12 @@
 /** @var array<string, mixed>|null $myClaim */
 /** @var bool $ownReport */
 /** @var list<array<string, mixed>> $claims */
-<<<<<<< HEAD
 /** @var array<string, mixed>|null $imageFile */
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 /** @var array<string, string> $errors */
 ?><div class="page-head"><div><div class="page-head__eyebrow"><a href="<?= url('/student/lost-found') ?>">Lost and Found</a> / <?= e($item['public_id']) ?></div><h2 class="page-head__title"><?= e($item['title']) ?></h2><p class="page-head__sub"><?= e($item['type']) ?> · <?= e($item['category']) ?> · <?= e($item['status']) ?></p></div><span class="badge <?= e(status_class($item['status'])) ?>"><?= e($item['status']) ?></span></div>
 <div class="detail-grid">
     <div class="detail-grid__main">
-<<<<<<< HEAD
-        <section class="card panel-card"><div class="panel-card__head"><div><div class="panel-title">Item Information</div><p class="panel-card__sub">Posted <?= e(fmt_datetime($item['posted_at'])) ?></p></div></div><p class="content-lede"><?= nl2br(e($item['description'] ?: 'No description provided.')) ?></p><?php if ($imageFile !== null): ?><div class="lf-detail-media"><img src="<?= url('/student/lost-found/' . $item['public_id'] . '/image') ?>" alt="<?= e($item['title']) ?> photo" loading="lazy"></div><?php endif; ?><div class="event-facts"><div><span>Location</span><strong><?= e($item['location']) ?></strong></div><div><span>Date</span><strong><?= e(fmt_datetime($item['date_occurred'])) ?></strong></div><div><span>Custody</span><strong><?= e($item['custody']) ?></strong></div><div><span>Reported by</span><strong><?= e($item['reported_by']) ?></strong></div></div></section>
-=======
-        <section class="card panel-card"><div class="panel-card__head"><div><div class="panel-title">Item Information</div><p class="panel-card__sub">Posted <?= e(fmt_datetime($item['posted_at'])) ?></p></div></div><p class="content-lede"><?= nl2br(e($item['description'] ?: 'No description provided.')) ?></p><div class="event-facts"><div><span>Location</span><strong><?= e($item['location']) ?></strong></div><div><span>Date</span><strong><?= e(fmt_datetime($item['date_occurred'])) ?></strong></div><div><span>Custody</span><strong><?= e($item['custody']) ?></strong></div><div><span>Reported by</span><strong><?= e($item['reported_by']) ?></strong></div></div></section>
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
+        <section class="card panel-card"><div class="panel-card__head"><div><div class="panel-title">Item Information</div><p class="panel-card__sub">Posted <?= e(fmt_datetime($item['posted_at'])) ?></p></div></div><p class="content-lede"><?= nl2br(e($item['description'] ?: 'No description provided.')) ?></p><?php if ($imageFile !== null): ?><div class="lf-detail-media"><img src="<?= url('/student/lost-found/' . $item['public_id'] . '/image') ?>" alt="<?= e($item['title']) ?> photo" loading="lazy"><div class="cell-sub"><?= e($imageFile['original_name'] ?? 'Item photo') ?> · <a class="link" href="<?= url('/student/lost-found/' . $item['public_id'] . '/image') ?>" target="_blank" rel="noopener">Open photo</a></div></div><?php endif; ?><div class="event-facts"><div><span>Location</span><strong><?= e($item['location']) ?></strong></div><div><span>Date</span><strong><?= e(fmt_datetime($item['date_occurred'])) ?></strong></div><div><span>Custody</span><strong><?= e($item['custody']) ?></strong></div></div></section>
         <?php if ($ownReport && $claims !== []): ?>
             <section class="card panel-card"><div class="panel-title">Claims on Your Report</div><div class="claim-list"><?php foreach ($claims as $claim): ?><article class="claim-card"><div class="claim-card__head"><div><strong><?= e($claim['claimant_name']) ?></strong><span><?= e($claim['claimant_email']) ?> · <?= e(fmt_datetime($claim['created_at'])) ?></span></div><span class="badge <?= e(status_class($claim['status'])) ?>"><?= e($claim['status']) ?></span></div><p><?= e($claim['message']) ?></p></article><?php endforeach; ?></div></section>
         <?php elseif ($myClaim): ?>
@@ -34,5 +27,5 @@
             </section>
         <?php endif; ?>
     </div>
-    <aside class="detail-grid__side"><section class="card panel-card"><div class="panel-title">Item Record</div><dl class="detail-list"><div><dt>Reference</dt><dd class="mono"><?= e($item['public_id']) ?></dd></div><div><dt>Type</dt><dd><?= e($item['type']) ?></dd></div><div><dt>Status</dt><dd><span class="badge <?= e(status_class($item['status'])) ?>"><?= e($item['status']) ?></span></dd></div><div><dt>Contact</dt><dd><?= e($item['contact']) ?></dd></div><div><dt>Student ID</dt><dd><?= e($item['student_id'] ?: '—') ?></dd></div></dl></section></aside>
+    <aside class="detail-grid__side"><section class="card panel-card"><div class="panel-title">Item Record</div><dl class="detail-list"><div><dt>Reference</dt><dd class="mono"><?= e($item['public_id']) ?></dd></div><div><dt>Type</dt><dd><?= e($item['type']) ?></dd></div><div><dt>Status</dt><dd><span class="badge <?= e(status_class($item['status'])) ?>"><?= e($item['status']) ?></span></dd></div></dl></section></aside>
 </div>

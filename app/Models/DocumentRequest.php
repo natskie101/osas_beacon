@@ -73,4 +73,26 @@ final class DocumentRequest extends BaseModel
     {
         return ['Submitted', 'Under Review', 'Ready for Pick-up', 'Released', 'Rejected', 'Cancelled'];
     }
+
+    /** @return array{document_types:list<string>,delivery_modes:list<string>} */
+    public static function filterOptions(): array
+    {
+        $documentTypes = DB::select(
+            'SELECT DISTINCT document_type FROM document_requests WHERE document_type <> "" ORDER BY document_type',
+        );
+        $deliveryModes = DB::select(
+            'SELECT DISTINCT delivery_mode FROM document_requests WHERE delivery_mode <> "" ORDER BY delivery_mode',
+        );
+
+        return [
+            'document_types' => array_values(array_map(
+                static fn (array $row): string => (string) $row['document_type'],
+                $documentTypes,
+            )),
+            'delivery_modes' => array_values(array_map(
+                static fn (array $row): string => (string) $row['delivery_mode'],
+                $deliveryModes,
+            )),
+        ];
+    }
 }

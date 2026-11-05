@@ -5,18 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-<<<<<<< HEAD
 use App\Models\File;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Models\OrientationModule;
 use App\Models\OrientationProgress;
 use App\Models\Tracking;
 use App\Services\AuditLogger;
-<<<<<<< HEAD
 use App\Services\FileStorage;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
@@ -32,7 +26,6 @@ final class OrientationController extends Controller
         $modules = OrientationModule::published();
         $progress = OrientationProgress::forUser((int) $actor['id']);
         $summary = OrientationProgress::summary((int) $actor['id'], count($modules));
-<<<<<<< HEAD
         $search = mb_strtolower($request->string('search'));
 
         if ($search !== '') {
@@ -43,8 +36,6 @@ final class OrientationController extends Controller
                     || str_contains(mb_strtolower((string) $module['public_id']), $search),
             ));
         }
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
         return $this->page('layouts.app', 'student/orientation/index', [
             'title' => 'Orientation',
@@ -56,10 +47,7 @@ final class OrientationController extends Controller
             'modules' => $modules,
             'progress' => $progress,
             'summary' => $summary,
-<<<<<<< HEAD
             'filters' => ['search' => $request->string('search')],
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ]);
     }
 
@@ -76,13 +64,10 @@ final class OrientationController extends Controller
         OrientationModule::incrementViews((int) $module['id']);
         Tracking::record((string) $module['title'], 'Orientation', (string) $module['public_id']);
         $progress = OrientationProgress::find((int) $actor['id'], (int) $module['id']);
-<<<<<<< HEAD
         $quiz = \App\Services\OrientationQuizService::findForModule((int) $module['id']);
         $quizAttempts = $quiz !== null ? \App\Services\OrientationQuizService::attempts((int) $quiz['id'], (int) $actor['id']) : [];
         $latestAttempt = $quizAttempts[0] ?? null;
         $quizAvailable = $quiz !== null && $quiz['status'] === 'Published' && $module['verification_method'] === 'Quiz Assessment';
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
         return $this->page('layouts.app', 'student/orientation/show', [
             'title' => $module['title'],
@@ -94,7 +79,6 @@ final class OrientationController extends Controller
             'module' => $module,
             'objectives' => json_items($module['objectives'] ?? null),
             'progress' => $progress,
-<<<<<<< HEAD
             'mediaFile' => !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
             'quiz' => $quizAvailable ? $quiz : null,
             'quizAttempts' => $quizAttempts,
@@ -119,11 +103,6 @@ final class OrientationController extends Controller
         return FileStorage::download($file);
     }
 
-=======
-        ]);
-    }
-
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public function complete(Request $request, string $publicId): Response
     {
         $actor = Auth::user();

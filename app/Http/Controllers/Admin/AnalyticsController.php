@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-<<<<<<< HEAD
 use App\Models\Participation;
+use App\Services\AuditLogger;
+use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-=======
-use App\Models\Tracking;
-use App\Support\Auth;
-use App\Support\DB;
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
+use App\Support\Exceptions\ValidationException;
 use App\Support\Request;
 use App\Support\Response;
+use App\Support\Session;
 
 final class AnalyticsController extends Controller
 {
@@ -23,12 +21,16 @@ final class AnalyticsController extends Controller
     {
         $actor = Auth::user();
         $search = mb_strtolower($request->string('search'));
-<<<<<<< HEAD
         $tab = $request->string('tab', 'all');
         $program = $request->string('program');
 
-        $students = Participation::students();
-        $summary = Participation::summary($students);
+        $allStudents = Participation::students();
+        $students = $allStudents;
+        $summary = Participation::summary($allStudents);
+        $bulkNotifyCount = count(array_filter(
+            $allStudents,
+            static fn (array $student): bool => $student['tracking_status'] !== 'Compliant',
+        ));
 
         if ($search !== '') {
             $students = array_values(array_filter(
@@ -61,49 +63,19 @@ final class AnalyticsController extends Controller
 
         $programs = array_values(array_unique(array_filter(array_map(
             static fn (array $student): string => (string) $student['program'],
-            Participation::students(),
+            $allStudents,
         ))));
         sort($programs);
-=======
-        $type = $request->string('type');
-        $rows = Tracking::all('views DESC, id DESC');
-
-        if ($search !== '') {
-            $rows = array_values(array_filter(
-                $rows,
-                static fn (array $row): bool => str_contains(mb_strtolower((string) $row['title']), $search)
-                    || str_contains(mb_strtolower((string) $row['type']), $search)
-                    || str_contains(mb_strtolower((string) $row['public_id']), $search),
-            ));
-        }
-
-        if ($type !== '') {
-            $rows = array_values(array_filter($rows, static fn (array $row): bool => (string) $row['type'] === $type));
-        }
-
-        $types = array_values(array_filter(array_map(
-            static fn (array $row): string => (string) $row['type'],
-            DB::select('SELECT DISTINCT type FROM tracking WHERE type <> "" ORDER BY type ASC'),
-        )));
-
-        $audience = DB::first(
-            'SELECT COUNT(*) AS accounts,
-                    SUM(role = "Student") AS students,
-                    SUM(status = "Active") AS active,
-                    SUM(status = "Pending") AS pending
-             FROM users',
-        );
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 
         return $this->page('layouts.app', 'admin/analytics/index', [
             'title' => 'Viewing & Tracking',
             'pageTitle' => config('navigation.meta.admin.analytics.title'),
-<<<<<<< HEAD
             'pageSubtitle' => 'Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.',
             'pageKey' => 'analytics',
             'user' => $actor,
             'role' => $actor['role'],
             'students' => $students,
+            'bulkNotifyCount' => $bulkNotifyCount,
             'summary' => $summary,
             'mandatoryTotal' => Participation::mandatoryModuleCount(),
             'programs' => $programs,
@@ -156,17 +128,109 @@ final class AnalyticsController extends Controller
             'total' => $total,
             'hours' => $hours,
             'trackingStatus' => $trackingStatus,
-=======
-            'pageSubtitle' => config('navigation.meta.admin.analytics.subtitle'),
-            'pageKey' => 'analytics',
-            'user' => $actor,
-            'role' => $actor['role'],
-            'rows' => $rows,
-            'totals' => Tracking::totals(),
-            'types' => $types,
-            'filters' => ['search' => $request->string('search'), 'type' => $type],
-            'audience' => array_map('intval', $audience ?? []),
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         ]);
+    }
+
+    public function notifyStudent(Request $request, string $publicId): Response
+    {
+        $student = Participation::findStudent($publicId);
+
+        if ($student === null) {
+            throw new NotFoundHttpException('The requested student record could not be found.');
+        }
+
+        $data = $this->validate($request, [
+            'message' => 'required|string|max:1000',
+            'return_to' => 'nullable|in:list,tracking',
+        ]);
+        $message = trim((string) $data['message']);
+
+        if ($message === '') {
+            throw new ValidationException(
+                ['message' => 'Enter a message for the student.'],
+                $request->all(),
+            );
+        }
+
+        NotificationService::send(
+            (int) $student['id'],
+            'Orientation Progress Update',
+            $message,
+            'info',
+            'orientation_progress',
+            (string) $student['public_id'],
+        );
+        AuditLogger::log(
+            'orientation.progress_notified',
+            'Orientation Progress Notification Sent',
+            'An orientation progress update was sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.',
+            [
+                'entity_type' => 'orientation_progress',
+                'entity_id' => (string) $student['public_id'],
+                'target_user_id' => (int) $student['id'],
+                'tone' => 'blue',
+                'icon' => 'send',
+            ],
+        );
+
+        Session::flash('status', 'Orientation progress notification sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.');
+        $destination = ($data['return_to'] ?? 'list') === 'tracking'
+            ? '/admin/analytics/' . $student['public_id']
+            : '/admin/analytics';
+
+        return Response::redirect(url($destination));
+    }
+
+    public function notifyAllNonCompliant(Request $request): Response
+    {
+        $data = $this->validate($request, [
+            'message' => 'required|string|max:1000',
+        ]);
+        $message = trim((string) $data['message']);
+
+        if ($message === '') {
+            throw new ValidationException(
+                ['message' => 'Enter a message for the students.'],
+                $request->all(),
+            );
+        }
+
+        $recipients = array_values(array_filter(
+            Participation::students(),
+            static fn (array $student): bool => $student['tracking_status'] !== 'Compliant',
+        ));
+
+        if ($recipients === []) {
+            Session::flash('status', 'There are no non-compliant students to notify.');
+
+            return Response::redirect(url('/admin/analytics'));
+        }
+
+        foreach ($recipients as $student) {
+            NotificationService::send(
+                (int) $student['id'],
+                'Orientation Progress Update',
+                $message,
+                'info',
+                'orientation_progress',
+                (string) $student['public_id'],
+            );
+        }
+
+        AuditLogger::log(
+            'orientation.progress_bulk_notified',
+            'Bulk Orientation Progress Notifications Sent',
+            'An orientation progress update was sent to ' . \count($recipients) . ' non-compliant students.',
+            [
+                'entity_type' => 'orientation_progress',
+                'entity_id' => 'bulk',
+                'tone' => 'blue',
+                'icon' => 'send',
+            ],
+        );
+
+        Session::flash('status', 'Orientation progress notification sent to ' . \count($recipients) . ' non-compliant students.');
+
+        return Response::redirect(url('/admin/analytics'));
     }
 }

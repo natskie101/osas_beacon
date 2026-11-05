@@ -15,11 +15,7 @@
     <div class="field"><label for="search">Search modules</label><span class="input-group"><span class="input-group__ico"><?= App\Support\Icons::render('search', 15) ?></span><input class="input" id="search" name="search" value="<?= e($filters['search'] ?? '') ?>" placeholder="Title, category or content"></span></div>
     <div class="field"><label for="status">Status</label><select class="input" id="status" name="status"><option value="">All statuses</option><?php foreach (['Published', 'Draft', 'Archived'] as $status): ?><option value="<?= e($status) ?>"<?= ($filters['status'] ?? '') === $status ? ' selected' : '' ?>><?= e($status) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label for="category">Category</label><select class="input" id="category" name="category"><option value="">All categories</option><?php foreach ($categories as $category): ?><option value="<?= e($category) ?>"<?= ($filters['category'] ?? '') === $category ? ' selected' : '' ?>><?= e($category) ?></option><?php endforeach; ?></select></div>
-<<<<<<< HEAD
     
-=======
-    <div class="filter-bar__actions"><button class="btn btn--primary" type="submit">Apply</button><a class="btn btn--ghost" href="<?= url('/admin/orientation') ?>">Reset</a></div>
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 </form>
 <div class="table-wrap">
     <div class="table-toolbar"><div><div class="panel-title">Orientation Modules</div><div class="cell-sub">Showing <?= number_format($pagination['from']) ?>–<?= number_format($pagination['to']) ?> of <?= number_format($pagination['total']) ?> modules</div></div><span class="badge badge--brand"><?= number_format($pagination['total']) ?> modules</span></div>
@@ -32,11 +28,7 @@
                 <td><span class="badge <?= e(status_class($module['status'])) ?>"><?= e($module['status']) ?></span></td>
                 <td><?= number_format((int) $module['learners']) ?></td>
                 <td><div class="cell-title"><?= number_format((float) $module['completion_rate'], 1) ?>%</div><div class="progress-bar"><span style="width: <?= min(100, (float) $module['completion_rate']) ?>%"></span></div></td>
-<<<<<<< HEAD
                 <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="<?= url('/admin/orientation/' . $module['public_id']) ?>">Open</a><?php if ($module['verification_method'] === 'Quiz Assessment'): ?><a class="btn btn--outline btn--sm" href="<?= url('/admin/orientation/' . $module['public_id'] . '/quiz') ?>">Quiz</a><?php endif; ?><a class="btn btn--outline btn--sm" href="<?= url('/admin/orientation/' . $module['public_id'] . '/edit') ?>">Edit</a></div></td>
-=======
-                <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="<?= url('/admin/orientation/' . $module['public_id']) ?>">Open</a><a class="btn btn--outline btn--sm" href="<?= url('/admin/orientation/' . $module['public_id'] . '/edit') ?>">Edit</a></div></td>
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             </tr>
         <?php endforeach; ?></tbody></table></div>
     <?php endif; ?>

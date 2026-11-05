@@ -5,25 +5,21 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-<<<<<<< HEAD
 use App\Models\File;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Models\LostFoundClaim;
 use App\Models\LostFoundItem;
 use App\Models\Tracking;
 use App\Services\AuditLogger;
-<<<<<<< HEAD
 use App\Services\FileStorage;
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\DB;
 use App\Support\Exceptions\NotFoundHttpException;
+use App\Support\Exceptions\ValidationException;
 use App\Support\Request;
 use App\Support\Response;
 use App\Support\Session;
+use RuntimeException;
 
 final class LostFoundController extends Controller
 {
@@ -33,10 +29,7 @@ final class LostFoundController extends Controller
         $items = LostFoundItem::visible();
         $type = $request->string('type');
         $status = $request->string('status');
-<<<<<<< HEAD
         $category = $request->string('category');
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         $search = mb_strtolower($request->string('search'));
 
         if (in_array($type, ['Lost', 'Found'], true)) {
@@ -47,13 +40,10 @@ final class LostFoundController extends Controller
             $items = array_values(array_filter($items, static fn (array $item): bool => $item['status'] === $status));
         }
 
-<<<<<<< HEAD
         if ($category !== '') {
             $items = array_values(array_filter($items, static fn (array $item): bool => (string) $item['category'] === $category));
         }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
         if ($search !== '') {
             $items = array_values(array_filter(
                 $items,
@@ -73,16 +63,11 @@ final class LostFoundController extends Controller
             'items' => $items,
             'myReports' => LostFoundItem::forReporter((string) $actor['email'], (string) ($actor['student_id'] ?? '')),
             'myClaims' => LostFoundItem::claimsByUser((int) $actor['id']),
-<<<<<<< HEAD
             'filters' => ['search' => $request->string('search'), 'type' => $type, 'status' => $status, 'category' => $category],
-=======
-            'filters' => ['search' => $request->string('search'), 'type' => $type, 'status' => $status],
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'counts' => LostFoundItem::counts(),
         ]);
     }
 
-<<<<<<< HEAD
     public function downloadImage(Request $request, string $publicId): Response
     {
         $item = LostFoundItem::findVisible($publicId);
@@ -97,11 +82,28 @@ final class LostFoundController extends Controller
             throw new NotFoundHttpException('The requested item image could not be found.');
         }
 
-        return FileStorage::download($file);
+        $mime = (string) ($file['mime_type'] ?? '');
+
+        if (!\in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            throw new NotFoundHttpException('The requested item image could not be found.');
+        }
+
+        $path = FileStorage::path($file);
+        $content = is_file($path) ? file_get_contents($path) : false;
+
+        if ($content === false) {
+            throw new NotFoundHttpException('The requested item image could not be found.');
+        }
+
+        return new Response($content, 200, [
+            'Content-Type' => $mime,
+            'Content-Length' => (string) \strlen($content),
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
     public function report(Request $request): Response
     {
         return $this->page('layouts.app', 'student/lost-found/report', [
@@ -136,6 +138,12 @@ final class LostFoundController extends Controller
             'date_occurred' => 'required|date',
             'contact' => 'required|string|max:190',
         ]);
+        $image = $this->storeImage($request, $actor);
+
+        if ($image !== null) {
+            $data['image_file_id'] = $image['file_id'];
+        }
+
         $data['date_occurred'] = db_datetime((string) $data['date_occurred']);
         $data['reported_by'] = trim((string) $actor['first_name'] . ' ' . (string) $actor['last_name']);
         $data['reporter_email'] = (string) $actor['email'];
@@ -147,6 +155,10 @@ final class LostFoundController extends Controller
         $id = LostFoundItem::create($data);
         $item = LostFoundItem::find($id);
 
+        if ($image !== null) {
+            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$item['public_id'], $image['file_id']]);
+        }
+
         AuditLogger::log('lost_found.reported', 'Lost & Found Report Submitted', $item['title'] . ' was reported by ' . $data['reported_by'] . '.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'blue', 'icon' => 'search', 'target_user_id' => (int) $actor['id']]);
         NotificationService::send((int) $actor['id'], 'Lost & Found Report Received', 'Your report for "' . $item['title'] . '" was submitted. OSAS will review it.', 'info', 'lost_found', (string) $item['public_id']);
 
@@ -157,6 +169,35 @@ final class LostFoundController extends Controller
         Session::flash('status', 'Your report has been submitted.');
 
         return Response::redirect(url('/student/lost-found/' . $item['public_id']));
+    }
+
+    /**
+     * @param array<string, mixed> $actor
+     * @return array{file_id:int}|null
+     */
+    private function storeImage(Request $request, array $actor): ?array
+    {
+        $file = $request->file('image');
+
+        if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        try {
+            $stored = FileStorage::storeUpload(
+                $file,
+                'lost-found/pending',
+                'lost_found_image',
+                'pending',
+                (int) $actor['id'],
+                5 * 1024 * 1024,
+                ['image/jpeg' => 'jpg', 'image/png' => 'png'],
+            );
+        } catch (RuntimeException $exception) {
+            throw new ValidationException(['image' => $exception->getMessage()], $request->all());
+        }
+
+        return ['file_id' => (int) $stored['id']];
     }
 
     public function show(Request $request, string $publicId): Response
@@ -186,10 +227,7 @@ final class LostFoundController extends Controller
             'myClaim' => $myClaim,
             'ownReport' => $ownReport,
             'claims' => $ownReport ? LostFoundItem::claimsFor((int) $item['id']) : [],
-<<<<<<< HEAD
             'imageFile' => !empty($item['image_file_id']) ? File::find((int) $item['image_file_id']) : null,
-=======
->>>>>>> ec9a5edde5ad128ad622472a6352ad33eff5ac37
             'errors' => Session::errors(),
         ]);
     }

@@ -22,7 +22,7 @@ final class ActivityController extends Controller
         $pagination = AuditLog::paginate($filters, max(1, (int) $request->input('page', 1)), 15);
 
         return $this->page('layouts.app', 'admin/activity/index', [
-            'title' => 'User Activity',
+            'title' => 'Audit Log',
             'pageTitle' => config('navigation.meta.admin.activity.title'),
             'pageSubtitle' => config('navigation.meta.admin.activity.subtitle'),
             'pageKey' => 'activity',

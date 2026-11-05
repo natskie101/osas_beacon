@@ -38,7 +38,7 @@
                     <?php foreach ($attachments as $attachment): ?>
                         <?php if (!empty($attachment['file_id'])): ?>
                             <a class="attachment-chip" href="<?= url('/admin/announcements/' . $announcement['public_id'] . '/attachment/' . $attachment['file_id']) ?>">
-                                <?= App\Support\Icons::render('download', 14) ?><span><?= e($attachment['name']) ?></span><em><?= e($attachment['size'] ?? '') ?></em>
+                                <?= App\Support\Icons::render('download', 14) ?><span><?= e($attachment['name']) ?></span><em>Download<?= !empty($attachment['size']) ? ' · ' . e($attachment['size']) : '' ?></em>
                             </a>
                         <?php else: ?>
                             <span class="attachment-chip"><?= App\Support\Icons::render('fileText', 14) ?><span><?= e($attachment['name']) ?></span><em><?= e($attachment['size'] ?? '') ?></em></span>

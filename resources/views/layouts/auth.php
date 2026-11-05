@@ -2,7 +2,9 @@
 /** @var string $title */
 /** @var string $content */
 /** @var bool|null $authSingle */
+/** @var bool|null $authLogoRight */
 $authSingle = $authSingle ?? false;
+$authLogoRight = $authLogoRight ?? false;
 $taglines = [
     'Information Broadcasting & Student Services System for Southway College of Technology.',
     'One portal for announcements, orientation, events and student support.',
@@ -20,7 +22,7 @@ $taglines = [
 <body data-page="<?= $authSingle ? 'register' : 'login' ?>">
 <div id="shell"></div>
 <main class="auth" id="auth-main">
-    <div class="auth__card<?= $authSingle ? ' auth__card--single' : '' ?>">
+    <div class="auth__card<?= $authSingle ? ' auth__card--single' : '' ?><?= $authLogoRight ? ' auth__card--logo-right' : '' ?>">
         <?php if (!$authSingle): ?>
             <div class="auth__panel auth__left">
                 <div class="auth__brand" id="auth-brand">
