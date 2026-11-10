@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ActivityController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
@@ -15,7 +16,9 @@ use App\Http\Controllers\Admin\OrientationQuizController as AdminOrientationQuiz
 use App\Http\Controllers\Admin\RegulationController as AdminRegulationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SupportController as AdminSupportController;
+use App\Http\Controllers\Admin\SystemOverviewController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -34,196 +37,224 @@ use App\Http\Controllers\Student\OrientationController as StudentOrientationCont
 use App\Http\Controllers\Student\OrientationQuizController as StudentOrientationQuizController;
 use App\Http\Controllers\Student\RegulationController as StudentRegulationController;
 use App\Http\Controllers\Student\SupportController as StudentSupportController;
-use App\Http\Middleware\Authenticate;
-use App\Http\Middleware\EnsureRole;
-use App\Http\Middleware\RedirectIfAuthenticated;
-use App\Http\Middleware\VerifyCsrfToken;
-use App\Support\Router;
 
-$router = new Router([VerifyCsrfToken::class]);
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
-/* Public authentication */
-$router->get('/', [HomeController::class, 'index']);
-$router->get('/login', [LoginController::class, 'show'], [RedirectIfAuthenticated::class]);
-$router->post('/login', [LoginController::class, 'store'], [RedirectIfAuthenticated::class]);
-$router->post('/logout', [LogoutController::class, 'destroy'], [Authenticate::class]);
-$router->get('/create-account', [RegisterController::class, 'show'], [RedirectIfAuthenticated::class]);
-$router->post('/create-account', [RegisterController::class, 'store'], [RedirectIfAuthenticated::class]);
-$router->get('/register', [RegisterController::class, 'show'], [RedirectIfAuthenticated::class]);
-$router->post('/register', [RegisterController::class, 'store'], [RedirectIfAuthenticated::class]);
+Route::get('/', [HomeController::class, 'index']);
 
-$router->get('/forgot-password', [ForgotPasswordController::class, 'show']);
-$router->post('/forgot-password', [ForgotPasswordController::class, 'store']);
-$router->get('/reset-password/{token}', [ResetPasswordController::class, 'show']);
-$router->post('/reset-password', [ResetPasswordController::class, 'store']);
+/* Guest routes */
+Route::middleware(['guest'])->group(function () {
+    Route::get('/login', [LoginController::class, 'show']);
+    Route::post('/login', [LoginController::class, 'store']);
+    Route::get('/create-account', [RegisterController::class, 'show']);
+    Route::post('/create-account', [RegisterController::class, 'store'])->middleware('throttle:30,3600');
+    Route::get('/register', [RegisterController::class, 'show']);
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:30,3600');
+});
 
-/* Admin portal */
-$router->get('/admin', [AdminDashboardController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/dashboard', [AdminDashboardController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
+/* Password reset */
+Route::get('/forgot-password', [ForgotPasswordController::class, 'show']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->middleware('throttle:10,3600');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'show']);
+Route::post('/reset-password', [ResetPasswordController::class, 'store'])->middleware('throttle:10,600');
 
-/* User management */
-$router->get('/admin/users', [UserController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/users/create', [UserController::class, 'create'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users', [UserController::class, 'store'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/users/{publicId}/edit', [UserController::class, 'edit'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->put('/admin/users/{publicId}', [UserController::class, 'update'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/verify', [UserController::class, 'verify'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/reject', [UserController::class, 'reject'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/activate', [UserController::class, 'activate'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/deactivate', [UserController::class, 'deactivate'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/reset-password', [UserController::class, 'resetPassword'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/users/{publicId}/school-id', [UserController::class, 'uploadSchoolId'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/users/{publicId}/school-id', [UserController::class, 'downloadSchoolId'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/users/{publicId}', [UserController::class, 'show'], [Authenticate::class, 'role:Coordinator,Administrator']);
+/* Authenticated routes */
+Route::middleware(['auth'])->group(function () {
+    Route::post('/logout', [LogoutController::class, 'destroy']);
+    
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'read']);
 
-/* Student portal */
-$router->get('/student', [StudentDashboardController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/dashboard', [StudentDashboardController::class, 'index'], [Authenticate::class, 'role:Student']);
+    /* Admin/Coordinator routes */
+    Route::middleware(['role:Coordinator,Administrator'])->group(function () {
+        Route::get('/admin', [AdminDashboardController::class, 'index']);
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+        
+        /* User management */
+        Route::get('/admin/users', [UserController::class, 'index']);
+        Route::get('/admin/users/create', [UserController::class, 'create']);
+        Route::post('/admin/users', [UserController::class, 'store']);
+        Route::get('/admin/users/{publicId}/edit', [UserController::class, 'edit']);
+        Route::put('/admin/users/{publicId}', [UserController::class, 'update']);
+        Route::post('/admin/users/{publicId}/verify', [UserController::class, 'verify']);
+        Route::post('/admin/users/{publicId}/reject', [UserController::class, 'reject']);
+        Route::post('/admin/users/{publicId}/activate', [UserController::class, 'activate']);
+        Route::post('/admin/users/{publicId}/deactivate', [UserController::class, 'deactivate']);
+        Route::post('/admin/users/{publicId}/reset-password', [UserController::class, 'resetPassword']);
+        Route::post('/admin/users/{publicId}/school-id', [UserController::class, 'uploadSchoolId']);
+        Route::get('/admin/users/{publicId}/school-id', [UserController::class, 'downloadSchoolId']);
+        Route::get('/admin/users/{publicId}', [UserController::class, 'show']);
+        
+        /* Support */
+        Route::get('/admin/support', [AdminSupportController::class, 'index']);
+        Route::post('/admin/support/{publicId}/reply', [AdminSupportController::class, 'reply']);
+        Route::post('/admin/support/{publicId}/status', [AdminSupportController::class, 'updateStatus']);
+        Route::get('/admin/support/{publicId}/attachment/{fileId}', [StudentSupportController::class, 'downloadImage']);
+        Route::get('/admin/support/{publicId}', [AdminSupportController::class, 'show']);
 
-/* Notifications */
-$router->get('/profile', [ProfileController::class, 'show'], [Authenticate::class, 'role:Coordinator,Student']);
-$router->put('/profile', [ProfileController::class, 'update'], [Authenticate::class, 'role:Coordinator,Student']);
-$router->get('/notifications', [NotificationController::class, 'index'], [Authenticate::class]);
-$router->post('/notifications/read-all', [NotificationController::class, 'readAll'], [Authenticate::class]);
-$router->post('/notifications/{id}/read', [NotificationController::class, 'read'], [Authenticate::class]);
+        Route::get('/admin/activity', [ActivityController::class, 'index']);
+    });
 
-/* Announcements */
-$router->get('/admin/announcements', [AdminAnnouncementController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/announcements/create', [AdminAnnouncementController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/announcements', [AdminAnnouncementController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/announcements/{publicId}/edit', [AdminAnnouncementController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/announcements/{publicId}/publish', [AdminAnnouncementController::class, 'publish'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/announcements/{publicId}/archive', [AdminAnnouncementController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/announcements/{publicId}/attachment/{index}/remove', [AdminAnnouncementController::class, 'removeAttachment'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/announcements/{publicId}/attachment/{fileId}', [AdminAnnouncementController::class, 'downloadAttachment'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+    /* Administrator only */
+    Route::middleware(['role:Administrator'])->group(function () {
+        Route::get('/admin/system-overview', [SystemOverviewController::class, 'index']);
+        Route::post('/admin/users/{publicId}/archive', [UserController::class, 'archive']);
+        Route::post('/admin/users/{publicId}/restore', [UserController::class, 'restore']);
+    });
 
-/* Regulations */
-$router->get('/admin/regulations', [AdminRegulationController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/regulations/create', [AdminRegulationController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/regulations', [AdminRegulationController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/regulations/{publicId}/edit', [AdminRegulationController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/regulations/{publicId}', [AdminRegulationController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/regulations/{publicId}/publish', [AdminRegulationController::class, 'publish'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/regulations/{publicId}/archive', [AdminRegulationController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/regulations/{publicId}', [AdminRegulationController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+    /* Coordinator only */
+    Route::middleware(['role:Coordinator'])->group(function () {
+        Route::get('/admin/announcements', [AdminAnnouncementController::class, 'index']);
+        Route::get('/admin/announcements/create', [AdminAnnouncementController::class, 'create']);
+        Route::post('/admin/announcements', [AdminAnnouncementController::class, 'store']);
+        Route::get('/admin/announcements/{publicId}/edit', [AdminAnnouncementController::class, 'edit']);
+        Route::put('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'update']);
+        Route::post('/admin/announcements/{publicId}/publish', [AdminAnnouncementController::class, 'publish']);
+        Route::post('/admin/announcements/{publicId}/archive', [AdminAnnouncementController::class, 'archive']);
+        Route::post('/admin/announcements/{publicId}/attachment/{index}/remove', [AdminAnnouncementController::class, 'removeAttachment']);
+        Route::get('/admin/announcements/{publicId}/attachment/{fileId}', [AdminAnnouncementController::class, 'downloadAttachment']);
+        Route::get('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'show']);
 
-/* Orientation */
-$router->get('/admin/orientation', [AdminOrientationController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/orientation/create', [AdminOrientationController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation', [AdminOrientationController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/orientation/{publicId}/edit', [AdminOrientationController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/orientation/{publicId}', [AdminOrientationController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/publish', [AdminOrientationController::class, 'publish'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/archive', [AdminOrientationController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/orientation/{publicId}/media', [AdminOrientationController::class, 'downloadMedia'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'saveSettings'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/quiz/questions', [AdminOrientationQuizController::class, 'storeQuestion'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/quiz/questions/{questionId}/update', [AdminOrientationQuizController::class, 'updateQuestion'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/orientation/{publicId}/quiz/questions/{questionId}/delete', [AdminOrientationQuizController::class, 'deleteQuestion'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/orientation/{publicId}', [AdminOrientationController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+        Route::get('/admin/regulations', [AdminRegulationController::class, 'index']);
+        Route::get('/admin/regulations/create', [AdminRegulationController::class, 'create']);
+        Route::post('/admin/regulations', [AdminRegulationController::class, 'store']);
+        Route::get('/admin/regulations/{publicId}/edit', [AdminRegulationController::class, 'edit']);
+        Route::put('/admin/regulations/{publicId}', [AdminRegulationController::class, 'update']);
+        Route::post('/admin/regulations/{publicId}/publish', [AdminRegulationController::class, 'publish']);
+        Route::post('/admin/regulations/{publicId}/archive', [AdminRegulationController::class, 'archive']);
+        Route::get('/admin/regulations/{publicId}', [AdminRegulationController::class, 'show']);
 
-/* Events */
-$router->get('/admin/events', [AdminEventController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/events/create', [AdminEventController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/events', [AdminEventController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/events/{publicId}/edit', [AdminEventController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/events/{publicId}/attachment/{fileId}', [AdminEventController::class, 'downloadAttachment'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/events/{publicId}', [AdminEventController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/events/{publicId}/cancel', [AdminEventController::class, 'cancel'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/events/{publicId}', [AdminEventController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+        Route::get('/admin/orientation', [AdminOrientationController::class, 'index']);
+        Route::get('/admin/orientation/create', [AdminOrientationController::class, 'create']);
+        Route::post('/admin/orientation', [AdminOrientationController::class, 'store']);
+        Route::get('/admin/orientation/{publicId}/edit', [AdminOrientationController::class, 'edit']);
+        Route::put('/admin/orientation/{publicId}', [AdminOrientationController::class, 'update']);
+        Route::post('/admin/orientation/{publicId}/publish', [AdminOrientationController::class, 'publish']);
+        Route::post('/admin/orientation/{publicId}/archive', [AdminOrientationController::class, 'archive']);
+        Route::get('/admin/orientation/{publicId}/media', [AdminOrientationController::class, 'downloadMedia']);
+        Route::get('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'show']);
+        Route::post('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'saveSettings']);
+        Route::post('/admin/orientation/{publicId}/quiz/questions', [AdminOrientationQuizController::class, 'storeQuestion']);
+        Route::post('/admin/orientation/{publicId}/quiz/questions/{questionId}/update', [AdminOrientationQuizController::class, 'updateQuestion']);
+        Route::post('/admin/orientation/{publicId}/quiz/questions/{questionId}/delete', [AdminOrientationQuizController::class, 'deleteQuestion']);
+        Route::get('/admin/orientation/{publicId}', [AdminOrientationController::class, 'show']);
 
-/* Lost & Found */
-$router->get('/admin/lost-found', [AdminLostFoundController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/lost-found/export', [AdminLostFoundController::class, 'export'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/lost-found/create', [AdminLostFoundController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/lost-found', [AdminLostFoundController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/lost-found/{publicId}/edit', [AdminLostFoundController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/lost-found/{publicId}', [AdminLostFoundController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/lost-found/{publicId}/claims/{claimId}/approve', [AdminLostFoundController::class, 'approveClaim'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/lost-found/{publicId}/claims/{claimId}/reject', [AdminLostFoundController::class, 'rejectClaim'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/lost-found/{publicId}/returned', [AdminLostFoundController::class, 'markReturned'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/lost-found/{publicId}/archive', [AdminLostFoundController::class, 'archive'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/lost-found/{publicId}/image', [AdminLostFoundController::class, 'downloadImage'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/lost-found/{publicId}', [AdminLostFoundController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+        Route::get('/admin/events', [AdminEventController::class, 'index']);
+        Route::get('/admin/events/create', [AdminEventController::class, 'create']);
+        Route::post('/admin/events', [AdminEventController::class, 'store']);
+        Route::get('/admin/events/{publicId}/edit', [AdminEventController::class, 'edit']);
+        Route::get('/admin/events/{publicId}/attachment/{fileId}', [AdminEventController::class, 'downloadAttachment']);
+        Route::put('/admin/events/{publicId}', [AdminEventController::class, 'update']);
+        Route::post('/admin/events/{publicId}/cancel', [AdminEventController::class, 'cancel']);
+        Route::get('/admin/events/{publicId}', [AdminEventController::class, 'show']);
 
-/* Document requests */
-$router->get('/admin/document-requests', [AdminDocumentRequestController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/document-requests/{publicId}/status', [AdminDocumentRequestController::class, 'updateStatus'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/document-requests/{publicId}', [AdminDocumentRequestController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+        Route::get('/admin/lost-found', [AdminLostFoundController::class, 'index']);
+        Route::get('/admin/lost-found/export', [AdminLostFoundController::class, 'export']);
+        Route::get('/admin/lost-found/create', [AdminLostFoundController::class, 'create']);
+        Route::post('/admin/lost-found', [AdminLostFoundController::class, 'store']);
+        Route::get('/admin/lost-found/{publicId}/edit', [AdminLostFoundController::class, 'edit']);
+        Route::put('/admin/lost-found/{publicId}', [AdminLostFoundController::class, 'update']);
+        Route::post('/admin/lost-found/{publicId}/claims/{claimId}/approve', [AdminLostFoundController::class, 'approveClaim']);
+        Route::post('/admin/lost-found/{publicId}/claims/{claimId}/reject', [AdminLostFoundController::class, 'rejectClaim']);
+        Route::post('/admin/lost-found/{publicId}/returned', [AdminLostFoundController::class, 'markReturned']);
+        Route::post('/admin/lost-found/{publicId}/archive', [AdminLostFoundController::class, 'archive']);
+        Route::get('/admin/lost-found/{publicId}/image', [AdminLostFoundController::class, 'downloadImage']);
+        Route::get('/admin/lost-found/{publicId}', [AdminLostFoundController::class, 'show']);
 
-/* Support */
-$router->get('/admin/support', [AdminSupportController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/support/{publicId}/reply', [AdminSupportController::class, 'reply'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->post('/admin/support/{publicId}/status', [AdminSupportController::class, 'updateStatus'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/support/{publicId}', [AdminSupportController::class, 'show'], [Authenticate::class, 'role:Coordinator,Administrator']);
+        Route::get('/admin/document-requests', [AdminDocumentRequestController::class, 'index']);
+        Route::post('/admin/document-requests/{publicId}/status', [AdminDocumentRequestController::class, 'updateStatus']);
+        Route::get('/admin/document-requests/{publicId}', [AdminDocumentRequestController::class, 'show']);
 
-/* Analytics, reports, activity and broadcasts */
-$router->get('/admin/analytics', [AnalyticsController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/analytics/notify', [AnalyticsController::class, 'notifyAllNonCompliant'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/analytics/{publicId}/notify', [AnalyticsController::class, 'notifyStudent'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/analytics/{publicId}', [AnalyticsController::class, 'showStudent'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports', [ReportController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/orientation/{publicId}/csv', [ReportController::class, 'moduleCsv'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/orientation/{publicId}/excel', [ReportController::class, 'moduleExcel'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/reports/orientation/{publicId}', [ReportController::class, 'moduleReport'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/activity', [ActivityController::class, 'index'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/admin/broadcasts', [BroadcastController::class, 'index'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/broadcasts/create', [BroadcastController::class, 'create'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/broadcasts', [BroadcastController::class, 'store'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/broadcasts/{publicId}/edit', [BroadcastController::class, 'edit'], [Authenticate::class, 'role:Coordinator']);
-$router->put('/admin/broadcasts/{publicId}', [BroadcastController::class, 'update'], [Authenticate::class, 'role:Coordinator']);
-$router->post('/admin/broadcasts/{publicId}/send', [BroadcastController::class, 'send'], [Authenticate::class, 'role:Coordinator']);
-$router->get('/admin/broadcasts/{publicId}', [BroadcastController::class, 'show'], [Authenticate::class, 'role:Coordinator']);
+        Route::get('/admin/analytics', [AnalyticsController::class, 'index']);
+        Route::post('/admin/analytics/notify', [AnalyticsController::class, 'notifyAllNonCompliant']);
+        Route::post('/admin/analytics/{publicId}/notify', [AnalyticsController::class, 'notifyStudent']);
+        Route::get('/admin/analytics/{publicId}', [AnalyticsController::class, 'showStudent']);
+        
+        Route::get('/admin/reports', [ReportController::class, 'index']);
+        Route::get('/admin/reports/orientation/{publicId}/csv', [ReportController::class, 'moduleCsv']);
+        Route::get('/admin/reports/orientation/{publicId}/excel', [ReportController::class, 'moduleExcel']);
+        Route::get('/admin/reports/orientation/{publicId}', [ReportController::class, 'moduleReport']);
+        
+        Route::get('/admin/broadcasts', [BroadcastController::class, 'index']);
+        Route::get('/admin/broadcasts/create', [BroadcastController::class, 'create']);
+        Route::post('/admin/broadcasts', [BroadcastController::class, 'store']);
+        Route::get('/admin/broadcasts/{publicId}/edit', [BroadcastController::class, 'edit']);
+        Route::put('/admin/broadcasts/{publicId}', [BroadcastController::class, 'update']);
+        Route::post('/admin/broadcasts/{publicId}/send', [BroadcastController::class, 'send']);
+        Route::get('/admin/broadcasts/{publicId}', [BroadcastController::class, 'show']);
+    });
 
-/* Student module routes */
-$router->get('/student/announcements', [StudentAnnouncementController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/announcements/{publicId}/attachment/{fileId}', [StudentAnnouncementController::class, 'downloadAttachment'], [Authenticate::class, 'role:Student']);
-$router->get('/student/announcements/{publicId}', [StudentAnnouncementController::class, 'show'], [Authenticate::class, 'role:Student']);
+    /* Shared routes */
+    Route::middleware(['role:Coordinator,Student'])->group(function () {
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::get('/profile/photo', [ProfileController::class, 'photo']);
+        Route::put('/profile', [ProfileController::class, 'update']);
+    });
 
-$router->get('/student/rules', [StudentRegulationController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->post('/student/rules/{publicId}/acknowledge', [StudentRegulationController::class, 'acknowledge'], [Authenticate::class, 'role:Student']);
-$router->get('/student/rules/{publicId}', [StudentRegulationController::class, 'show'], [Authenticate::class, 'role:Student']);
+    /* Student portal */
+    Route::middleware(['role:Student'])->group(function () {
+        Route::get('/student', [StudentDashboardController::class, 'index']);
+        Route::get('/student/dashboard', [StudentDashboardController::class, 'index']);
 
-$router->get('/student/orientation', [StudentOrientationController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/orientation/{publicId}/media', [StudentOrientationController::class, 'downloadMedia'], [Authenticate::class, 'role:Student']);
-$router->get('/student/orientation/{publicId}/quiz', [StudentOrientationQuizController::class, 'show'], [Authenticate::class, 'role:Student']);
-$router->post('/student/orientation/{publicId}/quiz/start', [StudentOrientationQuizController::class, 'start'], [Authenticate::class, 'role:Student']);
-$router->post('/student/orientation/{publicId}/quiz/submit', [StudentOrientationQuizController::class, 'submit'], [Authenticate::class, 'role:Student']);
-$router->get('/student/orientation/{publicId}/quiz/result', [StudentOrientationQuizController::class, 'result'], [Authenticate::class, 'role:Student']);
-$router->get('/student/orientation/{publicId}', [StudentOrientationController::class, 'show'], [Authenticate::class, 'role:Student']);
-$router->post('/student/orientation/{publicId}/complete', [StudentOrientationController::class, 'complete'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/announcements', [StudentAnnouncementController::class, 'index']);
+        Route::get('/student/announcements/{publicId}/attachment/{fileId}', [StudentAnnouncementController::class, 'downloadAttachment']);
+        Route::get('/student/announcements/{publicId}', [StudentAnnouncementController::class, 'show']);
 
-$router->get('/student/events', [StudentEventController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/events/{publicId}/attachment/{fileId}', [StudentEventController::class, 'downloadAttachment'], [Authenticate::class, 'role:Student']);
-$router->get('/student/events/{publicId}', [StudentEventController::class, 'show'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/rules', [StudentRegulationController::class, 'index']);
+        Route::post('/student/rules/{publicId}/acknowledge', [StudentRegulationController::class, 'acknowledge']);
+        Route::get('/student/rules/{publicId}', [StudentRegulationController::class, 'show']);
 
-$router->get('/student/lost-found', [StudentLostFoundController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/lost-found/report', [StudentLostFoundController::class, 'report'], [Authenticate::class, 'role:Student']);
-$router->post('/student/lost-found/report', [StudentLostFoundController::class, 'storeReport'], [Authenticate::class, 'role:Student']);
-$router->get('/student/lost-found/{publicId}/image', [StudentLostFoundController::class, 'downloadImage'], [Authenticate::class, 'role:Student']);
-$router->get('/student/lost-found/{publicId}', [StudentLostFoundController::class, 'show'], [Authenticate::class, 'role:Student']);
-$router->post('/student/lost-found/{publicId}/claim', [StudentLostFoundController::class, 'claim'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/orientation', [StudentOrientationController::class, 'index']);
+        Route::get('/student/orientation/{publicId}/media', [StudentOrientationController::class, 'downloadMedia']);
+        Route::get('/student/orientation/{publicId}/quiz', [StudentOrientationQuizController::class, 'show']);
+        Route::post('/student/orientation/{publicId}/quiz/start', [StudentOrientationQuizController::class, 'start']);
+        Route::post('/student/orientation/{publicId}/quiz/submit', [StudentOrientationQuizController::class, 'submit']);
+        Route::get('/student/orientation/{publicId}/quiz/result', [StudentOrientationQuizController::class, 'result']);
+        Route::get('/student/orientation/{publicId}', [StudentOrientationController::class, 'show']);
+        Route::post('/student/orientation/{publicId}/complete', [StudentOrientationController::class, 'complete']);
 
-$router->get('/student/document-requests', [StudentDocumentRequestController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/document-requests/create', [StudentDocumentRequestController::class, 'create'], [Authenticate::class, 'role:Student']);
-$router->post('/student/document-requests', [StudentDocumentRequestController::class, 'store'], [Authenticate::class, 'role:Student']);
-$router->get('/student/document-requests/{publicId}', [StudentDocumentRequestController::class, 'show'], [Authenticate::class, 'role:Student']);
-$router->post('/student/document-requests/{publicId}/cancel', [StudentDocumentRequestController::class, 'cancel'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/events', [StudentEventController::class, 'index']);
+        Route::get('/student/events/{publicId}/attachment/{fileId}', [StudentEventController::class, 'downloadAttachment']);
+        Route::get('/student/events/{publicId}', [StudentEventController::class, 'show']);
 
-$router->get('/student/support', [StudentSupportController::class, 'index'], [Authenticate::class, 'role:Student']);
-$router->get('/student/support/create', [StudentSupportController::class, 'create'], [Authenticate::class, 'role:Student']);
-$router->post('/student/support', [StudentSupportController::class, 'store'], [Authenticate::class, 'role:Student']);
-$router->get('/student/support/{publicId}', [StudentSupportController::class, 'show'], [Authenticate::class, 'role:Student']);
-$router->post('/student/support/{publicId}/reply', [StudentSupportController::class, 'reply'], [Authenticate::class, 'role:Student']);
-$router->post('/student/support/{publicId}/close', [StudentSupportController::class, 'close'], [Authenticate::class, 'role:Student']);
-$router->post('/student/support/{publicId}/rate', [StudentSupportController::class, 'rate'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/lost-found', [StudentLostFoundController::class, 'index']);
+        Route::get('/student/lost-found/report', [StudentLostFoundController::class, 'report']);
+        Route::post('/student/lost-found/report', [StudentLostFoundController::class, 'storeReport']);
+        Route::get('/student/lost-found/{publicId}/image', [StudentLostFoundController::class, 'downloadImage']);
+        Route::get('/student/lost-found/{publicId}', [StudentLostFoundController::class, 'show']);
+        Route::post('/student/lost-found/{publicId}/claim', [StudentLostFoundController::class, 'claim']);
 
-/* Legacy static-site URLs. */
-$router->get('/index.html', [LegacyRedirectController::class, 'index']);
-$router->get('/coordinator/{page}', [LegacyRedirectController::class, 'coordinator'], [Authenticate::class, 'role:Coordinator,Administrator']);
-$router->get('/student/{page}', [LegacyRedirectController::class, 'student'], [Authenticate::class, 'role:Student']);
+        Route::get('/student/document-requests', [StudentDocumentRequestController::class, 'index']);
+        Route::get('/student/document-requests/create', [StudentDocumentRequestController::class, 'create']);
+        Route::post('/student/document-requests', [StudentDocumentRequestController::class, 'store']);
+        Route::get('/student/document-requests/{publicId}', [StudentDocumentRequestController::class, 'show']);
+        Route::post('/student/document-requests/{publicId}/cancel', [StudentDocumentRequestController::class, 'cancel']);
 
-return $router;
+        Route::get('/student/support', [StudentSupportController::class, 'index']);
+        Route::get('/student/support/create', [StudentSupportController::class, 'create']);
+        Route::post('/student/support', [StudentSupportController::class, 'store']);
+        Route::get('/student/support/{publicId}/attachment/{fileId}', [StudentSupportController::class, 'downloadImage']);
+        Route::get('/student/support/{publicId}', [StudentSupportController::class, 'show']);
+        Route::post('/student/support/{publicId}/reply', [StudentSupportController::class, 'reply']);
+        Route::post('/student/support/{publicId}/close', [StudentSupportController::class, 'close']);
+        Route::post('/student/support/{publicId}/rate', [StudentSupportController::class, 'rate']);
+        
+        Route::get('/student/{page}', [LegacyRedirectController::class, 'student']);
+    });
+
+    /* AI Services (NVIDIA API) */
+    Route::middleware(['throttle:20,60'])->group(function () {
+        Route::post('/ai/chat', [AiChatController::class, 'ask']);
+        Route::get('/ai/stream', [AiChatController::class, 'stream']);
+    });
+
+    Route::get('/coordinator/{page}', [LegacyRedirectController::class, 'coordinator'])->middleware('role:Coordinator,Administrator');
+});
+
+/* Legacy static-site URLs */
+Route::get('/index.html', [LegacyRedirectController::class, 'index']);

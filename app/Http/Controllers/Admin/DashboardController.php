@@ -13,33 +13,35 @@ use App\Models\LostFoundItem;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Support\Auth;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 
 final class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $user = Auth::user();
+
+        if ($user['role'] === 'Administrator') {
+            return redirect(url('/admin/system-overview'));
+        }
+
         $counts = User::counts();
         $recent = AuditLog::recent(6);
-        $isCoordinator = $user['role'] === 'Coordinator';
 
         $announcements = Announcement::counts();
         $documents = DocumentRequest::counts();
         $support = SupportTicket::counts();
         $lostFound = LostFoundItem::counts();
 
-        return $this->page('layouts.app', 'admin/dashboard', [
-            'title' => $isCoordinator ? 'Admin Dashboard Overview' : 'Technical Support Dashboard',
-            'pageTitle' => $isCoordinator ? 'Admin Dashboard Overview' : 'Technical Support Dashboard',
+        return view('admin/dashboard', [
+            'title' => 'Admin Dashboard Overview',
+            'pageTitle' => 'Admin Dashboard Overview',
             'pageSubtitle' => config('navigation.meta.admin.dashboard.subtitle'),
             'pageKey' => 'dashboard',
             'user' => $user,
             'role' => $user['role'],
             'counts' => $counts,
             'recent' => $recent,
-            'isCoordinator' => $isCoordinator,
             'operations' => [
                 'support_pending' => $support['open'] + $support['in_progress'],
                 'support_open' => $support['open'],

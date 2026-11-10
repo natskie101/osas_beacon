@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 
 final class LegacyRedirectController extends Controller
 {
@@ -39,12 +38,12 @@ final class LegacyRedirectController extends Controller
         'support' => '/student/support',
     ];
 
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        return Response::redirect(url('/'));
+        return redirect(url('/'));
     }
 
-    public function coordinator(Request $request, string $page): Response
+    public function coordinator(Request $request, string $page)
     {
         if (!str_ends_with(strtolower($page), '.html')) {
             throw new NotFoundHttpException();
@@ -52,10 +51,10 @@ final class LegacyRedirectController extends Controller
 
         $key = preg_replace('/\.html$/i', '', $page) ?? $page;
 
-        return Response::redirect(url(self::ADMIN_PAGES[$key] ?? '/admin/dashboard'));
+        return redirect(url(self::ADMIN_PAGES[$key] ?? '/admin/dashboard'));
     }
 
-    public function student(Request $request, string $page): Response
+    public function student(Request $request, string $page)
     {
         if (!str_ends_with(strtolower($page), '.html')) {
             throw new NotFoundHttpException();
@@ -63,6 +62,6 @@ final class LegacyRedirectController extends Controller
 
         $key = preg_replace('/\.html$/i', '', $page) ?? $page;
 
-        return Response::redirect(url(self::STUDENT_PAGES[$key] ?? '/student/dashboard'));
+        return redirect(url(self::STUDENT_PAGES[$key] ?? '/student/dashboard'));
     }
 }

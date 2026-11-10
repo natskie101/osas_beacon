@@ -23,6 +23,7 @@ enum Role: string
     {
         return match ($this) {
             self::Student => '/student/dashboard',
+            self::Administrator => '/admin/system-overview',
             default => '/admin/dashboard',
         };
     }

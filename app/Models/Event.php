@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Event extends BaseModel
 {
@@ -19,58 +19,65 @@ final class Event extends BaseModel
     /** @return array{total:int,scheduled:int,ongoing:int,completed:int,cancelled:int,registered:int} */
     public static function counts(): array
     {
-        $row = DB::first(
-            'SELECT COUNT(*) AS total,
+        $row = DB::table('events')
+            ->selectRaw('COUNT(*) AS total,
                     SUM(status = "Scheduled") AS scheduled,
                     SUM(status = "Ongoing") AS ongoing,
                     SUM(status = "Completed") AS completed,
                     SUM(status = "Cancelled") AS cancelled,
-                    COALESCE(SUM(registered), 0) AS registered
-             FROM events',
-        );
+                    COALESCE(SUM(registered), 0) AS registered')
+            ->first();
 
-        return array_map('intval', $row ?? []);
+        return array_map('intval', $row === null ? [] : (array) $row);
     }
 
     /** @return list<array<string, mixed>> */
     public static function upcoming(?int $limit = null): array
     {
-        $sql = 'SELECT * FROM events
-                WHERE status IN ("Scheduled", "Ongoing") AND end_at >= ?
-                ORDER BY start_at ASC, id ASC';
-        $bindings = [date('Y-m-d H:i:s')];
+        $query = DB::table('events')
+            ->whereIn('status', ['Scheduled', 'Ongoing'])
+            ->where('end_at', '>=', date('Y-m-d H:i:s'));
 
         if ($limit !== null) {
-            $sql .= ' LIMIT ' . max(1, min(20, $limit));
+            $query->limit(max(1, min(20, $limit)));
         }
 
-        return DB::select($sql, $bindings);
+        return $query
+            ->orderBy('start_at')
+            ->orderBy('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function upcomingCount(): int
     {
-        return (int) DB::value(
-            'SELECT COUNT(*) FROM events WHERE status IN ("Scheduled", "Ongoing") AND end_at >= ?',
-            [date('Y-m-d H:i:s')],
-        );
+        return (int) DB::table('events')
+            ->whereIn('status', ['Scheduled', 'Ongoing'])
+            ->where('end_at', '>=', date('Y-m-d H:i:s'))
+            ->count();
     }
 
     /** @return list<array<string, mixed>> */
     public static function forStudent(): array
     {
-        return DB::select(
-            'SELECT * FROM events
-             WHERE status <> "Cancelled" AND audience <> "Faculty & Staff"
-             ORDER BY CASE WHEN status IN ("Scheduled", "Ongoing") THEN 0 ELSE 1 END, start_at ASC, id ASC',
-        );
+        return DB::table('events')
+            ->where('status', '<>', 'Cancelled')
+            ->where('audience', '<>', 'Faculty & Staff')
+            ->orderByRaw('CASE WHEN status IN ("Scheduled", "Ongoing") THEN 0 ELSE 1 END, start_at ASC, id ASC')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return array<string, mixed>|null */
     public static function findVisible(string $publicId): ?array
     {
-        return DB::first(
-            'SELECT * FROM events WHERE public_id = ? AND status <> "Cancelled" LIMIT 1',
-            [$publicId],
-        );
+        $row = DB::table('events')
+            ->where('public_id', $publicId)
+            ->where('status', '<>', 'Cancelled')
+            ->first();
+
+        return $row === null ? null : (array) $row;
     }
 }

@@ -28,6 +28,18 @@ final class UserPolicy
             return true;
         }
 
+        if ($ability === 'archive' || $ability === 'restore') {
+            return $actorRole === Role::Administrator
+                && in_array($targetRole, [Role::Student, Role::Coordinator], true)
+                && ($ability !== 'restore' || ($target['status'] ?? '') === 'Archived')
+                && ($ability !== 'archive' || ($target['status'] ?? '') !== 'Archived')
+                && (int) ($actor['id'] ?? 0) !== (int) ($target['id'] ?? 0);
+        }
+
+        if (($target['status'] ?? '') === 'Archived' && $ability !== 'view') {
+            return false;
+        }
+
         if ($actorRole === Role::Coordinator) {
             return true;
         }
@@ -76,6 +88,27 @@ final class UserPolicy
         }
 
         return [];
+    }
+
+    /** @return list<string> */
+    public static function creatableRoles(?array $actor): array
+    {
+        $role = Role::tryFrom((string) ($actor['role'] ?? ''));
+
+        if ($role === Role::Administrator) {
+            return ['Student', 'Coordinator'];
+        }
+
+        if ($role === Role::Coordinator) {
+            return ['Student'];
+        }
+
+        return [];
+    }
+
+    public static function canCreateRole(?array $actor, string $role): bool
+    {
+        return in_array($role, self::creatableRoles($actor), true);
     }
 
     public static function canAssignRole(?array $actor, string $role): bool

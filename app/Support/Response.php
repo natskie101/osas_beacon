@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-final class Response
+use Illuminate\Contracts\Support\Responsable;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+
+final class Response implements Responsable
 {
     /** @param array<string, string> $headers */
     public function __construct(
@@ -88,5 +91,10 @@ final class Response
         }
 
         echo $this->content;
+    }
+
+    public function toResponse($request): SymfonyResponse
+    {
+        return new SymfonyResponse($this->content, $this->status, $this->headers);
     }
 }

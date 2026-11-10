@@ -4,10 +4,23 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Illuminate\Container\Container;
+
 final class Csrf
 {
     public static function token(): string
     {
+        if (class_exists(Container::class) && Container::getInstance() && function_exists('session')) {
+            try {
+                $session = session();
+                if ($session->isStarted()) {
+                    return $session->token();
+                }
+            } catch (\Throwable) {
+                // fallback
+            }
+        }
+
         if (!Session::has('_token')) {
             Session::put('_token', Str::random(32));
         }
@@ -22,8 +35,21 @@ final class Csrf
 
     public static function validate(?string $token): bool
     {
-        return is_string($token)
-            && $token !== ''
-            && hash_equals(self::token(), $token);
+        if (!is_string($token) || $token === '') {
+            return false;
+        }
+
+        if (class_exists(Container::class) && Container::getInstance() && function_exists('session')) {
+            try {
+                $session = session();
+                if ($session->isStarted()) {
+                    return hash_equals($session->token(), $token);
+                }
+            } catch (\Throwable) {
+                // fallback
+            }
+        }
+
+        return hash_equals(self::token(), $token);
     }
 }

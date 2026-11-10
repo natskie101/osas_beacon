@@ -3,10 +3,16 @@
 .env.local
 
 # Dependencies / tooling
+/vendor/
 node_modules/
 .vite/
 
 # Runtime files
+/bootstrap/cache/*.php
+storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+storage/framework/views/*
+!storage/framework/views/.gitkeep
 storage/logs/*
 !storage/logs/.gitkeep
 storage/framework/sessions/*
@@ -20,3 +26,6 @@ public/uploads/*
 .DS_Store
 Thumbs.db
 *.log
+
+# Verification artifacts (machine-specific DB snapshots, regenerable)
+scripts/*.json

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
 use App\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 final class PasswordReset
 {
@@ -16,17 +16,13 @@ final class PasswordReset
 
         $token = Str::random(32);
 
-        DB::insert(
-            'INSERT INTO password_resets (user_id, email, token_hash, expires_at, created_at)
-             VALUES (?, ?, ?, ?, ?)',
-            [
-                (int) $user['id'],
-                (string) $user['email'],
-                hash('sha256', $token),
-                date('Y-m-d H:i:s', time() + 900),
-                date('Y-m-d H:i:s'),
-            ],
-        );
+        DB::table('password_resets')->insert([
+            'user_id' => (int) $user['id'],
+            'email' => (string) $user['email'],
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => date('Y-m-d H:i:s', time() + 900),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
 
         return $token;
     }
@@ -34,18 +30,17 @@ final class PasswordReset
     /** @return array<string, mixed>|null */
     public static function findValid(string $token): ?array
     {
-        $row = DB::first(
-            'SELECT pr.*, u.first_name, u.last_name, u.email
-             FROM password_resets pr
-             INNER JOIN users u ON u.id = pr.user_id
-             WHERE pr.token_hash = ?
-             LIMIT 1',
-            [hash('sha256', $token)],
-        );
+        $row = DB::table('password_resets as pr')
+            ->join('users as u', 'u.id', '=', 'pr.user_id')
+            ->where('pr.token_hash', hash('sha256', $token))
+            ->select('pr.*', 'u.first_name', 'u.last_name', 'u.email')
+            ->first();
 
         if ($row === null) {
             return null;
         }
+
+        $row = (array) $row;
 
         if ($row['used_at'] !== null || strtotime((string) $row['expires_at']) < time()) {
             return null;
@@ -56,11 +51,13 @@ final class PasswordReset
 
     public static function markUsed(int $id): void
     {
-        DB::update('UPDATE password_resets SET used_at = ? WHERE id = ?', [date('Y-m-d H:i:s'), $id]);
+        DB::table('password_resets')->where('id', $id)->update([
+            'used_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public static function deleteForEmail(string $email): void
     {
-        DB::delete('DELETE FROM password_resets WHERE email = ?', [$email]);
+        DB::table('password_resets')->where('email', $email)->delete();
     }
 }

@@ -103,6 +103,13 @@ final class Auth
             ];
         }
 
+        if ($user['status'] === 'Archived') {
+            return [
+                'ok' => false,
+                'message' => 'This account has been archived. Please contact OSAS Support.',
+            ];
+        }
+
         if ($user['status'] === 'Pending') {
             return [
                 'ok' => false,

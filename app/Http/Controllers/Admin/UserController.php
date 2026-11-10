@@ -19,18 +19,17 @@ use App\Support\DB;
 use App\Support\Exceptions\ForbiddenHttpException;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 use RuntimeException;
 
 final class UserController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
-        $tab = $request->string('tab', 'directory') === 'queue' ? 'queue' : 'directory';
-        $status = $request->string('status');
+        $tab = (string) $request->string('tab', 'directory') === 'queue' ? 'queue' : 'directory';
+        $status = (string) $request->string('status');
 
         if ($tab === 'queue') {
             $status = 'Pending';
@@ -39,19 +38,19 @@ final class UserController extends Controller
         }
 
         $filters = [
-            'search' => $request->string('search'),
-            'role' => $request->string('role'),
+            'search' => (string) $request->string('search'),
+            'role' => (string) $request->string('role'),
             'status' => $status,
-            'group' => $tab === 'queue' ? '' : $request->string('group'),
-            'sort' => $request->string('sort', 'name'),
-            'direction' => $request->string('direction', 'asc'),
+            'group' => $tab === 'queue' ? '' : (string) $request->string('group'),
+            'sort' => (string) $request->string('sort', 'name'),
+            'direction' => (string) $request->string('direction', 'asc'),
             'tab' => $tab,
             'exclude_pending' => $tab === 'directory' && $status === '',
         ];
 
         $pagination = User::paginate($filters, max(1, (int) $request->input('page', 1)), 10);
 
-        return $this->page('layouts.app', 'admin/users/index', [
+        return view('admin/users/index', [
             'title' => 'User Account & Access Management',
             'pageTitle' => 'User Account & Access Management',
             'pageSubtitle' => 'Verify pending registrations and manage portal access and system roles.',
@@ -67,7 +66,7 @@ final class UserController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -75,7 +74,7 @@ final class UserController extends Controller
 
         $schoolFile = !empty($target['school_id_file_id']) ? File::find((int) $target['school_id_file_id']) : null;
 
-        return $this->page('layouts.app', 'admin/users/show', [
+        return view('admin/users/show', [
             'title' => User::fullName($target),
             'pageTitle' => User::fullName($target),
             'pageSubtitle' => $target['public_id'] . ' · ' . $target['role'] . ' account',
@@ -91,10 +90,12 @@ final class UserController extends Controller
             'canReset' => UserPolicy::allows('reset_password', $actor, $target),
             'canUpload' => UserPolicy::allows('upload_school_id', $actor, $target),
             'canChangeRole' => UserPolicy::allows('change_role', $actor, $target),
+            'canArchive' => UserPolicy::allows('archive', $actor, $target),
+            'canRestore' => UserPolicy::allows('restore', $actor, $target),
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
         $actor = Auth::user();
 
@@ -105,7 +106,7 @@ final class UserController extends Controller
         return $this->form($actor, null);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -114,7 +115,7 @@ final class UserController extends Controller
         return $this->form($actor, $target);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $actor = Auth::user();
 
@@ -124,22 +125,22 @@ final class UserController extends Controller
 
         $data = (new StoreUserRequest())->validate($request);
 
-        if (!UserPolicy::canAssignRole($actor, (string) $data['role'])) {
+        if (!UserPolicy::canCreateRole($actor, (string) $data['role'])) {
             throw new ForbiddenHttpException();
         }
 
         try {
             $target = UserService::create($data, $this->schoolIdFile($request), $actor);
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['school_id' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
         Session::flash('status', 'Account created for ' . User::fullName($target) . '.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -161,15 +162,15 @@ final class UserController extends Controller
         try {
             $target = UserService::update($target, $data, $this->schoolIdFile($request), $actor);
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['school_id' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
         Session::flash('status', 'Account details saved for ' . User::fullName($target) . '.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function verify(Request $request, string $publicId): Response
+    public function verify(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -187,15 +188,15 @@ final class UserController extends Controller
 
         Session::flash('status', User::fullName($target) . ' has been verified and activated.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function reject(Request $request, string $publicId): Response
+    public function reject(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
         UserPolicy::authorize('verify', $actor, $target);
-        $reason = trim($request->string('reason'));
+        $reason = trim((string) $request->string('reason'));
 
         if ($reason === '') {
             $reason = 'The information submitted could not be verified.';
@@ -217,10 +218,10 @@ final class UserController extends Controller
 
         Session::flash('status', User::fullName($target) . ' was rejected and deactivated.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function activate(Request $request, string $publicId): Response
+    public function activate(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -239,10 +240,10 @@ final class UserController extends Controller
 
         Session::flash('status', User::fullName($target) . ' is active again.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function deactivate(Request $request, string $publicId): Response
+    public function deactivate(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -252,7 +253,7 @@ final class UserController extends Controller
         if ($target['role'] === 'Coordinator' && (int) DB::value('SELECT COUNT(*) FROM users WHERE role = "Coordinator" AND status = "Active"') <= 1) {
             Session::flash('error', 'The last active coordinator cannot be deactivated.');
 
-            return Response::redirect(url('/admin/users/' . $target['public_id']));
+            return redirect(url('/admin/users/' . $target['public_id']));
         }
 
         UserService::setStatus(
@@ -267,10 +268,39 @@ final class UserController extends Controller
 
         Session::flash('status', User::fullName($target) . ' has been deactivated.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function resetPassword(Request $request, string $publicId): Response
+    public function archive(Request $request, string $publicId)
+    {
+        $actor = Auth::user();
+        $target = $this->find($publicId);
+        UserPolicy::authorize('archive', $actor, $target);
+
+        if (!UserService::archiveAccount($target, $actor)) {
+            Session::flash('error', 'The last active coordinator cannot be archived.');
+
+            return redirect(url('/admin/users/' . $target['public_id']));
+        }
+
+        Session::flash('status', User::fullName($target) . ' was archived. Their account and history can be restored.');
+
+        return redirect(url('/admin/users'));
+    }
+
+    public function restore(Request $request, string $publicId)
+    {
+        $actor = Auth::user();
+        $target = $this->find($publicId);
+        UserPolicy::authorize('restore', $actor, $target);
+        UserService::restoreAccount($target, $actor);
+
+        Session::flash('status', User::fullName($target) . ' was restored with their previous account status.');
+
+        return redirect(url('/admin/users/' . $target['public_id']));
+    }
+
+    public function resetPassword(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -279,10 +309,10 @@ final class UserController extends Controller
 
         Session::flash('status', 'A password reset link was generated for ' . $target['email'] . '. In local mode it is written to storage/logs/mail.log.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function uploadSchoolId(Request $request, string $publicId): Response
+    public function uploadSchoolId(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -292,7 +322,7 @@ final class UserController extends Controller
         if ($file === null) {
             Session::flash('error', 'Choose a school ID file to upload.');
 
-            return Response::redirect(url('/admin/users/' . $target['public_id']));
+            return redirect(url('/admin/users/' . $target['public_id']));
         }
 
         try {
@@ -300,15 +330,15 @@ final class UserController extends Controller
         } catch (RuntimeException $exception) {
             Session::flash('error', $exception->getMessage());
 
-            return Response::redirect(url('/admin/users/' . $target['public_id']));
+            return redirect(url('/admin/users/' . $target['public_id']));
         }
 
         Session::flash('status', 'School ID uploaded for ' . User::fullName($target) . '.');
 
-        return Response::redirect(url('/admin/users/' . $target['public_id']));
+        return redirect(url('/admin/users/' . $target['public_id']));
     }
 
-    public function downloadSchoolId(Request $request, string $publicId): Response
+    public function downloadSchoolId(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $target = $this->find($publicId);
@@ -328,7 +358,7 @@ final class UserController extends Controller
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $target */
-    private function form(array $actor, ?array $target): Response
+    private function form(array $actor, ?array $target)
     {
         $isEdit = $target !== null;
         $old = Session::getFlash('old', []);
@@ -353,7 +383,7 @@ final class UserController extends Controller
         $values['password'] = '';
         $values['password_confirmation'] = '';
 
-        return $this->page('layouts.app', 'admin/users/form', [
+        return view('admin/users/form', [
             'title' => $isEdit ? 'Edit Account' : 'Add New Account',
             'pageTitle' => $isEdit ? 'Edit Account' : 'Add New Account',
             'pageSubtitle' => $isEdit
@@ -365,12 +395,13 @@ final class UserController extends Controller
             'target' => $target,
             'values' => $values,
             'errors' => Session::errors(),
-            'roles' => UserPolicy::assignableRoles($actor),
+            'roles' => $isEdit
+                ? UserPolicy::assignableRoles($actor)
+                : UserPolicy::creatableRoles($actor),
             'canChangeRole' => $isEdit ? UserPolicy::allows('change_role', $actor, $target) : true,
             'departments' => config('people.departments', []),
             'programs' => config('people.programs', []),
             'yearLevels' => config('people.year_levels', []),
-            'accountTiers' => config('people.account_tiers', []),
             'statuses' => config('people.statuses', []),
         ]);
     }
@@ -378,7 +409,7 @@ final class UserController extends Controller
     /** @return array<string, mixed>|null */
     private function schoolIdFile(Request $request): ?array
     {
-        $file = $request->file('school_id');
+        $file = $this->uploadedFile($request, 'school_id');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;

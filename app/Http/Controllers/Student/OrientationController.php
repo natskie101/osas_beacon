@@ -14,19 +14,18 @@ use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 
 final class OrientationController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $modules = OrientationModule::published();
         $progress = OrientationProgress::forUser((int) $actor['id']);
         $summary = OrientationProgress::summary((int) $actor['id'], count($modules));
-        $search = mb_strtolower($request->string('search'));
+        $search = mb_strtolower((string) $request->string('search'));
 
         if ($search !== '') {
             $modules = array_values(array_filter(
@@ -37,7 +36,7 @@ final class OrientationController extends Controller
             ));
         }
 
-        return $this->page('layouts.app', 'student/orientation/index', [
+        return view('student/orientation/index', [
             'title' => 'Orientation',
             'pageTitle' => config('navigation.meta.student.orientation.title'),
             'pageSubtitle' => config('navigation.meta.student.orientation.subtitle'),
@@ -47,11 +46,11 @@ final class OrientationController extends Controller
             'modules' => $modules,
             'progress' => $progress,
             'summary' => $summary,
-            'filters' => ['search' => $request->string('search')],
+            'filters' => ['search' => (string) $request->string('search')],
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $module = OrientationModule::findPublished($publicId);
@@ -69,7 +68,7 @@ final class OrientationController extends Controller
         $latestAttempt = $quizAttempts[0] ?? null;
         $quizAvailable = $quiz !== null && $quiz['status'] === 'Published' && $module['verification_method'] === 'Quiz Assessment';
 
-        return $this->page('layouts.app', 'student/orientation/show', [
+        return view('student/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
             'pageSubtitle' => $module['category'] . ' · ' . $module['duration_minutes'] . ' min',
@@ -86,7 +85,7 @@ final class OrientationController extends Controller
         ]);
     }
 
-    public function downloadMedia(Request $request, string $publicId): Response
+    public function downloadMedia(Request $request, string $publicId)
     {
         $module = OrientationModule::findPublished($publicId);
 
@@ -103,7 +102,7 @@ final class OrientationController extends Controller
         return FileStorage::download($file);
     }
 
-    public function complete(Request $request, string $publicId): Response
+    public function complete(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $module = OrientationModule::findPublished($publicId);
@@ -134,6 +133,6 @@ final class OrientationController extends Controller
             Session::flash('status', 'This module is already marked complete.');
         }
 
-        return Response::redirect(url('/student/orientation/' . $module['public_id']));
+        return redirect(url('/student/orientation/' . $module['public_id']));
     }
 }

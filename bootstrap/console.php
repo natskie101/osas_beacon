@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-define('BASE_PATH', dirname(__DIR__));
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 
-require BASE_PATH . '/app/Support/Autoloader.php';
-require BASE_PATH . '/app/Support/helpers.php';
+require_once BASE_PATH . '/vendor/autoload.php';
 
-App\Support\Autoloader::register();
-App\Support\Env::load(BASE_PATH . '/.env');
-App\Support\Config::load(BASE_PATH . '/config');
+$app = require BASE_PATH . '/bootstrap/app.php';
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 date_default_timezone_set((string) config('app.timezone', 'UTC'));
+
+return $app;

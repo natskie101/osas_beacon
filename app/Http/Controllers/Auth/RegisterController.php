@@ -8,16 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterStudentRequest;
 use App\Services\UserService;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
-use App\Support\Response;
 use App\Support\Session;
+use Illuminate\Http\Request;
 use RuntimeException;
 
 final class RegisterController extends Controller
 {
-    public function show(Request $request): Response
+    public function show(Request $request)
     {
-        return $this->page('layouts.auth', 'auth/register', [
+        return view('auth/register', [
             'title' => 'Create Student Account',
             'pageTitle' => 'Create Student Account',
             'authSingle' => true,
@@ -38,26 +37,26 @@ final class RegisterController extends Controller
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $data = (new RegisterStudentRequest())->validate($request);
-        $file = $request->file('school_id');
+        $file = $this->uploadedFile($request, 'school_id');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             throw new ValidationException(
                 ['school_id' => 'Upload a clear photo or PDF of your school ID.'],
-                $request->all(),
+                $request->input(),
             );
         }
 
         try {
             UserService::registerStudent($data, $file);
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['school_id' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
         Session::flash('registration_success', 'Your account was submitted for verification. OSAS will review your school ID before you can sign in.');
 
-        return Response::redirect(url('/login'));
+        return redirect(url('/login'));
     }
 }

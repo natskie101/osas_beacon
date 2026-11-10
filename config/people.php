@@ -28,12 +28,10 @@ return [
 
     'year_levels' => ['First Year', 'Second Year', 'Third Year', 'Fourth Year'],
 
-    'account_tiers' => ['Student Tier', 'Admin Tier'],
-
     'access_levels' => [
         'Student' => 'Student — Portal Access',
         'Administrator' => 'Administrator — Technical Support Access',
-        'Coordinator' => 'Coordinator — Full System Access',
+        'Coordinator' => 'Coordinator — Coordinator Portal Access',
     ],
 
     'statuses' => ['Active', 'Pending', 'Inactive'],

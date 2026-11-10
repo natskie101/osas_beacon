@@ -1,0 +1,12 @@
+@extends('layouts.app')
+@section('content')
+<?php
+/** @var array<string, mixed> $event */
+/** @var list<array<string, mixed>> $attachments */
+?><div class="page-head"><div><div class="page-head__eyebrow"><a href="{!! url('/student/events') !!}">Events and Activities</a> / {{ $event['category'] }}</div><h2 class="page-head__title">{{ $event['title'] }}</h2><p class="page-head__sub">{{ fmt_datetime($event['start_at']) }} · {{ $event['venue'] }}</p></div><span class="badge {{ status_class($event['status']) }}">{{ $event['status'] }}</span></div>
+<div class="detail-grid">
+    <div class="detail-grid__main"><article class="card panel-card content-article"><p class="content-lede">{!! nl2br(e($event['description'] ?: 'No further details are available.')) !!}</p><div class="event-facts"><div><span>Starts</span><strong>{{ fmt_datetime($event['start_at']) }}</strong></div><div><span>Ends</span><strong>{{ fmt_datetime($event['end_at']) }}</strong></div><div><span>Venue</span><strong>{{ $event['venue'] }}</strong></div><div><span>Mode</span><strong>{{ $event['mode'] }}</strong></div><div><span>Audience</span><strong>{{ $event['audience'] }}</strong></div><div><span>Organizer</span><strong>{{ $event['organizer'] }}</strong></div></div></article></div>
+    <aside class="detail-grid__side"><section class="card panel-card"><div class="panel-title">Attendance</div><p class="panel-card__text">No event registration is required in the portal. Attendees can check in at the venue with the organizer.</p><span class="badge badge--info">{{ $event['verification'] ?: 'OSAS Verified' }}</span></section><?php if ($attachments !== []): ?><section class="card panel-card"><div class="panel-title">Event Materials</div><?php foreach ($attachments as $attachment): ?><?php if (!empty($attachment['file_id'])): ?><a class="attachment-chip" href="{!! url('/student/events/' . $event['public_id'] . '/attachment/' . (int) $attachment['file_id']) !!}">{!! App\Support\Icons::render('download', 14) !!}<span>{{ $attachment['name'] ?? 'Attachment' }}</span><em>Download{!! !empty($attachment['size']) ? ' · ' . e($attachment['size']) : '' !!}</em></a><?php else: ?><div class="attachment-chip">{!! App\Support\Icons::render('fileText', 14) !!}<span>{{ $attachment['name'] ?? 'Attachment' }}</span><em>{{ $attachment['size'] ?? '' }}</em></div><?php endif; ?><?php endforeach; ?></section><?php endif; ?></aside>
+</div>
+
+@endsection

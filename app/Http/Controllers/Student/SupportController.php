@@ -5,25 +5,28 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\File;
 use App\Models\SupportTicket;
 use App\Services\AuditLogger;
+use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\DB;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use App\Support\Exceptions\ValidationException;
+use Illuminate\Http\Request;
 use App\Support\Session;
+use RuntimeException;
 
 final class SupportController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $tickets = SupportTicket::forStudent((int) $actor['id']);
         $counts = $this->counts($tickets);
-        $search = mb_strtolower($request->string('search'));
-        $status = $request->string('status');
+        $search = mb_strtolower((string) $request->string('search'));
+        $status = (string) $request->string('status');
         $status = in_array($status, ['Open', 'In Progress', 'Resolved'], true) ? $status : '';
 
         if ($search !== '') {
@@ -45,7 +48,7 @@ final class SupportController extends Controller
             ));
         }
 
-        return $this->page('layouts.app', 'student/support/index', [
+        return view('student/support/index', [
             'title' => 'Feedback and Report',
             'pageTitle' => config('navigation.meta.student.support.title'),
             'pageSubtitle' => config('navigation.meta.student.support.subtitle'),
@@ -54,13 +57,13 @@ final class SupportController extends Controller
             'role' => $actor['role'],
             'tickets' => $tickets,
             'counts' => $counts,
-            'filters' => ['search' => $request->string('search'), 'status' => $status],
+            'filters' => ['search' => (string) $request->string('search'), 'status' => $status],
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->page('layouts.app', 'student/support/create', [
+        return view('student/support/create', [
             'title' => 'Submit a Concern',
             'pageTitle' => 'Submit a Concern',
             'pageSubtitle' => 'Tell OSAS what happened and we will follow up through your portal.',
@@ -77,7 +80,7 @@ final class SupportController extends Controller
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $actor = Auth::user();
         $data = $this->validate($request, [
@@ -86,6 +89,7 @@ final class SupportController extends Controller
             'description' => 'required|string|max:4000',
             'priority' => 'required|in:Low,Medium,High,Urgent',
         ]);
+        $image = $this->storeImage($request, $actor);
         $now = date('Y-m-d H:i:s');
         $id = SupportTicket::create([
             'student_user_id' => (int) $actor['id'],
@@ -102,6 +106,9 @@ final class SupportController extends Controller
             'submitted_at' => $now,
         ]);
         $ticket = SupportTicket::find($id);
+        if ($image !== null) {
+            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$ticket['public_id'], $image['id']]);
+        }
         SupportTicket::addMessage($id, (string) $ticket['student_name'], 'Student', $data['description']);
         SupportTicket::addMessage($id, 'OSAS Support System', 'OSAS Support', 'Ticket received by OSAS Support. A staff member will review your concern and reply through this thread.');
 
@@ -114,10 +121,44 @@ final class SupportController extends Controller
         AuditLogger::log('support.created', 'Support Ticket Submitted', $ticket['student_name'] . ' submitted ' . $ticket['public_id'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => (int) $actor['id']]);
         Session::flash('status', 'Your concern has been submitted.');
 
-        return Response::redirect(url('/student/support/' . $ticket['public_id']));
+        return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function downloadImage(Request $request, string $publicId, string $fileId)
+    {
+        $actor = Auth::user();
+        $ticket = SupportTicket::findByPublicId($publicId);
+
+        if (
+            $ticket === null
+            || ($actor['role'] === 'Student' && (int) $ticket['student_user_id'] !== (int) $actor['id'])
+        ) {
+            throw new NotFoundHttpException('The requested concern image could not be found.');
+        }
+
+        $file = File::findForEntity((int) $fileId, 'support_ticket', $publicId);
+
+        if ($file === null || !in_array($file['mime_type'] ?? '', ['image/jpeg', 'image/png'], true)) {
+            throw new NotFoundHttpException('The requested concern image could not be found.');
+        }
+
+        $path = FileStorage::path($file);
+        $content = is_file($path) ? file_get_contents($path) : false;
+
+        if ($content === false) {
+            throw new NotFoundHttpException('The requested concern image could not be found.');
+        }
+
+        return response($content, 200, [
+            'Content-Type' => (string) $file['mime_type'],
+            'Content-Length' => (string) strlen($content),
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
@@ -126,7 +167,7 @@ final class SupportController extends Controller
             throw new NotFoundHttpException('The requested support ticket could not be found.');
         }
 
-        return $this->page('layouts.app', 'student/support/show', [
+        return view('student/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
             'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['status'],
@@ -134,12 +175,40 @@ final class SupportController extends Controller
             'user' => $actor,
             'role' => $actor['role'],
             'ticket' => $ticket,
+            'imageFile' => SupportTicket::imageAttachment((string) $ticket['public_id']),
             'messages' => SupportTicket::messages((int) $ticket['id']),
             'errors' => Session::errors(),
         ]);
     }
 
-    public function reply(Request $request, string $publicId): Response
+    /**
+     * @param array<string, mixed> $actor
+     * @return array<string, mixed>|null
+     */
+    private function storeImage(Request $request, array $actor): ?array
+    {
+        $file = $this->uploadedFile($request, 'image');
+
+        if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        try {
+            return FileStorage::storeUpload(
+                $file,
+                'support/pending',
+                'support_ticket',
+                'pending',
+                (int) $actor['id'],
+                5 * 1024 * 1024,
+                ['image/jpeg' => 'jpg', 'image/png' => 'png'],
+            );
+        } catch (RuntimeException $exception) {
+            throw new ValidationException(['image' => $exception->getMessage()], $request->input());
+        }
+    }
+
+    public function reply(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
@@ -151,7 +220,7 @@ final class SupportController extends Controller
         if (in_array($ticket['status'], ['Closed'], true)) {
             Session::flash('error', 'This ticket is closed. Open a new concern if you need further help.');
 
-            return Response::redirect(url('/student/support/' . $ticket['public_id']));
+            return redirect(url('/student/support/' . $ticket['public_id']));
         }
 
         $data = $this->validate($request, ['body' => 'required|string|max:4000']);
@@ -164,10 +233,10 @@ final class SupportController extends Controller
 
         Session::flash('status', 'Reply added to the ticket.');
 
-        return Response::redirect(url('/student/support/' . $ticket['public_id']));
+        return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
-    public function close(Request $request, string $publicId): Response
+    public function close(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
@@ -180,10 +249,10 @@ final class SupportController extends Controller
         AuditLogger::log('support.closed', 'Support Ticket Closed', $ticket['public_id'] . ' was closed by the student.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'amber', 'icon' => 'checkCircle', 'target_user_id' => (int) $actor['id']]);
         Session::flash('status', 'Ticket closed. Thank you for your feedback.');
 
-        return Response::redirect(url('/student/support/' . $ticket['public_id']));
+        return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
-    public function rate(Request $request, string $publicId): Response
+    public function rate(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
@@ -195,14 +264,14 @@ final class SupportController extends Controller
         if (!in_array($ticket['status'], ['Resolved', 'Closed'], true) || $ticket['rating'] !== null) {
             Session::flash('error', 'This ticket is not available for rating.');
 
-            return Response::redirect(url('/student/support/' . $ticket['public_id']));
+            return redirect(url('/student/support/' . $ticket['public_id']));
         }
 
         $data = $this->validate($request, ['rating' => 'required|integer|min:1|max:5']);
         SupportTicket::update((int) $ticket['id'], ['rating' => (int) $data['rating']]);
         Session::flash('status', 'Thank you for rating the support you received.');
 
-        return Response::redirect(url('/student/support/' . $ticket['public_id']));
+        return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
     /** @return array{total:int,open:int,in_progress:int,resolved:int} */

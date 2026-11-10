@@ -45,6 +45,7 @@ final class Icons
         'upload' => '<path d="M12 20V9"/><path d="M8 12l4-4 4 4"/><path d="M4 4h16"/>',
         'edit' => '<path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M14.5 5.5 18.5 9.5"/>',
         'trash' => '<path d="M4 7h16"/><path d="M9 7V4.8h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5M13.5 11v5"/>',
+        'archive' => '<path d="M3 4h18v4H3z"/><path d="M5 8v12h14V8"/><path d="M10 12h4"/>',
         'external' => '<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
         'menu' => '<path d="M4 7h16M4 12h16M4 17h16"/>',
         'logout' => '<path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/>',

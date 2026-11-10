@@ -10,15 +10,14 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuditLogger;
 use App\Services\LoginThrottle;
 use App\Support\Auth;
-use App\Support\Request;
-use App\Support\Response;
 use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class LoginController extends Controller
 {
-    public function show(Request $request): Response
+    public function show(Request $request)
     {
-        return $this->page('layouts.auth', 'auth/login', [
+        return view('auth/login', [
             'title' => 'Sign in to Portal',
             'pageTitle' => 'Sign in to Portal',
             'errors' => Session::errors(),
@@ -30,16 +29,16 @@ final class LoginController extends Controller
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $data = (new LoginRequest())->validate($request);
-        $ip = $request->ip;
+        $ip = $request->ip();
 
         if (LoginThrottle::tooManyAttempts($data['email'], $ip)) {
             Session::flashErrors(['email' => 'Too many failed attempts. Please wait 10 minutes before trying again.']);
             Session::flashOld(['email' => $data['email']]);
 
-            return Response::redirect(url('/login'));
+            return redirect(url('/login'));
         }
 
         $result = Auth::attempt($data['email'], $data['password'], $request->boolean('remember'));
@@ -49,7 +48,7 @@ final class LoginController extends Controller
             Session::flashErrors(['email' => $result['message']]);
             Session::flashOld(['email' => $data['email']]);
 
-            return Response::redirect(url('/login'));
+            return redirect(url('/login'));
         }
 
         LoginThrottle::clear($data['email'], $ip);
@@ -59,7 +58,7 @@ final class LoginController extends Controller
         $intended = Session::pull('url.intended');
         $target = $this->safeIntended($intended, $role) ?? url($role?->homePath() ?? '/login');
 
-        return Response::redirect($target);
+        return redirect($target);
     }
 
     private function safeIntended(mixed $intended, ?Role $role): ?string

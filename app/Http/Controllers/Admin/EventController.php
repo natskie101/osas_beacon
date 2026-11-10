@@ -15,19 +15,18 @@ use App\Support\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 
 final class EventController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = Event::paginate(
             $filters,
@@ -38,7 +37,7 @@ final class EventController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/events/index', [
+        return view('admin/events/index', [
             'title' => 'Events & Activities',
             'pageTitle' => config('navigation.meta.admin.events.title'),
             'pageSubtitle' => config('navigation.meta.admin.events.subtitle'),
@@ -53,12 +52,12 @@ final class EventController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
         return $this->form(Auth::user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $actor = Auth::user();
         $data = $this->validated($request);
@@ -76,15 +75,15 @@ final class EventController extends Controller
         AuditLogger::log('event.created', 'Event Created', $event['title'] . ' (' . $event['public_id'] . ') was scheduled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'blue', 'icon' => 'calendar']);
         Session::flash('status', 'Event created.');
 
-        return Response::redirect(url('/admin/events/' . $event['public_id']));
+        return redirect(url('/admin/events/' . $event['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $event = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/events/show', [
+        return view('admin/events/show', [
             'title' => $event['title'],
             'pageTitle' => $event['title'],
             'pageSubtitle' => $event['public_id'] . ' · ' . $event['status'],
@@ -97,12 +96,12 @@ final class EventController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
         return $this->form(Auth::user(), $this->find($publicId));
     }
 
-    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    public function downloadAttachment(Request $request, string $publicId, string $fileId)
     {
         $event = $this->find($publicId);
         $file = File::find((int) $fileId);
@@ -119,7 +118,7 @@ final class EventController extends Controller
         return FileStorage::download($file);
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $event = $this->find($publicId);
         $data = $this->validated($request);
@@ -137,21 +136,21 @@ final class EventController extends Controller
         AuditLogger::log('event.updated', 'Event Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'event', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
         Session::flash('status', 'Event saved.');
 
-        return Response::redirect(url('/admin/events/' . $updated['public_id']));
+        return redirect(url('/admin/events/' . $updated['public_id']));
     }
 
-    public function cancel(Request $request, string $publicId): Response
+    public function cancel(Request $request, string $publicId)
     {
         $event = $this->find($publicId);
         Event::update((int) $event['id'], ['status' => 'Cancelled']);
         AuditLogger::log('event.cancelled', 'Event Cancelled', $event['title'] . ' was cancelled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'amber', 'icon' => 'alert']);
         Session::flash('status', 'Event cancelled.');
 
-        return Response::redirect(url('/admin/events/' . $event['public_id']));
+        return redirect(url('/admin/events/' . $event['public_id']));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $event */
-    private function form(array $actor, ?array $event): Response
+    private function form(array $actor, ?array $event)
     {
         $isEdit = $event !== null;
         $old = Session::getFlash('old', []);
@@ -176,7 +175,7 @@ final class EventController extends Controller
             $values['end_at'] = datetime_input($values['end_at']);
         }
 
-        return $this->page('layouts.app', 'admin/events/form', [
+        return view('admin/events/form', [
             'title' => $isEdit ? 'Edit Event' : 'Create Event',
             'pageTitle' => $isEdit ? 'Edit Event' : 'Create Event',
             'pageSubtitle' => $isEdit ? 'Update the schedule, venue and publication details for ' . $event['public_id'] . '.' : 'Schedule a university event or student activity.',
@@ -214,7 +213,7 @@ final class EventController extends Controller
         $data['capacity'] = (int) $data['capacity'];
 
         if ($data['end_at'] !== null && $data['end_at'] < $data['start_at']) {
-            throw new ValidationException(['end_at' => 'The end time must be after the start time.'], $request->all());
+            throw new ValidationException(['end_at' => 'The end time must be after the start time.'], $request->input());
         }
 
         return $data;
@@ -236,7 +235,7 @@ final class EventController extends Controller
      */
     private function storeAttachment(Request $request, ?array $event, array $actor): array
     {
-        $file = $request->file('attachment');
+        $file = $this->uploadedFile($request, 'attachment');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return [];
@@ -251,7 +250,7 @@ final class EventController extends Controller
                 (int) $actor['id'],
             );
         } catch (\RuntimeException $exception) {
-            throw new ValidationException(['attachment' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['attachment' => $exception->getMessage()], $request->input());
         }
 
         return [[

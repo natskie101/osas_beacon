@@ -75,29 +75,186 @@
       });
     });
 
-    /* Show the selected filename in custom upload areas. */
+    /* Show selected files and support dropping files onto custom upload areas. */
+    function updateUploadLabel(input) {
+      var dropZone = Array.prototype.slice.call(document.querySelectorAll(".upload-drop[for]")).find(function (zone) {
+        return zone.getAttribute("for") === input.id;
+      });
+      var container = dropZone || input.closest(".field") || input.parentElement;
+      var filename = container ? container.querySelector("[data-upload-filename]") : null;
+      var prompts = container ? container.querySelectorAll("[data-upload-prompt]") : [];
+      var file = input.files && input.files.length ? input.files[0] : null;
+
+      if (!filename) return;
+
+      filename.textContent = file ? file.name : "";
+      filename.hidden = !file;
+      prompts.forEach(function (prompt) {
+        prompt.hidden = Boolean(file);
+      });
+    }
+
     document.querySelectorAll(".upload-drop__input").forEach(function (input) {
       input.addEventListener("change", function () {
-        var label = input.labels && input.labels.length ? input.labels[0] : null;
-        var filename = label ? label.querySelector("[data-upload-filename]") : null;
-        var prompts = label ? label.querySelectorAll("[data-upload-prompt]") : [];
-        var file = input.files && input.files.length ? input.files[0] : null;
-
-        if (!filename) return;
-
-        filename.textContent = file ? file.name : "";
-        filename.hidden = !file;
-        prompts.forEach(function (prompt) {
-          prompt.hidden = Boolean(file);
-        });
+        updateUploadLabel(input);
       });
     });
 
-    /* Announcement rich-content toolbar inserts basic HTML into the body field. */
+    document.querySelectorAll(".upload-drop[for]").forEach(function (dropZone) {
+      var input = document.getElementById(dropZone.getAttribute("for") || "");
+      if (!input || !input.matches(".upload-drop__input")) return;
+
+      ["dragenter", "dragover"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          dropZone.classList.add("upload-drop--dragging");
+        });
+      });
+
+      ["dragleave", "dragend"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          if (eventName === "dragleave" && dropZone.contains(event.relatedTarget)) return;
+          dropZone.classList.remove("upload-drop--dragging");
+        });
+      });
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("upload-drop--dragging");
+
+        var files = event.dataTransfer && event.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        var transfer = new DataTransfer();
+        transfer.items.add(files[0]);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+
+    /* Preview a selected profile photo before submitting the profile form. */
+    var profilePhotoInput = document.querySelector("[data-profile-photo-input]");
+    var profilePhotoImage = document.querySelector("[data-profile-photo-image]");
+    var profilePhotoInitials = document.querySelector("[data-profile-photo-initials]");
+    var profilePhotoPreviewUrl = null;
+
+    if (profilePhotoInput && profilePhotoImage) {
+      profilePhotoInput.addEventListener("change", function () {
+        var file = profilePhotoInput.files && profilePhotoInput.files.length ? profilePhotoInput.files[0] : null;
+
+        if (profilePhotoPreviewUrl) {
+          URL.revokeObjectURL(profilePhotoPreviewUrl);
+          profilePhotoPreviewUrl = null;
+        }
+
+        if (!file || !/^image\/(jpeg|png)$/.test(file.type)) return;
+
+        profilePhotoPreviewUrl = URL.createObjectURL(file);
+        profilePhotoImage.src = profilePhotoPreviewUrl;
+        profilePhotoImage.hidden = false;
+        if (profilePhotoInitials) profilePhotoInitials.hidden = true;
+      });
+    }
+
+    /* Toolbars marked data-editor-rich become a visual WYSIWYG editor backed by a
+       hidden textarea, so the stored value stays the same cleaned HTML as before. */
+    function setupRichEditor(toolbar, input) {
+      var surface = document.getElementById(input.id + "-editor");
+
+      if (!surface) return;
+
+      var error = input.form ? input.form.querySelector("[data-editor-error]") : null;
+
+      function sync() {
+        input.value = surface.innerHTML;
+      }
+
+      function isEmpty() {
+        return surface.textContent.replace(/\s+/g, "") === ""
+          && !surface.querySelector("img, hr, table");
+      }
+
+      function hideError() {
+        if (error && !error.hidden) error.hidden = true;
+      }
+
+      function exec(command, value) {
+        surface.focus();
+        document.execCommand(command, false, value || null);
+        sync();
+      }
+
+      /* Build the visual surface from the stored value, then swap it in. */
+      surface.innerHTML = input.value;
+
+      /* Collapse empty markup (e.g. "<p></p>") so the placeholder can show. */
+      if (isEmpty()) surface.innerHTML = "";
+
+      surface.hidden = false;
+      input.hidden = true;
+      input.required = false;
+
+      /* Chrome inserts <div> on Enter; prefer <p> so the cleaner keeps spacing. */
+      try {
+        document.execCommand("defaultParagraphSeparator", false, "p");
+      } catch (ignored) {
+        /* Older browsers ignore this command. */
+      }
+
+      toolbar.querySelectorAll("button[data-editor-command]").forEach(function (button) {
+        /* Keep the text selection when the toolbar button takes focus. */
+        button.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+
+        button.addEventListener("click", function () {
+          var command = button.getAttribute("data-editor-command") || "";
+          var value = button.getAttribute("data-editor-value") || "";
+
+          if (command === "createLink") {
+            var url = window.prompt("Link URL", "https://");
+            if (url) exec("createLink", url);
+            return;
+          }
+
+          if (command === "insertImage") {
+            var image = window.prompt("Image URL", "https://");
+            if (image) exec("insertImage", image);
+            return;
+          }
+
+          exec(command, command === "formatBlock" && value ? "<" + value + ">" : value);
+        });
+      });
+
+      surface.addEventListener("input", function () {
+        sync();
+        if (!isEmpty()) hideError();
+      });
+
+      if (input.form) {
+        input.form.addEventListener("submit", function (event) {
+          sync();
+
+          if (isEmpty()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (error) error.hidden = false;
+            surface.focus();
+          }
+        });
+      }
+    }
+
     document.querySelectorAll("[data-editor-toolbar]").forEach(function (toolbar) {
       var target = document.getElementById(toolbar.getAttribute("data-target") || "");
 
       if (!target) return;
+
+      if (toolbar.hasAttribute("data-editor-rich")) {
+        setupRichEditor(toolbar, target);
+        return;
+      }
 
       toolbar.querySelectorAll("button[data-editor-before]").forEach(function (button) {
         button.addEventListener("click", function () {
@@ -420,6 +577,11 @@
       document.querySelectorAll("details.account[open]").forEach(function (details) {
         if (!details.contains(event.target)) details.removeAttribute("open");
       });
+
+      /* Print buttons (replaces inline onclick so a strict CSP can be used) */
+      if (event.target.closest("[data-print-button]")) {
+        window.print();
+      }
     });
 
     /* Keep derived access fields in sync with the selected role. */
@@ -427,20 +589,39 @@
 
     if (roleSelect) {
       var accessLevel = document.querySelector("[data-access-level]");
-      var accountTier = document.querySelector("[data-account-tier]");
       var studentFields = document.querySelector("[data-student-fields]");
+      var studentIdField = document.querySelector("[data-student-id-field]");
+      var studentIdInput = document.getElementById("student_id");
+      var studentAgeInput = document.getElementById("age");
+      var coordinatorAgeField = document.querySelector("[data-coordinator-age-field]");
+      var coordinatorAgeInput = document.getElementById("coordinator_age");
+      var schoolIdSection = document.querySelector("[data-school-id-section]");
+      var schoolIdInput = document.getElementById("school_id");
       var accessLevels = {
         Student: "Student — Portal Access",
         Administrator: "Administrator — Technical Support Access",
-        Coordinator: "Coordinator — Full System Access"
+        Coordinator: "Coordinator — Coordinator Portal Access"
       };
 
       function syncRole() {
         var role = roleSelect.value;
+        var isStudent = role === "Student";
+        var isCoordinator = role === "Coordinator";
 
         if (accessLevel) accessLevel.value = accessLevels[role] || "";
-        if (accountTier) accountTier.value = role === "Student" ? "Student Tier" : "Admin Tier";
-        if (studentFields) studentFields.hidden = role !== "Student";
+        if (studentFields) studentFields.hidden = !isStudent;
+        if (studentFields) {
+          studentFields.querySelectorAll("input, select, textarea").forEach(function (field) {
+            field.disabled = !isStudent;
+          });
+        }
+        if (studentIdField) studentIdField.hidden = !isStudent;
+        if (studentIdInput) studentIdInput.disabled = !isStudent;
+        if (studentAgeInput) studentAgeInput.disabled = !isStudent;
+        if (coordinatorAgeField) coordinatorAgeField.hidden = !isCoordinator;
+        if (coordinatorAgeInput) coordinatorAgeInput.disabled = !isCoordinator;
+        if (schoolIdSection) schoolIdSection.hidden = !isStudent;
+        if (schoolIdInput) schoolIdInput.disabled = !isStudent;
       }
 
       roleSelect.addEventListener("change", syncRole);

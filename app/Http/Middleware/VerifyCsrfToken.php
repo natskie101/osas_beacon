@@ -9,11 +9,17 @@ use App\Support\Exceptions\HttpException;
 use App\Support\Request;
 use App\Support\Response;
 use Closure;
+use Illuminate\Container\Container;
 
 final class VerifyCsrfToken
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // When running under Laravel, Laravel's global VerifyCsrfToken middleware already validates the token
+        if (class_exists(Container::class) && Container::getInstance()) {
+            return $next($request);
+        }
+
         if (!in_array($request->method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             return $next($request);
         }

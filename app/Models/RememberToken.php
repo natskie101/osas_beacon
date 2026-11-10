@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
 use App\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 final class RememberToken
 {
@@ -15,11 +15,14 @@ final class RememberToken
         $validator = Str::random(32);
         $expiresAt = date('Y-m-d H:i:s', time() + (int) config('app.remember.lifetime', 2592000));
 
-        DB::insert(
-            'INSERT INTO remember_tokens (user_id, selector, validator_hash, expires_at, created_at, last_used_at)
-             VALUES (?, ?, ?, ?, ?, ?)',
-            [$userId, $selector, hash('sha256', $validator), $expiresAt, date('Y-m-d H:i:s'), date('Y-m-d H:i:s')],
-        );
+        DB::table('remember_tokens')->insert([
+            'user_id' => $userId,
+            'selector' => $selector,
+            'validator_hash' => hash('sha256', $validator),
+            'expires_at' => $expiresAt,
+            'created_at' => date('Y-m-d H:i:s'),
+            'last_used_at' => date('Y-m-d H:i:s'),
+        ]);
 
         self::setCookie($selector . ':' . $validator, time() + (int) config('app.remember.lifetime', 2592000));
     }
@@ -36,24 +39,27 @@ final class RememberToken
             return null;
         }
 
-        $row = DB::first('SELECT * FROM remember_tokens WHERE selector = ? LIMIT 1', [$selector]);
+        $row = DB::table('remember_tokens')->where('selector', $selector)->first();
+        $row = $row === null ? null : (array) $row;
 
         if ($row === null || strtotime((string) $row['expires_at']) < time()) {
             if ($row !== null) {
-                DB::delete('DELETE FROM remember_tokens WHERE selector = ?', [$selector]);
+                DB::table('remember_tokens')->where('selector', $selector)->delete();
             }
 
             return null;
         }
 
         if (!hash_equals((string) $row['validator_hash'], hash('sha256', $validator))) {
-            DB::delete('DELETE FROM remember_tokens WHERE selector = ?', [$selector]);
+            DB::table('remember_tokens')->where('selector', $selector)->delete();
 
             return null;
         }
 
-        DB::update('UPDATE remember_tokens SET last_used_at = ? WHERE selector = ?', [date('Y-m-d H:i:s'), $selector]);
-        DB::delete('DELETE FROM remember_tokens WHERE selector = ?', [$selector]);
+        DB::table('remember_tokens')->where('selector', $selector)->update([
+            'last_used_at' => date('Y-m-d H:i:s'),
+        ]);
+        DB::table('remember_tokens')->where('selector', $selector)->delete();
         self::issue((int) $row['user_id']);
 
         return (int) $row['user_id'];
@@ -63,7 +69,7 @@ final class RememberToken
     {
         if ($cookie !== null && str_contains($cookie, ':')) {
             [$selector] = explode(':', $cookie, 2);
-            DB::delete('DELETE FROM remember_tokens WHERE selector = ?', [$selector]);
+            DB::table('remember_tokens')->where('selector', $selector)->delete();
         }
 
         self::setCookie('', time() - 3600);
@@ -71,7 +77,7 @@ final class RememberToken
 
     public static function clearForUser(int $userId): void
     {
-        DB::delete('DELETE FROM remember_tokens WHERE user_id = ?', [$userId]);
+        DB::table('remember_tokens')->where('user_id', $userId)->delete();
     }
 
     private static function setCookie(string $value, int $expires): void

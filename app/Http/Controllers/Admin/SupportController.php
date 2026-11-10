@@ -10,19 +10,18 @@ use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 
 final class SupportController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = SupportTicket::paginate(
             $filters,
@@ -33,7 +32,7 @@ final class SupportController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/support/index', [
+        return view('admin/support/index', [
             'title' => 'Support & Concerns',
             'pageTitle' => config('navigation.meta.admin.support.title'),
             'pageSubtitle' => config('navigation.meta.admin.support.subtitle'),
@@ -48,12 +47,12 @@ final class SupportController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/support/show', [
+        return view('admin/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
             'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['student_name'] . ' · ' . $ticket['status'],
@@ -61,11 +60,12 @@ final class SupportController extends Controller
             'user' => $actor,
             'role' => $actor['role'],
             'ticket' => $ticket,
+            'imageFile' => SupportTicket::imageAttachment((string) $ticket['public_id']),
             'messages' => SupportTicket::messages((int) $ticket['id']),
         ]);
     }
 
-    public function reply(Request $request, string $publicId): Response
+    public function reply(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $ticket = $this->find($publicId);
@@ -84,10 +84,10 @@ final class SupportController extends Controller
         AuditLogger::log('support.replied', 'Support Ticket Reply', $author . ' replied to ' . $ticket['public_id'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => $ticket['student_user_id'] ?? null]);
         Session::flash('status', 'Reply sent to the student.');
 
-        return Response::redirect(url('/admin/support/' . $ticket['public_id']));
+        return redirect(url('/admin/support/' . $ticket['public_id']));
     }
 
-    public function updateStatus(Request $request, string $publicId): Response
+    public function updateStatus(Request $request, string $publicId)
     {
         $ticket = $this->find($publicId);
         $data = $this->validate($request, [
@@ -106,7 +106,7 @@ final class SupportController extends Controller
         AuditLogger::log('support.updated', 'Support Ticket Updated', $ticket['public_id'] . ' was moved to ' . $data['status'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => $ticket['student_user_id'] ?? null]);
         Session::flash('status', 'Ticket status updated.');
 
-        return Response::redirect(url('/admin/support/' . $ticket['public_id']));
+        return redirect(url('/admin/support/' . $ticket['public_id']));
     }
 
     /** @return list<string> */

@@ -18,6 +18,15 @@ final class DB
             return self::$pdo;
         }
 
+        if (class_exists(\Illuminate\Container\Container::class) && \Illuminate\Container\Container::getInstance()) {
+            try {
+                self::$pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+                return self::$pdo;
+            } catch (Throwable) {
+                // Fallback to standalone PDO configuration below
+            }
+        }
+
         $driver = (string) config('database.driver', 'mysql');
         $database = (string) config('database.database', 'osas_beacon');
 

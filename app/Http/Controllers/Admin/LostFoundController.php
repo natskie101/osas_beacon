@@ -16,21 +16,21 @@ use App\Support\Auth;
 use App\Support\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
+use Illuminate\Http\Request;
 use App\Support\Response;
 use App\Support\Session;
 use RuntimeException;
 
 final class LostFoundController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'type' => $request->string('type'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'type' => (string) $request->string('type'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = LostFoundItem::paginate(
             $filters,
@@ -41,7 +41,7 @@ final class LostFoundController extends Controller
             ['type' => 'type', 'category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/lost-found/index', [
+        return view('admin/lost-found/index', [
             'title' => 'Lost & Found',
             'pageTitle' => config('navigation.meta.admin.lost-found.title'),
             'pageSubtitle' => config('navigation.meta.admin.lost-found.subtitle'),
@@ -58,7 +58,7 @@ final class LostFoundController extends Controller
         ]);
     }
 
-    public function export(Request $request): Response
+    public function export(Request $request)
     {
         $rows = DB::select(
             'SELECT public_id, type, title, category, status, location, reported_by, reporter_email,
@@ -93,12 +93,12 @@ final class LostFoundController extends Controller
         return Response::download('lost-found-items.csv', "\xEF\xBB\xBF" . $csv, 'text/csv; charset=UTF-8');
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
         return $this->form(Auth::user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $actor = Auth::user();
         $data = $this->validated($request);
@@ -121,15 +121,15 @@ final class LostFoundController extends Controller
         AuditLogger::log('lost_found.created', 'Lost & Found Item Posted', $item['title'] . ' (' . $item['public_id'] . ') was posted.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'blue', 'icon' => 'search']);
         Session::flash('status', 'Lost & found item posted.');
 
-        return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
+        return redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $item = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/lost-found/show', [
+        return view('admin/lost-found/show', [
             'title' => $item['title'],
             'pageTitle' => $item['title'],
             'pageSubtitle' => $item['type'] . ' · ' . $item['public_id'] . ' · ' . $item['status'],
@@ -143,12 +143,12 @@ final class LostFoundController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
         return $this->form(Auth::user(), $this->find($publicId));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $item = $this->find($publicId);
         $data = $this->validated($request);
@@ -178,10 +178,10 @@ final class LostFoundController extends Controller
         AuditLogger::log('lost_found.updated', 'Lost & Found Item Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'lost_found', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
         Session::flash('status', 'Lost & found item saved.');
 
-        return Response::redirect(url('/admin/lost-found/' . $updated['public_id']));
+        return redirect(url('/admin/lost-found/' . $updated['public_id']));
     }
 
-    public function approveClaim(Request $request, string $publicId, string $claimId): Response
+    public function approveClaim(Request $request, string $publicId, string $claimId)
     {
         $item = $this->find($publicId);
         $claim = $this->claim($claimId, (int) $item['id']);
@@ -199,10 +199,10 @@ final class LostFoundController extends Controller
 
         Session::flash('status', 'Ownership claim verified.');
 
-        return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
+        return redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-    public function rejectClaim(Request $request, string $publicId, string $claimId): Response
+    public function rejectClaim(Request $request, string $publicId, string $claimId)
     {
         $item = $this->find($publicId);
         $claim = $this->claim($claimId, (int) $item['id']);
@@ -219,30 +219,30 @@ final class LostFoundController extends Controller
         AuditLogger::log('lost_found.claim_rejected', 'Ownership Claim Rejected', 'Claim ' . $claim['public_id'] . ' for ' . $item['title'] . ' was rejected.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'amber', 'icon' => 'close']);
         Session::flash('status', 'Ownership claim rejected.');
 
-        return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
+        return redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-    public function markReturned(Request $request, string $publicId): Response
+    public function markReturned(Request $request, string $publicId)
     {
         $item = $this->find($publicId);
         LostFoundItem::update((int) $item['id'], ['status' => 'Returned']);
         AuditLogger::log('lost_found.returned', 'Item Marked Returned', $item['title'] . ' was marked as returned.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'green', 'icon' => 'checkCircle']);
         Session::flash('status', 'Item marked as returned.');
 
-        return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
+        return redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-    public function archive(Request $request, string $publicId): Response
+    public function archive(Request $request, string $publicId)
     {
         $item = $this->find($publicId);
         LostFoundItem::update((int) $item['id'], ['status' => 'Archived']);
         AuditLogger::log('lost_found.archived', 'Lost & Found Item Archived', $item['title'] . ' was archived.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'amber', 'icon' => 'fileText']);
         Session::flash('status', 'Item archived.');
 
-        return Response::redirect(url('/admin/lost-found/' . $item['public_id']));
+        return redirect(url('/admin/lost-found/' . $item['public_id']));
     }
 
-    public function downloadImage(Request $request, string $publicId): Response
+    public function downloadImage(Request $request, string $publicId)
     {
         $item = $this->find($publicId);
 
@@ -269,7 +269,7 @@ final class LostFoundController extends Controller
             throw new NotFoundHttpException('No image is attached to this item.');
         }
 
-        return new Response($content, 200, [
+        return response($content, 200, [
             'Content-Type' => $mime,
             'Content-Length' => (string) \strlen($content),
             'Content-Disposition' => 'inline',
@@ -284,7 +284,7 @@ final class LostFoundController extends Controller
      */
     private function storeImage(Request $request, array $actor): ?array
     {
-        $file = $request->file('image');
+        $file = $this->uploadedFile($request, 'image');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;
@@ -301,7 +301,7 @@ final class LostFoundController extends Controller
                 ['image/jpeg' => 'jpg', 'image/png' => 'png'],
             );
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['image' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['image' => $exception->getMessage()], $request->input());
         }
 
         return [
@@ -312,7 +312,7 @@ final class LostFoundController extends Controller
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $item */
-    private function form(array $actor, ?array $item): Response
+    private function form(array $actor, ?array $item)
     {
         $isEdit = $item !== null;
         $old = Session::getFlash('old', []);
@@ -336,7 +336,7 @@ final class LostFoundController extends Controller
             $values['date_occurred'] = datetime_input($values['date_occurred']);
         }
 
-        return $this->page('layouts.app', 'admin/lost-found/form', [
+        return view('admin/lost-found/form', [
             'title' => $isEdit ? 'Edit Lost & Found Item' : 'Post Lost & Found Item',
             'pageTitle' => $isEdit ? 'Edit Lost & Found Item' : 'Post Lost & Found Item',
             'pageSubtitle' => $isEdit ? 'Update the item record and custody details for ' . $item['public_id'] . '.' : 'Record a lost or found item received by OSAS.',

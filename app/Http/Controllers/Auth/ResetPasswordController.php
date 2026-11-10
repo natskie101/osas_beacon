@@ -9,23 +9,22 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\PasswordReset;
 use App\Models\User;
 use App\Services\AuditLogger;
-use App\Support\Request;
-use App\Support\Response;
 use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class ResetPasswordController extends Controller
 {
-    public function show(Request $request, string $token): Response
+    public function show(Request $request, string $token)
     {
         $reset = PasswordReset::findValid($token);
 
         if ($reset === null) {
             Session::flash('error', 'That reset link is invalid or has expired. Request a new link below.');
 
-            return Response::redirect(url('/forgot-password'));
+            return redirect(url('/forgot-password'));
         }
 
-        return $this->page('layouts.auth', 'auth/reset-password', [
+        return view('auth/reset-password', [
             'title' => 'Choose a New Password',
             'pageTitle' => 'Choose a New Password',
             'token' => $token,
@@ -34,7 +33,7 @@ final class ResetPasswordController extends Controller
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $data = (new ResetPasswordRequest())->validate($request);
         $reset = PasswordReset::findValid($data['token']);
@@ -42,7 +41,7 @@ final class ResetPasswordController extends Controller
         if ($reset === null || mb_strtolower((string) $reset['email']) !== mb_strtolower($data['email'])) {
             Session::flash('error', 'That reset link is invalid or has expired. Request a new link below.');
 
-            return Response::redirect(url('/forgot-password'));
+            return redirect(url('/forgot-password'));
         }
 
         User::updatePassword((int) $reset['user_id'], $data['password']);
@@ -59,12 +58,12 @@ final class ResetPasswordController extends Controller
                 'entity_id' => '',
                 'tone' => 'warning',
                 'icon' => 'lock',
-                'ip_address' => $request->ip,
+                'ip_address' => $request->ip(),
             ],
         );
 
         Session::flash('status', 'Your password has been updated. Sign in with your new password.');
 
-        return Response::redirect(url('/login'));
+        return redirect(url('/login'));
     }
 }

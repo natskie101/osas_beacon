@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class AuditLog
 {
@@ -13,16 +13,18 @@ final class AuditLog
     {
         $limit = max(1, min(200, $limit));
 
-        return DB::select(
-            'SELECT a.*,
-                    COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
-                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display
-             FROM audit_log a
-             LEFT JOIN users u ON u.id = a.actor_user_id
-             LEFT JOIN users t ON t.id = a.target_user_id
-             ORDER BY a.created_at DESC, a.id DESC
-             LIMIT ' . $limit,
-        );
+        return DB::table('audit_log as a')
+            ->leftJoin('users as u', 'u.id', '=', 'a.actor_user_id')
+            ->leftJoin('users as t', 't.id', '=', 'a.target_user_id')
+            ->select('a.*')
+            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
+                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display')
+            ->orderBy('a.created_at', 'desc')
+            ->orderBy('a.id', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return list<array<string, mixed>> */
@@ -30,21 +32,25 @@ final class AuditLog
     {
         $limit = max(1, min(200, $limit));
 
-        return DB::select(
-            'SELECT a.*,
-                    COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display
-             FROM audit_log a
-             LEFT JOIN users u ON u.id = a.actor_user_id
-             WHERE a.actor_user_id = ? OR a.target_user_id = ?
-             ORDER BY a.created_at DESC, a.id DESC
-             LIMIT ' . $limit,
-            [$userId, $userId],
-        );
+        return DB::table('audit_log as a')
+            ->leftJoin('users as u', 'u.id', '=', 'a.actor_user_id')
+            ->where(static function ($group) use ($userId): void {
+                $group->where('a.actor_user_id', $userId)
+                    ->orWhere('a.target_user_id', $userId);
+            })
+            ->select('a.*')
+            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display')
+            ->orderBy('a.created_at', 'desc')
+            ->orderBy('a.id', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function count(): int
     {
-        return (int) DB::value('SELECT COUNT(*) FROM audit_log');
+        return (int) DB::table('audit_log')->count();
     }
 
     /**
@@ -53,39 +59,48 @@ final class AuditLog
      */
     public static function paginate(array $filters, int $page = 1, int $perPage = 15): array
     {
-        $where = [];
-        $bindings = [];
         $search = trim((string) ($filters['search'] ?? ''));
 
-        if ($search !== '') {
-            $like = '%' . $search . '%';
-            $where[] = '(a.actor_name LIKE ? OR a.action LIKE ? OR a.title LIKE ? OR a.text LIKE ? OR a.entity_id LIKE ?)';
-            array_push($bindings, $like, $like, $like, $like, $like);
-        }
+        $applyFilters = static function ($query) use ($filters, $search): void {
+            if ($search !== '') {
+                $like = '%' . \App\Support\Str::escapeLike($search) . '%';
 
-        $action = trim((string) ($filters['action'] ?? ''));
+                $query->where(static function ($group) use ($like): void {
+                    $group->where('a.actor_name', 'like', $like)
+                        ->orWhere('a.action', 'like', $like)
+                        ->orWhere('a.title', 'like', $like)
+                        ->orWhere('a.text', 'like', $like)
+                        ->orWhere('a.entity_id', 'like', $like);
+                });
+            }
 
-        if ($action !== '') {
-            $where[] = 'a.action = ?';
-            $bindings[] = $action;
-        }
+            $action = trim((string) ($filters['action'] ?? ''));
 
-        $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
-        $total = (int) DB::value('SELECT COUNT(*) FROM audit_log a' . $whereSql, $bindings);
+            if ($action !== '') {
+                $query->where('a.action', $action);
+            }
+        };
+
+        $query = DB::table('audit_log as a')
+            ->leftJoin('users as u', 'u.id', '=', 'a.actor_user_id')
+            ->leftJoin('users as t', 't.id', '=', 'a.target_user_id');
+        $applyFilters($query);
+        $total = (int) $query->count();
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $lastPage));
         $offset = ($page - 1) * $perPage;
-        $rows = DB::select(
-            'SELECT a.*,
-                    COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
-                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display
-             FROM audit_log a
-             LEFT JOIN users u ON u.id = a.actor_user_id
-             LEFT JOIN users t ON t.id = a.target_user_id'
-            . $whereSql
-            . ' ORDER BY a.created_at DESC, a.id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset,
-            $bindings,
-        );
+
+        $rows = $query
+            ->select('a.*')
+            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
+                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display')
+            ->orderBy('a.created_at', 'desc')
+            ->orderBy('a.id', 'desc')
+            ->limit($perPage)
+            ->offset($offset)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
 
         return [
             'data' => $rows,
@@ -101,8 +116,13 @@ final class AuditLog
     /** @return list<string> */
     public static function actions(): array
     {
-        $rows = DB::select('SELECT DISTINCT action FROM audit_log WHERE action <> "" ORDER BY action ASC');
+        $rows = DB::table('audit_log')
+            ->where('action', '<>', '')
+            ->distinct()
+            ->orderBy('action')
+            ->pluck('action')
+            ->all();
 
-        return array_map(static fn (array $row): string => (string) $row['action'], $rows);
+        return array_map(static fn (mixed $action): string => (string) $action, $rows);
     }
 }

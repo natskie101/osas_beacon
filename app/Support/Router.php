@@ -7,7 +7,12 @@ namespace App\Support;
 use App\Support\Exceptions\HttpException;
 use App\Support\Exceptions\MethodNotAllowedHttpException;
 use App\Support\Exceptions\NotFoundHttpException;
+use App\Support\Exceptions\ValidationException;
 use Closure;
+use Illuminate\Container\Container;
+use Illuminate\Http\Request as LaravelRequest;
+use Illuminate\Support\Facades\Route as LaravelRoute;
+use Throwable;
 
 final class Router
 {
@@ -61,12 +66,114 @@ final class Router
             $normalized = '/';
         }
 
-        $this->routes[] = [
+        $route = [
             'method' => strtoupper($method),
             'path' => $normalized,
             'action' => $action,
             'middleware' => $middleware,
         ];
+
+        $this->routes[] = $route;
+
+        // Automatically register with Laravel Route facade if running inside Laravel
+        if (class_exists(Container::class) && Container::getInstance()) {
+            $laravelPath = ltrim($normalized, '/');
+            if ($laravelPath === '') {
+                $laravelPath = '/';
+            }
+
+            // Laravel dispatches route arguments positionally: it runs
+            // array_values() on the parameters before invoking this callable
+            // (see CallableDispatcher@dispatch), so the argument keys lose
+            // their names. Remember the parameter names declared in the path
+            // so the positional arguments can be mapped back to names — the
+            // container resolves controller dependencies by name, and a name
+            // mismatch crashes every {param} route with a
+            // BindingResolutionException.
+            $paramNames = [];
+
+            foreach (explode('/', trim($normalized, '/')) as $segment) {
+                if (preg_match('/^\{([A-Za-z_][A-Za-z0-9_]*)\}$/', $segment, $segmentMatch) === 1) {
+                    $paramNames[] = $segmentMatch[1];
+                }
+            }
+
+            LaravelRoute::match([strtoupper($method)], $laravelPath, function (mixed ...$params) use ($route, $paramNames) {
+                Session::start();
+                $portalRequest = Request::capture();
+
+                $values = array_values($params);
+                $namedParams = [];
+
+                // Map positional arguments back to the route's parameter names.
+                // When array_values() normalises the arguments, order in
+                // $values matches the order the names appear in the path.
+                foreach ($paramNames as $index => $name) {
+                    if (array_key_exists($index, $values) && !is_object($values[$index])) {
+                        $namedParams[$name] = (string) $values[$index];
+                    }
+                }
+
+                // Preserve explicitly named keys if the caller ever provides them.
+                foreach ($params as $key => $value) {
+                    if (is_string($key) && !is_object($value)) {
+                        $namedParams[$key] = (string) $value;
+                    }
+                }
+
+                return $this->dispatchRoute($route, $portalRequest, $namedParams);
+            });
+        }
+    }
+
+    /**
+     * @param array{method: string, path: string, action: mixed, middleware: list<string|Closure>} $route
+     * @param array<string, string> $params
+     */
+    public function dispatchRoute(array $route, Request $request, array $params = []): Response
+    {
+        try {
+            $destination = function (Request $current) use ($route, $params): Response {
+                return $this->runAction($route['action'], $current, $params);
+            };
+
+            $pipeline = $destination;
+
+            foreach (array_reverse(array_merge($this->middleware, $route['middleware'])) as $middleware) {
+                $next = $pipeline;
+                $pipeline = fn (Request $current): Response => $this->runMiddleware($middleware, $current, $next);
+            }
+
+            return $pipeline($request);
+        } catch (ValidationException $exception) {
+            Session::flashErrors($exception->errors());
+            Session::flashOld($exception->old());
+
+            return Response::redirect($request->previousUrl());
+        } catch (HttpException $exception) {
+            return Response::html(
+                View::render('errors/error', [
+                    'status' => $exception->statusCode,
+                    'message' => $exception->getMessage() ?: 'The request could not be completed.',
+                    'debug' => (bool) config('app.debug', false),
+                    'exception' => $exception,
+                ]),
+                $exception->statusCode,
+                $exception->headers,
+            );
+        } catch (Throwable $exception) {
+            error_log((string) $exception);
+
+            return Response::html(
+                View::render('errors/error', [
+                    'status' => 500,
+                    'message' => 'An unexpected server error occurred. The details have been written to the application log.',
+                    'debug' => (bool) config('app.debug', false),
+                    'exception' => $exception,
+                ]),
+                500,
+            );
+        }
     }
 
     public function dispatch(Request $request): Response
@@ -91,18 +198,7 @@ final class Router
                 ARRAY_FILTER_USE_KEY,
             );
 
-            $destination = function (Request $current) use ($route, $params): Response {
-                return $this->runAction($route['action'], $current, $params);
-            };
-
-            $pipeline = $destination;
-
-            foreach (array_reverse(array_merge($this->middleware, $route['middleware'])) as $middleware) {
-                $next = $pipeline;
-                $pipeline = fn (Request $current): Response => $this->runMiddleware($middleware, $current, $next);
-            }
-
-            return $pipeline($request);
+            return $this->dispatchRoute($route, $request, $params);
         }
 
         if ($allowed !== []) {
@@ -137,16 +233,52 @@ final class Router
      */
     private function runAction(array|Closure $action, Request $request, array $params): Response
     {
-        if ($action instanceof Closure) {
-            $result = $action($request, ...array_values($params));
+        if (class_exists(Container::class) && Container::getInstance()) {
+            $container = Container::getInstance();
+            if ($action instanceof Closure) {
+                $result = $container->call($action, array_merge(['request' => $request], $params));
+            } else {
+                [$class, $method] = $action;
+                $controller = $container->make($class);
+
+                // Auto-detect whether controller action expects App\Support\Request or Illuminate\Http\Request
+                $actionArgs = $params;
+                $reflection = new \ReflectionMethod($class, $method);
+                foreach ($reflection->getParameters() as $param) {
+                    $type = $param->getType();
+                    if ($type instanceof \ReflectionNamedType) {
+                        $typeName = $type->getName();
+                        if ($typeName === Request::class) {
+                            $actionArgs[$param->getName()] = $request;
+                        } elseif ($typeName === LaravelRequest::class) {
+                            $actionArgs[$param->getName()] = request();
+                        }
+                    }
+                }
+
+                $result = $container->call([$controller, $method], $actionArgs);
+            }
         } else {
-            [$class, $method] = $action;
-            $controller = new $class();
-            $result = $controller->{$method}($request, ...array_values($params));
+            if ($action instanceof Closure) {
+                $result = $action($request, ...array_values($params));
+            } else {
+                [$class, $method] = $action;
+                $controller = new $class();
+                $result = $controller->{$method}($request, ...array_values($params));
+            }
         }
 
         if ($result instanceof Response) {
             return $result;
+        }
+
+        if ($result instanceof \Symfony\Component\HttpFoundation\Response) {
+            $headers = [];
+            foreach ($result->headers->all() as $name => $values) {
+                $headers[$name] = implode(', ', $values);
+            }
+
+            return new Response((string) $result->getContent(), $result->getStatusCode(), $headers);
         }
 
         return Response::html((string) $result);

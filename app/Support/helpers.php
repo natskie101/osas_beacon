@@ -137,6 +137,41 @@ if (!function_exists('format_bytes')) {
     }
 }
 
+if (!function_exists('google_drive_video_embed_url')) {
+    function google_drive_video_embed_url(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = (string) ($parts['path'] ?? '');
+
+        if (!in_array($scheme, ['http', 'https'], true) || $host !== 'drive.google.com') {
+            return null;
+        }
+
+        if (preg_match('~^/file/d/([A-Za-z0-9_-]+)(?:/(?:preview|view))?/?$~', $path, $matches) === 1) {
+            return 'https://drive.google.com/file/d/' . $matches[1] . '/preview';
+        }
+
+        if (in_array($path, ['/open', '/uc'], true)) {
+            parse_str((string) ($parts['query'] ?? ''), $query);
+            $fileId = (string) ($query['id'] ?? '');
+
+            if (preg_match('~^[A-Za-z0-9_-]+$~', $fileId) === 1) {
+                return 'https://drive.google.com/file/d/' . $fileId . '/preview';
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('video_embed_url')) {
     function video_embed_url(?string $url): ?string
     {
@@ -146,23 +181,39 @@ if (!function_exists('video_embed_url')) {
             return null;
         }
 
+        $driveEmbedUrl = google_drive_video_embed_url($url);
+
+        if ($driveEmbedUrl !== null) {
+            return $driveEmbedUrl;
+        }
+
         if (preg_match('~youtu\.be/([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~youtube\.com/watch\?.*v=([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~youtube\.com/embed/([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~vimeo\.com/(?:video/)?(\d+)~', $url, $matches) === 1) {
-            return 'https://player.vimeo.com/video/' . $matches[1];
+            return 'https://player.vimeo.com/video/' . $matches[1] . '?rel=0';
         }
 
-        return filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : null;
+        // Fallback for other providers: only https URLs may be embedded, and
+        // never any URL containing credentials or unusual characters.
+        if (
+            str_starts_with(strtolower($url), 'https://')
+            && filter_var($url, FILTER_VALIDATE_URL) !== false
+            && !str_contains($url, '@')
+        ) {
+            return $url;
+        }
+
+        return null;
     }
 }
 

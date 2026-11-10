@@ -11,17 +11,16 @@ use App\Models\Tracking;
 use App\Services\FileStorage;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 
 final class AnnouncementController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
-        $search = $request->string('search');
-        $category = $request->string('category');
+        $search = (string) $request->string('search');
+        $category = (string) $request->string('category');
         $announcements = Announcement::published(100);
 
         if ($search !== '') {
@@ -47,7 +46,7 @@ final class AnnouncementController extends Controller
             $categories[$item['category']] = true;
         }
 
-        return $this->page('layouts.app', 'student/announcements/index', [
+        return view('student/announcements/index', [
             'title' => 'Announcements',
             'pageTitle' => config('navigation.meta.student.announcements.title'),
             'pageSubtitle' => config('navigation.meta.student.announcements.subtitle'),
@@ -60,7 +59,7 @@ final class AnnouncementController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $announcement = Announcement::findPublished($publicId);
@@ -80,7 +79,7 @@ final class AnnouncementController extends Controller
             }
         }
 
-        return $this->page('layouts.app', 'student/announcements/show', [
+        return view('student/announcements/show', [
             'title' => $announcement['title'],
             'pageTitle' => $announcement['title'],
             'pageSubtitle' => $announcement['category'] . ' · ' . fmt_date($announcement['published_at']),
@@ -96,7 +95,7 @@ final class AnnouncementController extends Controller
         ]);
     }
 
-    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    public function downloadAttachment(Request $request, string $publicId, string $fileId)
     {
         $announcement = Announcement::findPublished($publicId);
         $file = File::find((int) $fileId);

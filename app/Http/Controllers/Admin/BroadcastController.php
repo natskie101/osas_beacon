@@ -11,18 +11,17 @@ use App\Services\AuditLogger;
 use App\Services\BroadcastService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 use App\Support\Session;
 
 final class BroadcastController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $actor = Auth::user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
         ];
         $pagination = Broadcast::paginate(
             $filters,
@@ -32,7 +31,7 @@ final class BroadcastController extends Controller
             'newest',
         );
 
-        return $this->page('layouts.app', 'admin/broadcasts/index', [
+        return view('admin/broadcasts/index', [
             'title' => 'Broadcasts',
             'pageTitle' => config('navigation.meta.admin.broadcasts.title'),
             'pageSubtitle' => config('navigation.meta.admin.broadcasts.subtitle'),
@@ -46,12 +45,12 @@ final class BroadcastController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
         return $this->form(Auth::user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $actor = Auth::user();
         $data = $this->validated($request);
@@ -67,15 +66,15 @@ final class BroadcastController extends Controller
         AuditLogger::log('broadcast.created', 'Broadcast Created', $broadcast['subject'] . ' (' . $broadcast['public_id'] . ') was created.', ['entity_type' => 'broadcast', 'entity_id' => (string) $broadcast['public_id'], 'tone' => 'blue', 'icon' => 'broadcast']);
         Session::flash('status', 'Broadcast saved.');
 
-        return Response::redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
+        return redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $broadcast = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/broadcasts/show', [
+        return view('admin/broadcasts/show', [
             'title' => $broadcast['subject'],
             'pageTitle' => $broadcast['subject'],
             'pageSubtitle' => $broadcast['public_id'] . ' · ' . $broadcast['status'] . ' · ' . $broadcast['channel'],
@@ -87,12 +86,12 @@ final class BroadcastController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
         return $this->form(Auth::user(), $this->find($publicId));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $broadcast = $this->find($publicId);
         $data = $this->validated($request);
@@ -103,10 +102,10 @@ final class BroadcastController extends Controller
         AuditLogger::log('broadcast.updated', 'Broadcast Updated', $updated['subject'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'broadcast', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
         Session::flash('status', 'Broadcast saved.');
 
-        return Response::redirect(url('/admin/broadcasts/' . $updated['public_id']));
+        return redirect(url('/admin/broadcasts/' . $updated['public_id']));
     }
 
-    public function send(Request $request, string $publicId): Response
+    public function send(Request $request, string $publicId)
     {
         $actor = Auth::user();
         $broadcast = $this->find($publicId);
@@ -114,7 +113,7 @@ final class BroadcastController extends Controller
         if ($broadcast['status'] === 'Sent') {
             Session::flash('error', 'This broadcast has already been sent.');
 
-            return Response::redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
+            return redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
         }
 
         $delivery = BroadcastService::send($broadcast);
@@ -128,11 +127,11 @@ final class BroadcastController extends Controller
         AuditLogger::log('broadcast.sent', 'Broadcast Sent', $broadcast['subject'] . ' was delivered to ' . $delivery['delivered'] . ' recipients.', ['entity_type' => 'broadcast', 'entity_id' => (string) $broadcast['public_id'], 'tone' => 'green', 'icon' => 'send']);
         Session::flash('status', 'Broadcast sent to ' . $delivery['delivered'] . ' recipients.');
 
-        return Response::redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
+        return redirect(url('/admin/broadcasts/' . $broadcast['public_id']));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $broadcast */
-    private function form(array $actor, ?array $broadcast): Response
+    private function form(array $actor, ?array $broadcast)
     {
         $isEdit = $broadcast !== null;
         $old = Session::getFlash('old', []);
@@ -149,7 +148,7 @@ final class BroadcastController extends Controller
             $values['scheduled_at'] = datetime_input($values['scheduled_at']);
         }
 
-        return $this->page('layouts.app', 'admin/broadcasts/form', [
+        return view('admin/broadcasts/form', [
             'title' => $isEdit ? 'Edit Broadcast' : 'Compose Broadcast',
             'pageTitle' => $isEdit ? 'Edit Broadcast' : 'Compose Broadcast',
             'pageSubtitle' => $isEdit ? 'Update the audience and delivery settings for ' . $broadcast['public_id'] . '.' : 'Send a portal notification, email, or both to a student audience.',

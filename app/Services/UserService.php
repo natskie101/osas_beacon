@@ -9,6 +9,8 @@ use App\Models\PasswordReset;
 use App\Models\RememberToken;
 use App\Models\User;
 use App\Support\DB;
+use App\Support\Exceptions\ForbiddenHttpException;
+use App\Support\Exceptions\NotFoundHttpException;
 
 final class UserService
 {
@@ -266,6 +268,100 @@ final class UserService
         });
     }
 
+    /** @param array<string, mixed> $target @param array<string, mixed> $actor */
+    public static function archiveAccount(array $target, array $actor): bool
+    {
+        return DB::transaction(function () use ($target, $actor): bool {
+            $activeCoordinators = DB::select(
+                'SELECT id FROM users WHERE role = "Coordinator" AND status = "Active" FOR UPDATE',
+            );
+            $current = DB::first('SELECT * FROM users WHERE id = ? FOR UPDATE', [(int) $target['id']]);
+
+            if ($current === null) {
+                throw new NotFoundHttpException('The account no longer exists.');
+            }
+
+            if (!in_array($current['role'], ['Student', 'Coordinator'], true)
+                || (int) $current['id'] === (int) $actor['id']
+                || $current['status'] === 'Archived') {
+                throw new ForbiddenHttpException();
+            }
+
+            if ($current['role'] === 'Coordinator' && $current['status'] === 'Active') {
+                if (count($activeCoordinators) <= 1) {
+                    return false;
+                }
+            }
+
+            User::update((int) $current['id'], [
+                'status' => 'Archived',
+                'archived_status' => $current['status'],
+            ]);
+            RememberToken::clearForUser((int) $current['id']);
+
+            AuditLogger::log(
+                'user.archived',
+                'Account Archived',
+                User::fullName($current) . ' (' . $current['public_id'] . ', ' . $current['role']
+                    . ') was archived. The profile and all history remain available for restoration.',
+                [
+                    'actor_user_id' => (int) $actor['id'],
+                    'actor_name' => User::fullName($actor),
+                    'target_user_id' => (int) $current['id'],
+                    'entity_type' => 'user',
+                    'entity_id' => (string) $current['public_id'],
+                    'tone' => 'amber',
+                    'icon' => 'archive',
+                ],
+            );
+
+            return true;
+        });
+    }
+
+    /** @param array<string, mixed> $target @param array<string, mixed> $actor */
+    public static function restoreAccount(array $target, array $actor): void
+    {
+        DB::transaction(function () use ($target, $actor): void {
+            $current = DB::first('SELECT * FROM users WHERE id = ? FOR UPDATE', [(int) $target['id']]);
+
+            if ($current === null) {
+                throw new NotFoundHttpException('The account no longer exists.');
+            }
+
+            if (!in_array($current['role'], ['Student', 'Coordinator'], true)
+                || (int) $current['id'] === (int) $actor['id']
+                || $current['status'] !== 'Archived') {
+                throw new ForbiddenHttpException();
+            }
+
+            $status = in_array($current['archived_status'] ?? null, ['Active', 'Pending', 'Inactive'], true)
+                ? (string) $current['archived_status']
+                : 'Inactive';
+
+            User::update((int) $current['id'], [
+                'status' => $status,
+                'archived_status' => null,
+            ]);
+
+            AuditLogger::log(
+                'user.restored',
+                'Account Restored',
+                User::fullName($current) . ' (' . $current['public_id'] . ', ' . $current['role']
+                    . ') was restored with its previous ' . strtolower($status) . ' status.',
+                [
+                    'actor_user_id' => (int) $actor['id'],
+                    'actor_name' => User::fullName($actor),
+                    'target_user_id' => (int) $current['id'],
+                    'entity_type' => 'user',
+                    'entity_id' => (string) $current['public_id'],
+                    'tone' => 'green',
+                    'icon' => 'checkCircle',
+                ],
+            );
+        });
+    }
+
     /**
      * @param array<string, mixed> $target
      * @param array<string, mixed> $file
@@ -368,7 +464,9 @@ final class UserService
             $data['account_tier'] = 'Admin Tier';
             $data['student_id'] = null;
             $data['year_level'] = null;
-            $data['age'] = null;
+            $data['age'] = $role === 'Coordinator' && ($data['age'] ?? '') !== ''
+                ? (int) $data['age']
+                : null;
         }
 
         $data['department'] = trim((string) ($data['department'] ?? '')) ?: null;

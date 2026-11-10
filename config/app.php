@@ -4,10 +4,22 @@ declare(strict_types=1);
 
 return [
     'name' => env('APP_NAME', 'BEACON OSAS Portal'),
-    'url' => env('APP_URL', ''),
     'env' => env('APP_ENV', 'production'),
-    'debug' => filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOL),
+    'debug' => (bool) env('APP_DEBUG', false),
+    'url' => env('APP_URL', 'http://127.0.0.1:8081'),
+    'asset_url' => env('ASSET_URL', '/assets'),
     'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
+    'locale' => env('APP_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'cipher' => 'AES-256-CBC',
+    'key' => env('APP_KEY'),
+    'previous_keys' => [
+        ...array_filter(
+            explode(',', env('APP_PREVIOUS_KEYS', ''))
+        ),
+    ],
+
     'demo_mode' => filter_var(env('APP_DEMO_MODE', false), FILTER_VALIDATE_BOOL),
 
     'institution' => [

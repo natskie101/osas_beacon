@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Support\Auth;
-use App\Support\Request;
-use App\Support\Response;
 use Closure;
+use Illuminate\Http\Request;
+use App\Support\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
-final class RedirectIfAuthenticated
+class RedirectIfAuthenticated
 {
+    /**
+     * Handle an incoming request.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $role = Auth::role();
 
         if ($role !== null) {
-            return Response::redirect(url($role->homePath()));
+            return redirect($role->homePath());
         }
 
         return $next($request);

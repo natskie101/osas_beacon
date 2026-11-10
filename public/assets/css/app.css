@@ -223,6 +223,7 @@ svg{display:block}
 .avatar{
   width:30px;height:30px;border-radius:50%;flex:0 0 30px;
   display:inline-flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
   background:var(--brand-tint-2);color:var(--brand);
   font-size:10.5px;font-weight:800;letter-spacing:.02em;
 }
@@ -231,6 +232,7 @@ svg{display:block}
 .avatar--blue{background:#e2edfc;color:#1a67d8}
 .avatar--grey{background:#eceef1;color:#5b6470}
 .avatar--lg{width:42px;height:42px;flex-basis:42px;font-size:13px}
+.avatar__photo{position:absolute;inset:0;display:block;width:100%;height:100%;min-width:0;max-width:100%;max-height:100%;flex:none;border-radius:inherit;object-fit:cover}
 .cell-user{display:flex;align-items:center;gap:10px}
 
 /* ---------- 10. Tables ---------- */
@@ -1082,6 +1084,7 @@ body{background:#f4f6f9}
   padding:0;border:1.5px solid var(--brand);border-radius:50%;background:#fff;color:var(--brand);
   font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.02em;cursor:pointer;transition:.15s}
 .topbar__avatar:hover{background:var(--brand-tint)}
+.topbar__avatar{position:relative;overflow:hidden}
 
 .content{flex:1 0 auto;padding:24px 26px 20px}
 .app-foot{display:none}

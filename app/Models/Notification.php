@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Notification
 {
@@ -13,33 +13,38 @@ final class Notification
     {
         $limit = max(1, min(100, $limit));
 
-        return DB::select(
-            'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ' . $limit,
-            [$userId],
-        );
+        return DB::table('notifications')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function unreadCount(int $userId): int
     {
-        return (int) DB::value(
-            'SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL',
-            [$userId],
-        );
+        return (int) DB::table('notifications')
+            ->where('user_id', $userId)
+            ->whereNull('read_at')
+            ->count();
     }
 
     public static function markRead(int $id, int $userId): void
     {
-        DB::update(
-            'UPDATE notifications SET read_at = ? WHERE id = ? AND user_id = ? AND read_at IS NULL',
-            [date('Y-m-d H:i:s'), $id, $userId],
-        );
+        DB::table('notifications')
+            ->where('id', $id)
+            ->where('user_id', $userId)
+            ->whereNull('read_at')
+            ->update(['read_at' => date('Y-m-d H:i:s')]);
     }
 
     public static function markAllRead(int $userId): void
     {
-        DB::update(
-            'UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL',
-            [date('Y-m-d H:i:s'), $userId],
-        );
+        DB::table('notifications')
+            ->where('user_id', $userId)
+            ->whereNull('read_at')
+            ->update(['read_at' => date('Y-m-d H:i:s')]);
     }
 }
