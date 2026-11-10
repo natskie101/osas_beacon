@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterStudentRequest;
 use App\Services\UserService;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Session;
 use Illuminate\Http\Request;
 use RuntimeException;
 
@@ -20,17 +19,17 @@ final class RegisterController extends Controller
             'title' => 'Create Student Account',
             'pageTitle' => 'Create Student Account',
             'authSingle' => true,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
             'old' => [
-                'first_name' => Session::old('first_name', ''),
-                'middle_name' => Session::old('middle_name', ''),
-                'last_name' => Session::old('last_name', ''),
-                'student_id' => Session::old('student_id', ''),
-                'age' => Session::old('age', ''),
-                'email' => Session::old('email', ''),
-                'program' => Session::old('program', ''),
-                'phone' => Session::old('phone', ''),
-                'year_level' => Session::old('year_level', ''),
+                'first_name' => old('first_name', ''),
+                'middle_name' => old('middle_name', ''),
+                'last_name' => old('last_name', ''),
+                'student_id' => old('student_id', ''),
+                'age' => old('age', ''),
+                'email' => old('email', ''),
+                'program' => old('program', ''),
+                'phone' => old('phone', ''),
+                'year_level' => old('year_level', ''),
             ],
             'programs' => config('people.programs', []),
             'yearLevels' => config('people.year_levels', []),
@@ -55,7 +54,7 @@ final class RegisterController extends Controller
             throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
-        Session::flash('registration_success', 'Your account was submitted for verification. OSAS will review your school ID before you can sign in.');
+        session()->flash('registration_success', 'Your account was submitted for verification. OSAS will review your school ID before you can sign in.');
 
         return redirect(url('/login'));
     }

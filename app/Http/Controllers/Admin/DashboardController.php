@@ -12,14 +12,13 @@ use App\Models\Event;
 use App\Models\LostFoundItem;
 use App\Models\SupportTicket;
 use App\Models\User;
-use App\Support\Auth;
 use Illuminate\Http\Request;
 
 final class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = auth_user();
 
         if ($user['role'] === 'Administrator') {
             return redirect(url('/admin/system-overview'));

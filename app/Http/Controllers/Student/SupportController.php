@@ -10,19 +10,17 @@ use App\Models\SupportTicket;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 use RuntimeException;
 
 final class SupportController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $tickets = SupportTicket::forStudent((int) $actor['id']);
         $counts = $this->counts($tickets);
         $search = mb_strtolower((string) $request->string('search'));
@@ -68,21 +66,21 @@ final class SupportController extends Controller
             'pageTitle' => 'Submit a Concern',
             'pageSubtitle' => 'Tell OSAS what happened and we will follow up through your portal.',
             'pageKey' => 'support',
-            'user' => Auth::user(),
-            'role' => Auth::user()['role'],
+            'user' => auth_user(),
+            'role' => auth_user()['role'],
             'values' => array_merge([
                 'category' => '',
                 'subject' => '',
                 'description' => '',
                 'priority' => 'Medium',
-            ], Session::getFlash('old', [])),
-            'errors' => Session::errors(),
+            ], old()),
+            'errors' => session('errors', []),
         ]);
     }
 
     public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validate($request, [
             'category' => 'required|string|max:100',
             'subject' => 'required|string|max:200',
@@ -119,14 +117,14 @@ final class SupportController extends Controller
         }
 
         AuditLogger::log('support.created', 'Support Ticket Submitted', $ticket['student_name'] . ' submitted ' . $ticket['public_id'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => (int) $actor['id']]);
-        Session::flash('status', 'Your concern has been submitted.');
+        session()->flash('status', 'Your concern has been submitted.');
 
         return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
     public function downloadImage(Request $request, string $publicId, string $fileId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = SupportTicket::findByPublicId($publicId);
 
         if (
@@ -160,7 +158,7 @@ final class SupportController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
 
         if ($ticket === null) {
@@ -170,14 +168,14 @@ final class SupportController extends Controller
         return view('student/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
-            'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['status'],
+            'pageSubtitle' => $ticket['public_id'] . ' Â· ' . $ticket['status'],
             'pageKey' => 'support',
             'user' => $actor,
             'role' => $actor['role'],
             'ticket' => $ticket,
             'imageFile' => SupportTicket::imageAttachment((string) $ticket['public_id']),
             'messages' => SupportTicket::messages((int) $ticket['id']),
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
@@ -210,7 +208,7 @@ final class SupportController extends Controller
 
     public function reply(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
 
         if ($ticket === null) {
@@ -218,7 +216,7 @@ final class SupportController extends Controller
         }
 
         if (in_array($ticket['status'], ['Closed'], true)) {
-            Session::flash('error', 'This ticket is closed. Open a new concern if you need further help.');
+            session()->flash('error', 'This ticket is closed. Open a new concern if you need further help.');
 
             return redirect(url('/student/support/' . $ticket['public_id']));
         }
@@ -231,14 +229,14 @@ final class SupportController extends Controller
             NotificationService::send((int) $staffId, 'Student Replied to Support Ticket', $ticket['student_name'] . ' replied to "' . $ticket['subject'] . '".', 'info', 'support', (string) $ticket['public_id']);
         }
 
-        Session::flash('status', 'Reply added to the ticket.');
+        session()->flash('status', 'Reply added to the ticket.');
 
         return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
     public function close(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
 
         if ($ticket === null) {
@@ -247,14 +245,14 @@ final class SupportController extends Controller
 
         SupportTicket::update((int) $ticket['id'], ['status' => 'Closed']);
         AuditLogger::log('support.closed', 'Support Ticket Closed', $ticket['public_id'] . ' was closed by the student.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'amber', 'icon' => 'checkCircle', 'target_user_id' => (int) $actor['id']]);
-        Session::flash('status', 'Ticket closed. Thank you for your feedback.');
+        session()->flash('status', 'Ticket closed. Thank you for your feedback.');
 
         return redirect(url('/student/support/' . $ticket['public_id']));
     }
 
     public function rate(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = SupportTicket::findForStudent($publicId, (int) $actor['id']);
 
         if ($ticket === null) {
@@ -262,14 +260,14 @@ final class SupportController extends Controller
         }
 
         if (!in_array($ticket['status'], ['Resolved', 'Closed'], true) || $ticket['rating'] !== null) {
-            Session::flash('error', 'This ticket is not available for rating.');
+            session()->flash('error', 'This ticket is not available for rating.');
 
             return redirect(url('/student/support/' . $ticket['public_id']));
         }
 
         $data = $this->validate($request, ['rating' => 'required|integer|min:1|max:5']);
         SupportTicket::update((int) $ticket['id'], ['rating' => (int) $data['rating']]);
-        Session::flash('status', 'Thank you for rating the support you received.');
+        session()->flash('status', 'Thank you for rating the support you received.');
 
         return redirect(url('/student/support/' . $ticket['public_id']));
     }

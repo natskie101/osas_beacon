@@ -9,7 +9,6 @@ use App\Models\Event;
 use App\Models\File;
 use App\Services\FileStorage;
 use App\Models\Tracking;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
 
@@ -17,7 +16,7 @@ final class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $events = Event::forStudent();
         $eventCounts = ['all' => count($events), 'upcoming' => 0, 'ongoing' => 0, 'completed' => 0];
 
@@ -71,7 +70,7 @@ final class EventController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $event = Event::findVisible($publicId);
 
         if ($event === null) {

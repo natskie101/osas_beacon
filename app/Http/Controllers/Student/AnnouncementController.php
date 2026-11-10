@@ -9,16 +9,14 @@ use App\Models\Announcement;
 use App\Models\File;
 use App\Models\Tracking;
 use App\Services\FileStorage;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class AnnouncementController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $search = (string) $request->string('search');
         $category = (string) $request->string('category');
         $announcements = Announcement::published(100);
@@ -61,7 +59,7 @@ final class AnnouncementController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $announcement = Announcement::findPublished($publicId);
 
         if ($announcement === null) {

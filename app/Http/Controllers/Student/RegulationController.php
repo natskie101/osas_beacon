@@ -7,16 +7,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Regulation;
 use App\Models\Tracking;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class RegulationController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulations = Regulation::published();
         $search = mb_strtolower((string) $request->string('search'));
         $category = (string) $request->string('category');
@@ -54,7 +52,7 @@ final class RegulationController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulation = Regulation::findPublished($publicId);
 
         if ($regulation === null) {
@@ -67,7 +65,7 @@ final class RegulationController extends Controller
         return view('student/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['reference_code'] . ' · ' . $regulation['category'],
+            'pageSubtitle' => $regulation['reference_code'] . ' Â· ' . $regulation['category'],
             'pageKey' => 'rules',
             'user' => $actor,
             'role' => $actor['role'],
@@ -84,7 +82,7 @@ final class RegulationController extends Controller
             throw new NotFoundHttpException('The requested regulation could not be found.');
         }
 
-        Session::flash('status', 'You acknowledged "' . $regulation['title'] . '".');
+        session()->flash('status', 'You acknowledged "' . $regulation['title'] . '".');
 
         return redirect(url('/student/rules/' . $regulation['public_id']));
     }

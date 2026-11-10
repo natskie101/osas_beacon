@@ -9,7 +9,6 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\PasswordReset;
 use App\Models\User;
 use App\Services\AuditLogger;
-use App\Support\Session;
 use Illuminate\Http\Request;
 
 final class ResetPasswordController extends Controller
@@ -19,7 +18,7 @@ final class ResetPasswordController extends Controller
         $reset = PasswordReset::findValid($token);
 
         if ($reset === null) {
-            Session::flash('error', 'That reset link is invalid or has expired. Request a new link below.');
+            session()->flash('error', 'That reset link is invalid or has expired. Request a new link below.');
 
             return redirect(url('/forgot-password'));
         }
@@ -29,7 +28,7 @@ final class ResetPasswordController extends Controller
             'pageTitle' => 'Choose a New Password',
             'token' => $token,
             'email' => (string) $reset['email'],
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
@@ -39,7 +38,7 @@ final class ResetPasswordController extends Controller
         $reset = PasswordReset::findValid($data['token']);
 
         if ($reset === null || mb_strtolower((string) $reset['email']) !== mb_strtolower($data['email'])) {
-            Session::flash('error', 'That reset link is invalid or has expired. Request a new link below.');
+            session()->flash('error', 'That reset link is invalid or has expired. Request a new link below.');
 
             return redirect(url('/forgot-password'));
         }
@@ -62,7 +61,7 @@ final class ResetPasswordController extends Controller
             ],
         );
 
-        Session::flash('status', 'Your password has been updated. Sign in with your new password.');
+        session()->flash('status', 'Your password has been updated. Sign in with your new password.');
 
         return redirect(url('/login'));
     }

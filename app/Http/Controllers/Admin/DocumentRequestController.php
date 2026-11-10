@@ -9,16 +9,14 @@ use App\Models\AuditLog;
 use App\Models\DocumentRequest;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class DocumentRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'status' => (string) $request->string('status'),
@@ -54,13 +52,13 @@ final class DocumentRequestController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = $this->find($publicId);
 
         return view('admin/document-requests/show', [
             'title' => $documentRequest['document_type'],
             'pageTitle' => $documentRequest['document_type'],
-            'pageSubtitle' => $documentRequest['public_id'] . ' · ' . $documentRequest['student_name'] . ' · ' . $documentRequest['status'],
+            'pageSubtitle' => $documentRequest['public_id'] . ' Â· ' . $documentRequest['student_name'] . ' Â· ' . $documentRequest['status'],
             'pageKey' => 'document-requests',
             'user' => $actor,
             'role' => $actor['role'],
@@ -72,7 +70,7 @@ final class DocumentRequestController extends Controller
 
     public function updateStatus(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = $this->find($publicId);
         $data = $this->validate($request, [
             'status' => 'required|in:Submitted,Under Review,Ready for Pick-up,Released,Rejected,Cancelled',
@@ -100,7 +98,7 @@ final class DocumentRequestController extends Controller
         }
 
         AuditLogger::log('document_request.updated', 'Document Request Updated', $updated['public_id'] . ' was moved from ' . $oldStatus . ' to ' . $newStatus . '.', ['entity_type' => 'document_request', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'printer', 'target_user_id' => $updated['student_user_id'] ?? null]);
-        Session::flash('status', 'Document request updated.');
+        session()->flash('status', 'Document request updated.');
 
         return redirect(url('/admin/document-requests/' . $updated['public_id']));
     }

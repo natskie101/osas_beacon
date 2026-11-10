@@ -6,14 +6,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\TechnicalAdminOverview;
-use App\Support\Auth;
 use Illuminate\Http\Request;
 
 final class SystemOverviewController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = auth_user();
 
         return view('admin/system-overview', [
             'title' => 'System Overview',

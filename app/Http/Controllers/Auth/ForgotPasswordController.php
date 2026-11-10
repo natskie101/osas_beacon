@@ -10,7 +10,6 @@ use App\Models\PasswordReset;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Mailer;
-use App\Support\Session;
 use Illuminate\Http\Request;
 
 final class ForgotPasswordController extends Controller
@@ -21,9 +20,9 @@ final class ForgotPasswordController extends Controller
             'title' => 'Reset Portal Password',
             'pageTitle' => 'Reset Portal Password',
             'authLogoRight' => true,
-            'errors' => Session::errors(),
-            'status' => Session::getFlash('status'),
-            'old' => ['email' => Session::old('email', '')],
+            'errors' => session('errors', []),
+            'status' => session('status'),
+            'old' => ['email' => old('email', '')],
         ]);
     }
 
@@ -60,7 +59,7 @@ final class ForgotPasswordController extends Controller
             );
         }
 
-        Session::flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
+        session()->flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
 
         return redirect(url('/forgot-password'));
     }

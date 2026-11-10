@@ -6,14 +6,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-use App\Support\Auth;
 use Illuminate\Http\Request;
 
 final class ActivityController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'action' => (string) $request->string('action'),

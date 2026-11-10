@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Support\Auth;
+use App\Auth\ArrayUser;
+use App\Enums\Role;
 use App\Support\Config;
 use App\Support\Csrf;
 use App\Support\Env;
 use App\Support\Request;
-use App\Support\Session;
+use Illuminate\Support\Facades\Auth;
 
 if (!function_exists('env')) {
     function env(string $key, mixed $default = null): mixed
@@ -91,17 +92,21 @@ if (!function_exists('csrf_token')) {
     }
 }
 
-if (!function_exists('old')) {
-    function old(string $key, mixed $default = null): mixed
-    {
-        return Session::old($key, $default);
-    }
-}
-
 if (!function_exists('auth_user')) {
     function auth_user(): ?array
     {
-        return Auth::user();
+        $user = Auth::user();
+
+        return $user instanceof ArrayUser ? $user->toArray() : null;
+    }
+}
+
+if (!function_exists('auth_role')) {
+    function auth_role(): ?Role
+    {
+        $user = auth_user();
+
+        return $user === null ? null : Role::tryFrom((string) $user['role']);
     }
 }
 

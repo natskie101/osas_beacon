@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\OrientationReportService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
 use App\Support\Response;
@@ -15,7 +14,7 @@ final class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $search = mb_strtolower((string) $request->string('search'));
         $status = (string) $request->string('status');
         $period = (string) $request->string('period');
@@ -67,7 +66,7 @@ final class ReportController extends Controller
 
     public function moduleReport(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = OrientationReportService::module($publicId);
 
         if ($module === null) {

@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
-use App\Support\Auth;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
 
         return view('notifications/index', [
             'title' => 'Notifications',
@@ -29,7 +27,7 @@ final class NotificationController extends Controller
 
     public function read(Request $request, string $id)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         Notification::markRead((int) $id, (int) $actor['id']);
 
         return redirect(url('/notifications'));
@@ -37,9 +35,9 @@ final class NotificationController extends Controller
 
     public function readAll(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         Notification::markAllRead((int) $actor['id']);
-        Session::flash('status', 'All notifications marked as read.');
+        session()->flash('status', 'All notifications marked as read.');
 
         return redirect(url('/notifications'));
     }

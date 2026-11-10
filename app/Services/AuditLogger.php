@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 
 final class AuditLogger
@@ -15,7 +14,7 @@ final class AuditLogger
      */
     public static function log(string $action, string $title, string $text = '', array $options = []): void
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $actorId = $options['actor_user_id'] ?? ($actor['id'] ?? null);
         $actorName = $options['actor_name'] ?? ($actor !== null ? User::fullName($actor) : '');
 

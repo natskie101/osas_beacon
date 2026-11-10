@@ -10,19 +10,17 @@ use App\Models\Event;
 use App\Models\File;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'status' => (string) $request->string('status'),
@@ -54,12 +52,12 @@ final class EventController extends Controller
 
     public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
     public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
         $uploaded = $this->storeAttachment($request, null, $actor);
         $data['description'] = trim((string) ($data['description'] ?? ''));
@@ -73,20 +71,20 @@ final class EventController extends Controller
         }
 
         AuditLogger::log('event.created', 'Event Created', $event['title'] . ' (' . $event['public_id'] . ') was scheduled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'blue', 'icon' => 'calendar']);
-        Session::flash('status', 'Event created.');
+        session()->flash('status', 'Event created.');
 
         return redirect(url('/admin/events/' . $event['public_id']));
     }
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $event = $this->find($publicId);
 
         return view('admin/events/show', [
             'title' => $event['title'],
             'pageTitle' => $event['title'],
-            'pageSubtitle' => $event['public_id'] . ' · ' . $event['status'],
+            'pageSubtitle' => $event['public_id'] . ' Â· ' . $event['status'],
             'pageKey' => 'events',
             'user' => $actor,
             'role' => $actor['role'],
@@ -98,7 +96,7 @@ final class EventController extends Controller
 
     public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
     public function downloadAttachment(Request $request, string $publicId, string $fileId)
@@ -122,7 +120,7 @@ final class EventController extends Controller
     {
         $event = $this->find($publicId);
         $data = $this->validated($request);
-        $uploaded = $this->storeAttachment($request, $event, Auth::user());
+        $uploaded = $this->storeAttachment($request, $event, auth_user());
         $data['description'] = trim((string) ($data['description'] ?? ''));
         $attachments = json_items($event['attachments'] ?? null);
         $data['attachments'] = json_encode(array_merge($attachments, $uploaded), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -134,7 +132,7 @@ final class EventController extends Controller
         }
 
         AuditLogger::log('event.updated', 'Event Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'event', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
-        Session::flash('status', 'Event saved.');
+        session()->flash('status', 'Event saved.');
 
         return redirect(url('/admin/events/' . $updated['public_id']));
     }
@@ -144,7 +142,7 @@ final class EventController extends Controller
         $event = $this->find($publicId);
         Event::update((int) $event['id'], ['status' => 'Cancelled']);
         AuditLogger::log('event.cancelled', 'Event Cancelled', $event['title'] . ' was cancelled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'amber', 'icon' => 'alert']);
-        Session::flash('status', 'Event cancelled.');
+        session()->flash('status', 'Event cancelled.');
 
         return redirect(url('/admin/events/' . $event['public_id']));
     }
@@ -153,7 +151,7 @@ final class EventController extends Controller
     private function form(array $actor, ?array $event)
     {
         $isEdit = $event !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($event, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
@@ -185,7 +183,7 @@ final class EventController extends Controller
             'event' => $event,
             'attachments' => $event === null ? [] : json_items($event['attachments'] ?? null),
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 

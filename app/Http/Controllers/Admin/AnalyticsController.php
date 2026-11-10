@@ -8,17 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Participation;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $search = mb_strtolower((string) $request->string('search'));
         $tab = (string) $request->string('tab', 'all');
         $program = (string) $request->string('program');
@@ -88,7 +86,7 @@ final class AnalyticsController extends Controller
 
     public function showStudent(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $student = Participation::findStudent($publicId);
 
         if ($student === null) {
@@ -115,7 +113,7 @@ final class AnalyticsController extends Controller
         return view('admin/analytics/show', [
             'title' => 'Student Tracking Logs',
             'pageTitle' => 'View Student Profile & Tracking Logs',
-            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' · ' . $student['public_id'],
+            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' Â· ' . $student['public_id'],
             'pageKey' => 'analytics',
             'user' => $actor,
             'role' => $actor['role'],
@@ -172,7 +170,7 @@ final class AnalyticsController extends Controller
             ],
         );
 
-        Session::flash('status', 'Orientation progress notification sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.');
+        session()->flash('status', 'Orientation progress notification sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.');
         $destination = ($data['return_to'] ?? 'list') === 'tracking'
             ? '/admin/analytics/' . $student['public_id']
             : '/admin/analytics';
@@ -200,7 +198,7 @@ final class AnalyticsController extends Controller
         ));
 
         if ($recipients === []) {
-            Session::flash('status', 'There are no non-compliant students to notify.');
+            session()->flash('status', 'There are no non-compliant students to notify.');
 
             return redirect(url('/admin/analytics'));
         }
@@ -228,7 +226,7 @@ final class AnalyticsController extends Controller
             ],
         );
 
-        Session::flash('status', 'Orientation progress notification sent to ' . \count($recipients) . ' non-compliant students.');
+        session()->flash('status', 'Orientation progress notification sent to ' . \count($recipients) . ' non-compliant students.');
 
         return redirect(url('/admin/analytics'));
     }

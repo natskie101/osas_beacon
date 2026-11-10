@@ -8,17 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Support\Session;
 
 final class SupportController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'status' => (string) $request->string('status'),
@@ -50,13 +48,13 @@ final class SupportController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = $this->find($publicId);
 
         return view('admin/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
-            'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['student_name'] . ' · ' . $ticket['status'],
+            'pageSubtitle' => $ticket['public_id'] . ' Â· ' . $ticket['student_name'] . ' Â· ' . $ticket['status'],
             'pageKey' => 'support',
             'user' => $actor,
             'role' => $actor['role'],
@@ -68,7 +66,7 @@ final class SupportController extends Controller
 
     public function reply(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $ticket = $this->find($publicId);
         $data = $this->validate($request, ['body' => 'required|string|max:4000']);
         $author = trim((string) $actor['first_name'] . ' ' . (string) $actor['last_name']);
@@ -83,7 +81,7 @@ final class SupportController extends Controller
         }
 
         AuditLogger::log('support.replied', 'Support Ticket Reply', $author . ' replied to ' . $ticket['public_id'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => $ticket['student_user_id'] ?? null]);
-        Session::flash('status', 'Reply sent to the student.');
+        session()->flash('status', 'Reply sent to the student.');
 
         return redirect(url('/admin/support/' . $ticket['public_id']));
     }
@@ -105,7 +103,7 @@ final class SupportController extends Controller
         }
 
         AuditLogger::log('support.updated', 'Support Ticket Updated', $ticket['public_id'] . ' was moved to ' . $data['status'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => $ticket['student_user_id'] ?? null]);
-        Session::flash('status', 'Ticket status updated.');
+        session()->flash('status', 'Ticket status updated.');
 
         return redirect(url('/admin/support/' . $ticket['public_id']));
     }

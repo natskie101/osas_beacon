@@ -8,17 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Regulation;
 use App\Services\AuditLogger;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Html;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class RegulationController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'status' => (string) $request->string('status'),
@@ -50,12 +48,12 @@ final class RegulationController extends Controller
 
     public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
     public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
 
         if ((string) $request->string('save_action') === 'draft') {
@@ -79,20 +77,20 @@ final class RegulationController extends Controller
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'blue', 'icon' => 'scale'],
         );
 
-        Session::flash('status', 'Regulation created.');
+        session()->flash('status', 'Regulation created.');
 
         return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulation = $this->find($publicId);
 
         return view('admin/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['public_id'] . ' · ' . $regulation['status'],
+            'pageSubtitle' => $regulation['public_id'] . ' Â· ' . $regulation['status'],
             'pageKey' => 'regulations',
             'user' => $actor,
             'role' => $actor['role'],
@@ -104,7 +102,7 @@ final class RegulationController extends Controller
 
     public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
     public function update(Request $request, string $publicId)
@@ -132,7 +130,7 @@ final class RegulationController extends Controller
             ['entity_type' => 'regulation', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit'],
         );
 
-        Session::flash('status', 'Regulation saved.');
+        session()->flash('status', 'Regulation saved.');
 
         return redirect(url('/admin/regulations/' . $updated['public_id']));
     }
@@ -147,7 +145,7 @@ final class RegulationController extends Controller
             $regulation['title'] . ' is now visible in the student portal.',
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'green', 'icon' => 'scale'],
         );
-        Session::flash('status', 'Regulation published.');
+        session()->flash('status', 'Regulation published.');
 
         return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
@@ -162,7 +160,7 @@ final class RegulationController extends Controller
             $regulation['title'] . ' was archived.',
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'amber', 'icon' => 'fileText'],
         );
-        Session::flash('status', 'Regulation archived.');
+        session()->flash('status', 'Regulation archived.');
 
         return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
@@ -171,7 +169,7 @@ final class RegulationController extends Controller
     private function form(array $actor, ?array $regulation)
     {
         $isEdit = $regulation !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($regulation, is_array($old) ? $old : []) : array_merge([
             'reference_code' => '',
             'title' => '',
@@ -202,7 +200,7 @@ final class RegulationController extends Controller
             'role' => $actor['role'],
             'regulation' => $regulation,
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 

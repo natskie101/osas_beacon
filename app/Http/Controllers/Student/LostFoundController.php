@@ -12,19 +12,17 @@ use App\Models\Tracking;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 use RuntimeException;
 
 final class LostFoundController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $items = LostFoundItem::visible();
         $type = (string) $request->string('type');
         $status = (string) $request->string('status');
@@ -110,8 +108,8 @@ final class LostFoundController extends Controller
             'pageTitle' => 'Report a Lost or Found Item',
             'pageSubtitle' => 'Submit the details so OSAS can match the item with its owner or custodian.',
             'pageKey' => 'lost-found',
-            'user' => Auth::user(),
-            'role' => Auth::user()['role'],
+            'user' => auth_user(),
+            'role' => auth_user()['role'],
             'values' => array_merge([
                 'type' => 'Lost',
                 'title' => '',
@@ -119,15 +117,15 @@ final class LostFoundController extends Controller
                 'description' => '',
                 'location' => '',
                 'date_occurred' => date('Y-m-d\TH:i'),
-                'contact' => Auth::user()['email'],
-            ], Session::getFlash('old', [])),
-            'errors' => Session::errors(),
+                'contact' => auth_user()['email'],
+            ], old()),
+            'errors' => session('errors', []),
         ]);
     }
 
     public function storeReport(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validate($request, [
             'type' => 'required|in:Lost,Found',
             'title' => 'required|string|max:200',
@@ -165,7 +163,7 @@ final class LostFoundController extends Controller
             NotificationService::send((int) $staffId, 'New Lost & Found Report', $item['type'] . ' item "' . $item['title'] . '" was reported by ' . $data['reported_by'] . '.', 'info', 'lost_found', (string) $item['public_id']);
         }
 
-        Session::flash('status', 'Your report has been submitted.');
+        session()->flash('status', 'Your report has been submitted.');
 
         return redirect(url('/student/lost-found/' . $item['public_id']));
     }
@@ -201,7 +199,7 @@ final class LostFoundController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $item = LostFoundItem::findVisible($publicId);
 
         if ($item === null) {
@@ -220,7 +218,7 @@ final class LostFoundController extends Controller
         return view('student/lost-found/show', [
             'title' => $item['title'],
             'pageTitle' => $item['title'],
-            'pageSubtitle' => $item['type'] . ' · ' . $item['category'] . ' · ' . $item['status'],
+            'pageSubtitle' => $item['type'] . ' Â· ' . $item['category'] . ' Â· ' . $item['status'],
             'pageKey' => 'lost-found',
             'user' => $actor,
             'role' => $actor['role'],
@@ -229,13 +227,13 @@ final class LostFoundController extends Controller
             'ownReport' => $ownReport,
             'claims' => $ownReport ? LostFoundItem::claimsFor((int) $item['id']) : [],
             'imageFile' => !empty($item['image_file_id']) ? File::find((int) $item['image_file_id']) : null,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
     public function claim(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $item = LostFoundItem::findVisible($publicId);
 
         if ($item === null) {
@@ -243,13 +241,13 @@ final class LostFoundController extends Controller
         }
 
         if ((string) $item['reporter_email'] === (string) $actor['email']) {
-            Session::flash('error', 'You cannot submit a claim for your own report.');
+            session()->flash('error', 'You cannot submit a claim for your own report.');
 
             return redirect(url('/student/lost-found/' . $item['public_id']));
         }
 
         if (!in_array($item['status'], ['Open', 'Unclaimed', 'Claim Pending'], true)) {
-            Session::flash('error', 'This item is no longer accepting claims.');
+            session()->flash('error', 'This item is no longer accepting claims.');
 
             return redirect(url('/student/lost-found/' . $item['public_id']));
         }
@@ -260,7 +258,7 @@ final class LostFoundController extends Controller
             ->first();
 
         if ($existing !== null) {
-            Session::flash('error', 'You already submitted a claim for this item.');
+            session()->flash('error', 'You already submitted a claim for this item.');
 
             return redirect(url('/student/lost-found/' . $item['public_id']));
         }
@@ -293,7 +291,7 @@ final class LostFoundController extends Controller
             NotificationService::send((int) $staffId, 'New Ownership Claim', $claim['claimant_name'] . ' filed a claim for "' . $item['title'] . '".', 'warning', 'lost_found', (string) $item['public_id']);
         }
 
-        Session::flash('status', 'Your claim has been submitted for verification.');
+        session()->flash('status', 'Your claim has been submitted for verification.');
 
         return redirect(url('/student/lost-found/' . $item['public_id']));
     }

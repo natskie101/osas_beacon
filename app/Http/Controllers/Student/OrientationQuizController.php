@@ -10,17 +10,15 @@ use App\Models\OrientationProgress;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use App\Services\OrientationQuizService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class OrientationQuizController extends Controller
 {
     public function start(Request $request, string $modulePublicId)
     {
         [$module, $quiz] = $this->moduleQuiz($modulePublicId);
-        $actor = Auth::user();
+        $actor = auth_user();
         $userId = (int) $actor['id'];
         $latest = OrientationQuizService::latestAttempt((int) $quiz['id'], $userId);
 
@@ -46,7 +44,7 @@ final class OrientationQuizController extends Controller
     public function show(Request $request, string $modulePublicId)
     {
         [$module, $quiz] = $this->moduleQuiz($modulePublicId);
-        $actor = Auth::user();
+        $actor = auth_user();
         $attempt = OrientationQuizService::activeAttempt((int) $quiz['id'], (int) $actor['id']);
 
         if ($attempt === null) {
@@ -71,7 +69,7 @@ final class OrientationQuizController extends Controller
         return view('student/orientation/quiz', [
             'title' => $quiz['title'],
             'pageTitle' => $quiz['title'],
-            'pageSubtitle' => number_format(count($questions)) . ' questions · ' . number_format((int) $quiz['time_limit_minutes']) . ' minutes',
+            'pageSubtitle' => number_format(count($questions)) . ' questions Â· ' . number_format((int) $quiz['time_limit_minutes']) . ' minutes',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
@@ -85,7 +83,7 @@ final class OrientationQuizController extends Controller
     public function submit(Request $request, string $modulePublicId)
     {
         [$module, $quiz] = $this->moduleQuiz($modulePublicId);
-        $actor = Auth::user();
+        $actor = auth_user();
         $attempt = OrientationQuizService::activeAttempt((int) $quiz['id'], (int) $actor['id']);
 
         if ($attempt === null) {
@@ -94,7 +92,7 @@ final class OrientationQuizController extends Controller
 
         if (strtotime((string) $attempt['expires_at']) <= time()) {
             OrientationQuizService::markExpired((int) $attempt['id']);
-            Session::flash('error', 'Time expired. You can retake the assessment.');
+            session()->flash('error', 'Time expired. You can retake the assessment.');
 
             return redirect(url('/student/orientation/' . $module['public_id'] . '/quiz/result'));
         }
@@ -124,7 +122,7 @@ final class OrientationQuizController extends Controller
             }
         }
 
-        Session::flash($result['passed'] ? 'status' : 'error', $result['passed']
+        session()->flash($result['passed'] ? 'status' : 'error', $result['passed']
             ? 'You passed the assessment with ' . number_format($result['percent'], 1) . '%.'
             : 'You did not meet the passing score. You can retake the assessment.');
 
@@ -134,7 +132,7 @@ final class OrientationQuizController extends Controller
     public function result(Request $request, string $modulePublicId)
     {
         [$module, $quiz] = $this->moduleQuiz($modulePublicId);
-        $actor = Auth::user();
+        $actor = auth_user();
         $attempt = OrientationQuizService::latestAttempt((int) $quiz['id'], (int) $actor['id']);
 
         if ($attempt === null) {

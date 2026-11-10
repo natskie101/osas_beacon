@@ -14,20 +14,18 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\FileStorage;
 use App\Services\UserService;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\ForbiddenHttpException;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 use RuntimeException;
 
 final class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $tab = (string) $request->string('tab', 'directory') === 'queue' ? 'queue' : 'directory';
         $status = (string) $request->string('status');
 
@@ -68,7 +66,7 @@ final class UserController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('view', $actor, $target);
 
@@ -77,7 +75,7 @@ final class UserController extends Controller
         return view('admin/users/show', [
             'title' => User::fullName($target),
             'pageTitle' => User::fullName($target),
-            'pageSubtitle' => $target['public_id'] . ' · ' . $target['role'] . ' account',
+            'pageSubtitle' => $target['public_id'] . ' Â· ' . $target['role'] . ' account',
             'pageKey' => 'users',
             'user' => $actor,
             'role' => $actor['role'],
@@ -97,7 +95,7 @@ final class UserController extends Controller
 
     public function create(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
 
         if (!UserPolicy::canManageAccounts($actor)) {
             throw new ForbiddenHttpException();
@@ -108,7 +106,7 @@ final class UserController extends Controller
 
     public function edit(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('manage', $actor, $target);
 
@@ -117,7 +115,7 @@ final class UserController extends Controller
 
     public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
 
         if (!UserPolicy::canManageAccounts($actor)) {
             throw new ForbiddenHttpException();
@@ -135,14 +133,14 @@ final class UserController extends Controller
             throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
-        Session::flash('status', 'Account created for ' . User::fullName($target) . '.');
+        session()->flash('status', 'Account created for ' . User::fullName($target) . '.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function update(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('manage', $actor, $target);
 
@@ -165,14 +163,14 @@ final class UserController extends Controller
             throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
         }
 
-        Session::flash('status', 'Account details saved for ' . User::fullName($target) . '.');
+        session()->flash('status', 'Account details saved for ' . User::fullName($target) . '.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function verify(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('verify', $actor, $target);
 
@@ -186,14 +184,14 @@ final class UserController extends Controller
             'green',
         );
 
-        Session::flash('status', User::fullName($target) . ' has been verified and activated.');
+        session()->flash('status', User::fullName($target) . ' has been verified and activated.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function reject(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('verify', $actor, $target);
         $reason = trim((string) $request->string('reason'));
@@ -216,14 +214,14 @@ final class UserController extends Controller
             'red',
         );
 
-        Session::flash('status', User::fullName($target) . ' was rejected and deactivated.');
+        session()->flash('status', User::fullName($target) . ' was rejected and deactivated.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function activate(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('manage', $actor, $target);
         $this->preventSelfStatusChange($actor, $target);
@@ -238,20 +236,20 @@ final class UserController extends Controller
             'green',
         );
 
-        Session::flash('status', User::fullName($target) . ' is active again.');
+        session()->flash('status', User::fullName($target) . ' is active again.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function deactivate(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('manage', $actor, $target);
         $this->preventSelfStatusChange($actor, $target);
 
         if ($target['role'] === 'Coordinator' && DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->count() <= 1) {
-            Session::flash('error', 'The last active coordinator cannot be deactivated.');
+            session()->flash('error', 'The last active coordinator cannot be deactivated.');
 
             return redirect(url('/admin/users/' . $target['public_id']));
         }
@@ -266,61 +264,61 @@ final class UserController extends Controller
             'red',
         );
 
-        Session::flash('status', User::fullName($target) . ' has been deactivated.');
+        session()->flash('status', User::fullName($target) . ' has been deactivated.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function archive(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('archive', $actor, $target);
 
         if (!UserService::archiveAccount($target, $actor)) {
-            Session::flash('error', 'The last active coordinator cannot be archived.');
+            session()->flash('error', 'The last active coordinator cannot be archived.');
 
             return redirect(url('/admin/users/' . $target['public_id']));
         }
 
-        Session::flash('status', User::fullName($target) . ' was archived. Their account and history can be restored.');
+        session()->flash('status', User::fullName($target) . ' was archived. Their account and history can be restored.');
 
         return redirect(url('/admin/users'));
     }
 
     public function restore(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('restore', $actor, $target);
         UserService::restoreAccount($target, $actor);
 
-        Session::flash('status', User::fullName($target) . ' was restored with their previous account status.');
+        session()->flash('status', User::fullName($target) . ' was restored with their previous account status.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function resetPassword(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('reset_password', $actor, $target);
         UserService::sendPasswordReset($target, $actor);
 
-        Session::flash('status', 'A password reset link was generated for ' . $target['email'] . '. In local mode it is written to storage/logs/mail.log.');
+        session()->flash('status', 'A password reset link was generated for ' . $target['email'] . '. In local mode it is written to storage/logs/mail.log.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function uploadSchoolId(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('upload_school_id', $actor, $target);
         $file = $this->schoolIdFile($request);
 
         if ($file === null) {
-            Session::flash('error', 'Choose a school ID file to upload.');
+            session()->flash('error', 'Choose a school ID file to upload.');
 
             return redirect(url('/admin/users/' . $target['public_id']));
         }
@@ -328,19 +326,19 @@ final class UserController extends Controller
         try {
             UserService::attachSchoolId($target, $file, $actor);
         } catch (RuntimeException $exception) {
-            Session::flash('error', $exception->getMessage());
+            session()->flash('error', $exception->getMessage());
 
             return redirect(url('/admin/users/' . $target['public_id']));
         }
 
-        Session::flash('status', 'School ID uploaded for ' . User::fullName($target) . '.');
+        session()->flash('status', 'School ID uploaded for ' . User::fullName($target) . '.');
 
         return redirect(url('/admin/users/' . $target['public_id']));
     }
 
     public function downloadSchoolId(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $target = $this->find($publicId);
         UserPolicy::authorize('download_school_id', $actor, $target);
 
@@ -361,7 +359,7 @@ final class UserController extends Controller
     private function form(array $actor, ?array $target)
     {
         $isEdit = $target !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($target, is_array($old) ? $old : []) : array_merge([
             'first_name' => '',
             'middle_name' => '',
@@ -394,7 +392,7 @@ final class UserController extends Controller
             'role' => $actor['role'],
             'target' => $target,
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
             'roles' => $isEdit
                 ? UserPolicy::assignableRoles($actor)
                 : UserPolicy::creatableRoles($actor),

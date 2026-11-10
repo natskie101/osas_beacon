@@ -34,8 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // validation failures flash errors + old input and redirect back
         // instead of bubbling up as 500s.
         $exceptions->render(function (ValidationException $e) {
-            \App\Support\Session::flashErrors($e->errors());
-            \App\Support\Session::flashOld($e->old());
+            session()->flash('errors', $e->errors());
+            session()->flashInput($e->old());
 
             return redirect()->back();
         });

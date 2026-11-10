@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Auth\ArrayUser;
 use App\Models\File;
 use App\Models\RememberToken;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
-use App\Support\Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 use RuntimeException;
 use Throwable;
 
@@ -22,8 +22,8 @@ final class ProfileController extends Controller
 {
     public function show(Request $_request)
     {
-        $user = Auth::user();
-        $old = Session::getFlash('old', []);
+        $user = auth_user();
+        $old = old();
         $values = array_merge($user, \is_array($old) ? $old : []);
         $values['password'] = '';
         $values['password_confirmation'] = '';
@@ -38,7 +38,7 @@ final class ProfileController extends Controller
             'role' => $user['role'],
             'values' => $values,
             'profilePhotoFile' => File::latestForEntity('user_profile_photo', (string) $user['id']),
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
             'departments' => config('people.departments', []),
             'programs' => config('people.programs', []),
             'yearLevels' => config('people.year_levels', []),
@@ -47,7 +47,7 @@ final class ProfileController extends Controller
 
     public function photo(Request $_request)
     {
-        $user = Auth::user();
+        $user = auth_user();
         $file = File::latestForEntity('user_profile_photo', (string) $user['id']);
 
         if ($file === null || !in_array($file['mime_type'] ?? '', ['image/jpeg', 'image/png'], true)) {
@@ -72,7 +72,7 @@ final class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user = auth_user();
         $userId = (int) $user['id'];
         $rules = [
             'first_name' => 'required|string|max:80',
@@ -176,8 +176,8 @@ final class ProfileController extends Controller
             throw new RuntimeException('The account could not be loaded after updating the profile.');
         }
 
-        Auth::refresh($updated);
-        Session::flash('status', 'Your profile has been updated.');
+        Auth::setUser(new ArrayUser($updated));
+        session()->flash('status', 'Your profile has been updated.');
 
         return redirect(url('/profile'));
     }

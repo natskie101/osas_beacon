@@ -21,11 +21,11 @@ final class Csrf
             }
         }
 
-        if (!Session::has('_token')) {
-            Session::put('_token', Str::random(32));
+        if (!session()->has('_token')) {
+            session()->put('_token', Str::random(32));
         }
 
-        return (string) Session::get('_token');
+        return (string) session()->get('_token');
     }
 
     public static function field(): string

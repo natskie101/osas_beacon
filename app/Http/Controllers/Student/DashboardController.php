@@ -11,14 +11,13 @@ use App\Models\Event;
 use App\Models\OrientationModule;
 use App\Models\OrientationProgress;
 use App\Models\SupportTicket;
-use App\Support\Auth;
 use Illuminate\Http\Request;
 
 final class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = auth_user();
         $userId = (int) $user['id'];
 
         $modules = OrientationModule::published();

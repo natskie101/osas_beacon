@@ -11,19 +11,17 @@ use App\Models\OrientationModule;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\OrientationQuizService;
-use App\Support\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 use RuntimeException;
 
 final class OrientationController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
             'search' => (string) $request->string('search'),
             'status' => (string) $request->string('status'),
@@ -55,12 +53,12 @@ final class OrientationController extends Controller
 
     public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
     public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
 
         if ((string) $request->string('save_action') === 'draft') {
@@ -108,14 +106,14 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'blue', 'icon' => 'graduation'],
         );
 
-        Session::flash('status', 'Orientation module created.');
+        session()->flash('status', 'Orientation module created.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
     }
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->find($publicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $quizQuestions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
@@ -123,7 +121,7 @@ final class OrientationController extends Controller
         return view('admin/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
-            'pageSubtitle' => $module['public_id'] . ' · ' . $module['status'],
+            'pageSubtitle' => $module['public_id'] . ' Â· ' . $module['status'],
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
@@ -138,7 +136,7 @@ final class OrientationController extends Controller
 
     public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
     public function update(Request $request, string $publicId)
@@ -153,7 +151,7 @@ final class OrientationController extends Controller
         }
 
         $this->normalizeMediaChoice($data, $request);
-        $media = $this->storeMedia($request, Auth::user());
+        $media = $this->storeMedia($request, auth_user());
         $oldMedia = null;
 
         if ($media !== null) {
@@ -184,7 +182,7 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit'],
         );
 
-        Session::flash('status', 'Orientation module saved.');
+        session()->flash('status', 'Orientation module saved.');
 
         return redirect(url('/admin/orientation/' . $updated['public_id']));
     }
@@ -194,7 +192,7 @@ final class OrientationController extends Controller
         $module = $this->find($publicId);
         OrientationModule::update((int) $module['id'], ['status' => 'Published']);
         AuditLogger::log('orientation.published', 'Orientation Module Published', $module['title'] . ' is now available to students.', ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'green', 'icon' => 'graduation']);
-        Session::flash('status', 'Orientation module published.');
+        session()->flash('status', 'Orientation module published.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
     }
@@ -204,7 +202,7 @@ final class OrientationController extends Controller
         $module = $this->find($publicId);
         OrientationModule::update((int) $module['id'], ['status' => 'Archived']);
         AuditLogger::log('orientation.archived', 'Orientation Module Archived', $module['title'] . ' was archived.', ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'amber', 'icon' => 'fileText']);
-        Session::flash('status', 'Orientation module archived.');
+        session()->flash('status', 'Orientation module archived.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
     }
@@ -377,7 +375,7 @@ final class OrientationController extends Controller
     private function form(array $actor, ?array $module)
     {
         $isEdit = $module !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($module, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
@@ -413,7 +411,7 @@ final class OrientationController extends Controller
             'role' => $actor['role'],
             'module' => $module,
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
             'mediaFile' => $isEdit && !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
         ]);
     }

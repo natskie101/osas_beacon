@@ -31,7 +31,7 @@ $profilePhotoFile = $profilePhotoFile ?? (
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $pageTitle ?? 'OSAS Portal' }} · BEACON OSAS Portal</title>
+    <title>{{ $pageTitle ?? 'OSAS Portal' }} Â· BEACON OSAS Portal</title>
     <link rel="stylesheet" href="{!! asset('css/app.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app.css') !!}">
     <link rel="stylesheet" href="{!! asset('css/app-php.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app-php.css') !!}">
     <?php if ($role === 'Administrator' && ($pageKey ?? '') === 'system-overview'): ?>
@@ -45,8 +45,8 @@ $profilePhotoFile = $profilePhotoFile ?? (
         @include('partials/topbar', compact('pageTitle', 'pageSubtitle', 'user', 'role', 'initials', 'profilePhotoFile'))
         <main class="content" id="page-content">
             @include('partials/flash', [
-                'status' => App\Support\Session::getFlash('status'),
-                'error' => App\Support\Session::getFlash('error'),
+                'status' => session('status'),
+                'error' => session('error'),
             ])
             <?php if ($role === 'Administrator' && ($pageKey ?? '') === 'system-overview'): ?>
                 <div id="technical-overview">@yield('content')</div>

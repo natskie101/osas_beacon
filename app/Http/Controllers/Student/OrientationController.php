@@ -12,16 +12,14 @@ use App\Models\Tracking;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class OrientationController extends Controller
 {
     public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $modules = OrientationModule::published();
         $progress = OrientationProgress::forUser((int) $actor['id']);
         $summary = OrientationProgress::summary((int) $actor['id'], count($modules));
@@ -52,7 +50,7 @@ final class OrientationController extends Controller
 
     public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = OrientationModule::findPublished($publicId);
 
         if ($module === null) {
@@ -71,7 +69,7 @@ final class OrientationController extends Controller
         return view('student/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
-            'pageSubtitle' => $module['category'] . ' · ' . $module['duration_minutes'] . ' min',
+            'pageSubtitle' => $module['category'] . ' Â· ' . $module['duration_minutes'] . ' min',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
@@ -104,7 +102,7 @@ final class OrientationController extends Controller
 
     public function complete(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = OrientationModule::findPublished($publicId);
 
         if ($module === null) {
@@ -128,9 +126,9 @@ final class OrientationController extends Controller
                 $module['title'] . ' was marked complete by ' . trim($actor['first_name'] . ' ' . $actor['last_name']) . '.',
                 ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'green', 'icon' => 'checkCircle', 'target_user_id' => (int) $actor['id']],
             );
-            Session::flash('status', 'Module marked complete. Your orientation progress has been updated.');
+            session()->flash('status', 'Module marked complete. Your orientation progress has been updated.');
         } else {
-            Session::flash('status', 'This module is already marked complete.');
+            session()->flash('status', 'This module is already marked complete.');
         }
 
         return redirect(url('/student/orientation/' . $module['public_id']));

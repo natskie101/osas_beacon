@@ -8,17 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Models\OrientationModule;
 use App\Services\AuditLogger;
 use App\Services\OrientationQuizService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
-use App\Support\Session;
 
 final class OrientationQuizController extends Controller
 {
     public function show(Request $request, string $modulePublicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->module($modulePublicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $questions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
@@ -26,20 +24,20 @@ final class OrientationQuizController extends Controller
         return view('admin/orientation/quiz', [
             'title' => 'Manage Quiz',
             'pageTitle' => $module['title'] . ' Quiz',
-            'pageSubtitle' => $module['public_id'] . ' · ' . count($questions) . ' questions',
+            'pageSubtitle' => $module['public_id'] . ' Â· ' . count($questions) . ' questions',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
             'module' => $module,
             'quiz' => $quiz,
             'questions' => $questions,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
     public function saveSettings(Request $request, string $modulePublicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->module($modulePublicId);
         $data = $this->validate($request, [
             'title' => 'required|string|max:200',
@@ -57,7 +55,7 @@ final class OrientationQuizController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'blue', 'icon' => 'fileText'],
         );
 
-        Session::flash('status', 'Quiz settings saved.');
+        session()->flash('status', 'Quiz settings saved.');
 
         return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
@@ -72,7 +70,7 @@ final class OrientationQuizController extends Controller
         }
 
         OrientationQuizService::saveQuestion((int) $quiz['id'], $this->questionData($request));
-        Session::flash('status', 'Question added.');
+        session()->flash('status', 'Question added.');
 
         return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
@@ -91,7 +89,7 @@ final class OrientationQuizController extends Controller
         }
 
         OrientationQuizService::saveQuestion((int) $quiz['id'], $this->questionData($request), (int) $questionId);
-        Session::flash('status', 'Question updated.');
+        session()->flash('status', 'Question updated.');
 
         return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
@@ -105,7 +103,7 @@ final class OrientationQuizController extends Controller
             OrientationQuizService::deleteQuestion((int) $questionId, (int) $quiz['id']);
         }
 
-        Session::flash('status', 'Question removed.');
+        session()->flash('status', 'Question removed.');
 
         return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
