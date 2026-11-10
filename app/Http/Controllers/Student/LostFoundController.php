@@ -13,7 +13,7 @@ use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
@@ -155,14 +155,14 @@ final class LostFoundController extends Controller
         $item = LostFoundItem::find($id);
 
         if ($image !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$item['public_id'], $image['file_id']]);
+            DB::table('files')->where('id', (int) $image['file_id'])->update(['entity_id' => (string) $item['public_id']]);
         }
 
         AuditLogger::log('lost_found.reported', 'Lost & Found Report Submitted', $item['title'] . ' was reported by ' . $data['reported_by'] . '.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'blue', 'icon' => 'search', 'target_user_id' => (int) $actor['id']]);
         NotificationService::send((int) $actor['id'], 'Lost & Found Report Received', 'Your report for "' . $item['title'] . '" was submitted. OSAS will review it.', 'info', 'lost_found', (string) $item['public_id']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role = "Coordinator" AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'New Lost & Found Report', $item['type'] . ' item "' . $item['title'] . '" was reported by ' . $data['reported_by'] . '.', 'info', 'lost_found', (string) $item['public_id']);
+        foreach (DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'New Lost & Found Report', $item['type'] . ' item "' . $item['title'] . '" was reported by ' . $data['reported_by'] . '.', 'info', 'lost_found', (string) $item['public_id']);
         }
 
         Session::flash('status', 'Your report has been submitted.');
@@ -209,10 +209,12 @@ final class LostFoundController extends Controller
         }
 
         Tracking::record((string) $item['title'], 'Lost & Found', (string) $item['public_id']);
-        $myClaim = DB::first(
-            'SELECT * FROM lost_found_claims WHERE item_id = ? AND claimant_user_id = ? ORDER BY id DESC LIMIT 1',
-            [(int) $item['id'], (int) $actor['id']],
-        );
+        $myClaim = DB::table('lost_found_claims')
+            ->where('item_id', (int) $item['id'])
+            ->where('claimant_user_id', (int) $actor['id'])
+            ->orderByDesc('id')
+            ->first();
+        $myClaim = $myClaim === null ? null : (array) $myClaim;
         $ownReport = (string) $item['reporter_email'] === (string) $actor['email'];
 
         return view('student/lost-found/show', [
@@ -252,10 +254,10 @@ final class LostFoundController extends Controller
             return redirect(url('/student/lost-found/' . $item['public_id']));
         }
 
-        $existing = DB::first(
-            'SELECT id FROM lost_found_claims WHERE item_id = ? AND claimant_user_id = ? LIMIT 1',
-            [(int) $item['id'], (int) $actor['id']],
-        );
+        $existing = DB::table('lost_found_claims')
+            ->where('item_id', (int) $item['id'])
+            ->where('claimant_user_id', (int) $actor['id'])
+            ->first();
 
         if ($existing !== null) {
             Session::flash('error', 'You already submitted a claim for this item.');
@@ -287,8 +289,8 @@ final class LostFoundController extends Controller
         AuditLogger::log('lost_found.claim_submitted', 'Ownership Claim Submitted', $claim['claimant_name'] . ' submitted a claim for ' . $item['title'] . '.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'amber', 'icon' => 'search', 'target_user_id' => (int) $actor['id']]);
         NotificationService::send((int) $actor['id'], 'Claim Submitted', 'Your claim for "' . $item['title'] . '" is awaiting OSAS verification.', 'info', 'lost_found', (string) $item['public_id']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role = "Coordinator" AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'New Ownership Claim', $claim['claimant_name'] . ' filed a claim for "' . $item['title'] . '".', 'warning', 'lost_found', (string) $item['public_id']);
+        foreach (DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'New Ownership Claim', $claim['claimant_name'] . ' filed a claim for "' . $item['title'] . '".', 'warning', 'lost_found', (string) $item['public_id']);
         }
 
         Session::flash('status', 'Your claim has been submitted for verification.');

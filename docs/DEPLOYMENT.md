@@ -81,11 +81,11 @@ existing portal data before importing the seeded dataset.
 
 Demo accounts after reseeding (password `Beacon@2026`):
 
-| Role | Email |
-| --- | --- |
-| Coordinator | `josefina.reyes@uc.edu.ph` |
+| Role          | Email                       |
+| ------------- | --------------------------- |
+| Coordinator   | `josefina.reyes@uc.edu.ph`  |
 | Administrator | `technical.admin@uc.edu.ph` |
-| Student | `ryan.delacruz@uc.edu.ph` |
+| Student       | `ryan.delacruz@uc.edu.ph`   |
 
 ## 4. Laragon virtual host
 

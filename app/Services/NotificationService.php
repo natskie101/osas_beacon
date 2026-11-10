@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Notification;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class NotificationService
 {
@@ -17,11 +17,16 @@ final class NotificationService
         string $entityType = '',
         string $entityId = '',
     ): int {
-        return DB::insert(
-            'INSERT INTO notifications (user_id, title, message, type, entity_type, entity_id, read_at, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NULL, ?)',
-            [$userId, $title, $message, $type, $entityType, $entityId, date('Y-m-d H:i:s')],
-        );
+        return DB::table('notifications')->insertGetId([
+            'user_id' => $userId,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'read_at' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public static function unreadCount(int $userId): int

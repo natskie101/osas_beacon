@@ -16,6 +16,7 @@ use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Support\Session;
 use RuntimeException;
 
@@ -83,10 +84,7 @@ final class AnnouncementController extends Controller
 
         foreach (Announcement::decodeList($announcement['attachments'] ?? null) as $attachment) {
             if (!empty($attachment['file_id'])) {
-                \App\Support\DB::update(
-                    'UPDATE files SET entity_id = ? WHERE id = ?',
-                    [$announcement['public_id'], (int) $attachment['file_id']],
-                );
+                DB::table('files')->where('id', (int) $attachment['file_id'])->update(['entity_id' => (string) $announcement['public_id']]);
             }
         }
 
@@ -324,12 +322,16 @@ final class AnnouncementController extends Controller
         );
     }
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<string> */
     private function categories(): array
     {
-        $rows = \App\Support\DB::select('SELECT DISTINCT category FROM announcements WHERE category <> "" ORDER BY category ASC');
-
-        return array_map(static fn (array $row): string => (string) $row['category'], $rows);
+        return DB::table('announcements')
+            ->distinct()
+            ->where('category', '<>', '')
+            ->orderBy('category')
+            ->pluck('category')
+            ->map(static fn (mixed $category): string => (string) $category)
+            ->all();
     }
 
     /**

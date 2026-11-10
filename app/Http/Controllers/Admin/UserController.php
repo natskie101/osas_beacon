@@ -15,7 +15,7 @@ use App\Policies\UserPolicy;
 use App\Services\FileStorage;
 use App\Services\UserService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\ForbiddenHttpException;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
@@ -250,7 +250,7 @@ final class UserController extends Controller
         UserPolicy::authorize('manage', $actor, $target);
         $this->preventSelfStatusChange($actor, $target);
 
-        if ($target['role'] === 'Coordinator' && (int) DB::value('SELECT COUNT(*) FROM users WHERE role = "Coordinator" AND status = "Active"') <= 1) {
+        if ($target['role'] === 'Coordinator' && DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->count() <= 1) {
             Session::flash('error', 'The last active coordinator cannot be deactivated.');
 
             return redirect(url('/admin/users/' . $target['public_id']));
@@ -471,7 +471,7 @@ final class UserController extends Controller
             return;
         }
 
-        $count = (int) DB::value('SELECT COUNT(*) FROM users WHERE role = "Coordinator" AND status = "Active"');
+        $count = DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->count();
 
         if ($count <= 1) {
             throw new ForbiddenHttpException('The last active coordinator cannot be demoted or deactivated.');

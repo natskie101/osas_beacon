@@ -11,6 +11,7 @@ use App\Services\NotificationService;
 use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Support\Session;
 
 final class SupportController extends Controller
@@ -112,9 +113,13 @@ final class SupportController extends Controller
     /** @return list<string> */
     private function categories(): array
     {
-        $rows = \App\Support\DB::select('SELECT DISTINCT category FROM support_tickets WHERE category <> "" ORDER BY category ASC');
-
-        return array_map(static fn (array $row): string => (string) $row['category'], $rows);
+        return DB::table('support_tickets')
+            ->distinct()
+            ->where('category', '<>', '')
+            ->orderBy('category')
+            ->pluck('category')
+            ->map(static fn (mixed $category): string => (string) $category)
+            ->all();
     }
 
     /** @return array<string, mixed> */

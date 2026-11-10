@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class ReportService
 {
@@ -35,23 +35,22 @@ final class ReportService
     {
         $types = self::types();
         $definition = $types[$type] ?? $types['announcements'];
-        $where = '';
-        $bindings = [];
+        [$columns, $table, $selects, $dateColumn] = self::query($type);
+
+        $query = DB::table($table)->select($selects);
 
         if ($from !== null && $from !== '') {
-            $where .= ($where === '' ? ' WHERE ' : ' AND ') . 'DATE({date_column}) >= ?';
-            $bindings[] = $from;
+            $query->whereRaw('DATE(' . $dateColumn . ') >= ?', [$from]);
         }
 
         if ($to !== null && $to !== '') {
-            $where .= ($where === '' ? ' WHERE ' : ' AND ') . 'DATE({date_column}) <= ?';
-            $bindings[] = $to;
+            $query->whereRaw('DATE(' . $dateColumn . ') <= ?', [$to]);
         }
 
-        [$columns, $sql, $dateColumn] = self::query($type);
-        $where = str_replace('{date_column}', $dateColumn, $where);
-
-        $rows = DB::select($sql . $where . ' ORDER BY ' . $dateColumn . ' DESC', $bindings);
+        $rows = $query->orderBy($dateColumn, 'desc')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
 
         return [
             'title' => $definition['label'] . ' Report',
@@ -63,7 +62,7 @@ final class ReportService
     }
 
     /**
-     * @return array{0:list<array{key:string,label:string}>,1:string,2:string}
+     * @return array{0:list<array{key:string,label:string}>,1:string,2:list<string|\Illuminate\Contracts\Database\Query\Expression>,3:string}
      */
     private static function query(string $type): array
     {
@@ -80,7 +79,8 @@ final class ReportService
                     ['key' => 'status', 'label' => 'Status'],
                     ['key' => 'created_at', 'label' => 'Created'],
                 ],
-                'SELECT public_id, CONCAT(first_name, " ", last_name) AS full_name, email, role, student_id, program, year_level, status, created_at FROM users',
+                'users',
+                ['public_id', DB::raw('CONCAT(first_name, " ", last_name) AS full_name'), 'email', 'role', 'student_id', 'program', 'year_level', 'status', 'created_at'],
                 'created_at',
             ],
             'announcements' => [
@@ -94,7 +94,8 @@ final class ReportService
                     ['key' => 'views', 'label' => 'Views'],
                     ['key' => 'published_at', 'label' => 'Published'],
                 ],
-                'SELECT public_id, title, category, audience, status, priority, views, published_at FROM announcements',
+                'announcements',
+                ['public_id', 'title', 'category', 'audience', 'status', 'priority', 'views', 'published_at'],
                 'created_at',
             ],
             'regulations' => [
@@ -108,7 +109,8 @@ final class ReportService
                     ['key' => 'views', 'label' => 'Views'],
                     ['key' => 'updated_at', 'label' => 'Updated'],
                 ],
-                'SELECT public_id, reference_code, title, category, status, effective_date, views, updated_at FROM regulations',
+                'regulations',
+                ['public_id', 'reference_code', 'title', 'category', 'status', 'effective_date', 'views', 'updated_at'],
                 'updated_at',
             ],
             'orientation' => [
@@ -123,7 +125,8 @@ final class ReportService
                     ['key' => 'completions', 'label' => 'Completions'],
                     ['key' => 'completion_rate', 'label' => 'Completion %'],
                 ],
-                'SELECT public_id, title, category, status, mandatory, duration_minutes, learners, completions, completion_rate FROM orientation_modules',
+                'orientation_modules',
+                ['public_id', 'title', 'category', 'status', 'mandatory', 'duration_minutes', 'learners', 'completions', 'completion_rate'],
                 'updated_at',
             ],
             'events' => [
@@ -138,7 +141,8 @@ final class ReportService
                     ['key' => 'registered', 'label' => 'Registered'],
                     ['key' => 'capacity', 'label' => 'Capacity'],
                 ],
-                'SELECT public_id, title, category, status, start_at, venue, mode, registered, capacity FROM events',
+                'events',
+                ['public_id', 'title', 'category', 'status', 'start_at', 'venue', 'mode', 'registered', 'capacity'],
                 'start_at',
             ],
             'lost_found' => [
@@ -152,7 +156,8 @@ final class ReportService
                     ['key' => 'reported_by', 'label' => 'Reported By'],
                     ['key' => 'posted_at', 'label' => 'Posted'],
                 ],
-                'SELECT public_id, type, title, category, location, status, reported_by, posted_at FROM lost_found_items',
+                'lost_found_items',
+                ['public_id', 'type', 'title', 'category', 'location', 'status', 'reported_by', 'posted_at'],
                 'posted_at',
             ],
             'document_requests' => [
@@ -167,7 +172,8 @@ final class ReportService
                     ['key' => 'released_at', 'label' => 'Released'],
                     ['key' => 'processed_by', 'label' => 'Processed By'],
                 ],
-                'SELECT public_id, student_name, student_id, document_type, status, priority, requested_at, released_at, processed_by FROM document_requests',
+                'document_requests',
+                ['public_id', 'student_name', 'student_id', 'document_type', 'status', 'priority', 'requested_at', 'released_at', 'processed_by'],
                 'requested_at',
             ],
             'support' => [
@@ -182,7 +188,8 @@ final class ReportService
                     ['key' => 'rating', 'label' => 'Rating'],
                     ['key' => 'submitted_at', 'label' => 'Submitted'],
                 ],
-                'SELECT public_id, student_name, category, subject, priority, status, assigned_to, rating, submitted_at FROM support_tickets',
+                'support_tickets',
+                ['public_id', 'student_name', 'category', 'subject', 'priority', 'status', 'assigned_to', 'rating', 'submitted_at'],
                 'submitted_at',
             ],
             'broadcasts' => [
@@ -197,7 +204,8 @@ final class ReportService
                     ['key' => 'opened', 'label' => 'Opened'],
                     ['key' => 'sent_at', 'label' => 'Sent'],
                 ],
-                'SELECT public_id, subject, channel, audience, status, reach, delivered, opened, sent_at FROM broadcasts',
+                'broadcasts',
+                ['public_id', 'subject', 'channel', 'audience', 'status', 'reach', 'delivered', 'opened', 'sent_at'],
                 'created_at',
             ],
             'tracking' => [
@@ -211,7 +219,8 @@ final class ReportService
                     ['key' => 'engagement', 'label' => 'Engagement'],
                     ['key' => 'last_viewed', 'label' => 'Last Viewed'],
                 ],
-                'SELECT public_id, title, type, views, unique_visitors, avg_time, engagement, last_viewed FROM tracking',
+                'tracking',
+                ['public_id', 'title', 'type', 'views', 'unique_visitors', 'avg_time', 'engagement', 'last_viewed'],
                 'last_viewed',
             ],
             default => [
@@ -223,7 +232,8 @@ final class ReportService
                     ['key' => 'text', 'label' => 'Details'],
                     ['key' => 'ip_address', 'label' => 'IP Address'],
                 ],
-                'SELECT created_at, actor_name, action, title, text, ip_address FROM audit_log',
+                'audit_log',
+                ['created_at', 'actor_name', 'action', 'title', 'text', 'ip_address'],
                 'created_at',
             ],
         };

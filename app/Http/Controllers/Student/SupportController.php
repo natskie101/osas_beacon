@@ -11,7 +11,7 @@ use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
@@ -107,15 +107,15 @@ final class SupportController extends Controller
         ]);
         $ticket = SupportTicket::find($id);
         if ($image !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$ticket['public_id'], $image['id']]);
+            DB::table('files')->where('id', (int) $image['id'])->update(['entity_id' => (string) $ticket['public_id']]);
         }
         SupportTicket::addMessage($id, (string) $ticket['student_name'], 'Student', $data['description']);
         SupportTicket::addMessage($id, 'OSAS Support System', 'OSAS Support', 'Ticket received by OSAS Support. A staff member will review your concern and reply through this thread.');
 
         NotificationService::send((int) $actor['id'], 'Support Ticket Received', 'Your ticket "' . $data['subject'] . '" has been received. You can follow the conversation in the portal.', 'info', 'support', (string) $ticket['public_id']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role IN ("Coordinator","Administrator") AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'New Support Ticket', $ticket['student_name'] . ' submitted "' . $data['subject'] . '".', 'warning', 'support', (string) $ticket['public_id']);
+        foreach (DB::table('users')->whereIn('role', ['Coordinator', 'Administrator'])->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'New Support Ticket', $ticket['student_name'] . ' submitted "' . $data['subject'] . '".', 'warning', 'support', (string) $ticket['public_id']);
         }
 
         AuditLogger::log('support.created', 'Support Ticket Submitted', $ticket['student_name'] . ' submitted ' . $ticket['public_id'] . '.', ['entity_type' => 'support', 'entity_id' => (string) $ticket['public_id'], 'tone' => 'blue', 'icon' => 'headset', 'target_user_id' => (int) $actor['id']]);
@@ -227,8 +227,8 @@ final class SupportController extends Controller
         SupportTicket::addMessage((int) $ticket['id'], trim((string) $actor['first_name'] . ' ' . (string) $actor['last_name']), 'Student', $data['body']);
         SupportTicket::update((int) $ticket['id'], ['status' => 'Open']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role IN ("Coordinator","Administrator") AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'Student Replied to Support Ticket', $ticket['student_name'] . ' replied to "' . $ticket['subject'] . '".', 'info', 'support', (string) $ticket['public_id']);
+        foreach (DB::table('users')->whereIn('role', ['Coordinator', 'Administrator'])->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'Student Replied to Support Ticket', $ticket['student_name'] . ' replied to "' . $ticket['subject'] . '".', 'info', 'support', (string) $ticket['public_id']);
         }
 
         Session::flash('status', 'Reply added to the ticket.');

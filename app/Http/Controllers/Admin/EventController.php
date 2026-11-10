@@ -11,7 +11,7 @@ use App\Models\File;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
@@ -69,7 +69,7 @@ final class EventController extends Controller
         $event = Event::find($id);
 
         if ($uploaded !== []) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$event['public_id'], $uploaded[0]['file_id']]);
+            DB::table('files')->where('id', (int) $uploaded[0]['file_id'])->update(['entity_id' => (string) $event['public_id']]);
         }
 
         AuditLogger::log('event.created', 'Event Created', $event['title'] . ' (' . $event['public_id'] . ') was scheduled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'blue', 'icon' => 'calendar']);
@@ -130,7 +130,7 @@ final class EventController extends Controller
         $updated = Event::find((int) $event['id']) ?? $event;
 
         if ($uploaded !== []) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $uploaded[0]['file_id']]);
+            DB::table('files')->where('id', (int) $uploaded[0]['file_id'])->update(['entity_id' => (string) $updated['public_id']]);
         }
 
         AuditLogger::log('event.updated', 'Event Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'event', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
@@ -222,10 +222,15 @@ final class EventController extends Controller
     /** @return list<string> */
     private function categories(): array
     {
-        return array_values(array_filter(array_map(
-            static fn (array $row): string => (string) $row['category'],
-            DB::select('SELECT DISTINCT category FROM events WHERE category <> "" ORDER BY category ASC'),
-        )));
+        return array_values(array_filter(
+            DB::table('events')
+                ->distinct()
+                ->where('category', '<>', '')
+                ->orderBy('category')
+                ->pluck('category')
+                ->map(static fn (mixed $category): string => (string) $category)
+                ->all(),
+        ));
     }
 
     /**

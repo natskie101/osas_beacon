@@ -10,7 +10,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
@@ -135,10 +135,9 @@ final class ProfileController extends Controller
                 User::update($userId, $updates);
 
                 if ($emailChanged) {
-                    DB::update(
-                        'UPDATE lost_found_items SET reporter_email = ? WHERE reporter_email = ?',
-                        [$updates['email'], (string) $user['email']],
-                    );
+                    DB::table('lost_found_items')
+                        ->where('reporter_email', (string) $user['email'])
+                        ->update(['reporter_email' => $updates['email']]);
                 }
 
                 if ($passwordChanged) {

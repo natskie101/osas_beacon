@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap/console.php';
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 $driver = (string) config('database.driver', 'mysql');
 
@@ -40,10 +40,11 @@ DB::statement(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
 );
 
-$applied = array_map(
-    static fn (array $row): string => (string) $row['migration'],
-    DB::select('SELECT migration FROM schema_migrations ORDER BY migration ASC'),
-);
+$applied = DB::table('schema_migrations')
+    ->orderBy('migration')
+    ->pluck('migration')
+    ->map(static fn (mixed $migration): string => (string) $migration)
+    ->all();
 
 $files = glob(BASE_PATH . '/database/migrations/*.sql') ?: [];
 sort($files);
@@ -64,8 +65,11 @@ foreach ($files as $file) {
     }
 
     try {
-        DB::connection()->exec($sql);
-        DB::insert('INSERT INTO schema_migrations (migration, applied_at) VALUES (?, ?)', [$name, date('Y-m-d H:i:s')]);
+        DB::unprepared($sql);
+        DB::table('schema_migrations')->insert([
+            'migration' => $name,
+            'applied_at' => date('Y-m-d H:i:s'),
+        ]);
         echo "Apply {$name}\n";
     } catch (Throwable $exception) {
         fwrite(STDERR, "Failed {$name}: " . $exception->getMessage() . "\n");

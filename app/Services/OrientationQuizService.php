@@ -4,27 +4,30 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class OrientationQuizService
 {
     /** @return array<string, mixed>|null */
     public static function findForModule(int $moduleId): ?array
     {
-        return DB::first('SELECT * FROM orientation_quizzes WHERE module_id = ? LIMIT 1', [$moduleId]);
+        $quiz = DB::table('orientation_quizzes')
+            ->where('module_id', $moduleId)
+            ->first();
+
+        return $quiz === null ? null : (array) $quiz;
     }
 
     /** @return array<string, mixed>|null */
     public static function findByModulePublicId(string $modulePublicId): ?array
     {
-        return DB::first(
-            'SELECT q.*, m.public_id AS module_code, m.title AS module_title, m.passing_rate, m.verification_method
-             FROM orientation_quizzes q
-             JOIN orientation_modules m ON m.id = q.module_id
-             WHERE m.public_id = ?
-             LIMIT 1',
-            [$modulePublicId],
-        );
+        $quiz = DB::table('orientation_quizzes as q')
+            ->join('orientation_modules as m', 'm.id', '=', 'q.module_id')
+            ->selectRaw('q.*, m.public_id AS module_code, m.title AS module_title, m.passing_rate, m.verification_method')
+            ->where('m.public_id', $modulePublicId)
+            ->first();
+
+        return $quiz === null ? null : (array) $quiz;
     }
 
     /** @param array<string, mixed> $data */
@@ -34,37 +37,28 @@ final class OrientationQuizService
         $now = date('Y-m-d H:i:s');
 
         if ($existing === null) {
-            return DB::insert(
-                'INSERT INTO orientation_quizzes
-                    (public_id, module_id, title, instructions, time_limit_minutes, status, created_by, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    self::publicId('orientation_quizzes', 'QZ'),
-                    $moduleId,
-                    $data['title'],
-                    $data['instructions'] ?? null,
-                    (int) $data['time_limit_minutes'],
-                    $data['status'],
-                    $actorId,
-                    $now,
-                    $now,
-                ],
-            );
+            return DB::table('orientation_quizzes')->insertGetId([
+                'public_id' => self::publicId('orientation_quizzes', 'QZ'),
+                'module_id' => $moduleId,
+                'title' => $data['title'],
+                'instructions' => $data['instructions'] ?? null,
+                'time_limit_minutes' => (int) $data['time_limit_minutes'],
+                'status' => $data['status'],
+                'created_by' => $actorId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         }
 
-        DB::update(
-            'UPDATE orientation_quizzes
-             SET title = ?, instructions = ?, time_limit_minutes = ?, status = ?, updated_at = ?
-             WHERE id = ?',
-            [
-                $data['title'],
-                $data['instructions'] ?? null,
-                (int) $data['time_limit_minutes'],
-                $data['status'],
-                $now,
-                (int) $existing['id'],
-            ],
-        );
+        DB::table('orientation_quizzes')
+            ->where('id', (int) $existing['id'])
+            ->update([
+                'title' => $data['title'],
+                'instructions' => $data['instructions'] ?? null,
+                'time_limit_minutes' => (int) $data['time_limit_minutes'],
+                'status' => $data['status'],
+                'updated_at' => $now,
+            ]);
 
         return (int) $existing['id'];
     }
@@ -72,10 +66,13 @@ final class OrientationQuizService
     /** @return list<array<string, mixed>> */
     public static function questions(int $quizId): array
     {
-        $questions = DB::select(
-            'SELECT * FROM orientation_quiz_questions WHERE quiz_id = ? ORDER BY position ASC, id ASC',
-            [$quizId],
-        );
+        $questions = DB::table('orientation_quiz_questions')
+            ->where('quiz_id', $quizId)
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
 
         foreach ($questions as $index => $question) {
             $questions[$index]['options'] = self::options((int) $question['id']);
@@ -87,15 +84,16 @@ final class OrientationQuizService
     /** @return array<string, mixed>|null */
     public static function question(int $questionId, int $quizId): ?array
     {
-        $question = DB::first(
-            'SELECT * FROM orientation_quiz_questions WHERE id = ? AND quiz_id = ? LIMIT 1',
-            [$questionId, $quizId],
-        );
+        $question = DB::table('orientation_quiz_questions')
+            ->where('id', $questionId)
+            ->where('quiz_id', $quizId)
+            ->first();
 
         if ($question === null) {
             return null;
         }
 
+        $question = (array) $question;
         $question['options'] = self::options($questionId);
 
         return $question;
@@ -104,10 +102,13 @@ final class OrientationQuizService
     /** @return list<array<string, mixed>> */
     public static function options(int $questionId): array
     {
-        return DB::select(
-            'SELECT * FROM orientation_quiz_options WHERE question_id = ? ORDER BY position ASC, id ASC',
-            [$questionId],
-        );
+        return DB::table('orientation_quiz_options')
+            ->where('question_id', $questionId)
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /**
@@ -120,33 +121,35 @@ final class OrientationQuizService
         $now = date('Y-m-d H:i:s');
 
         if ($questionId === null) {
-            $questionId = DB::insert(
-                'INSERT INTO orientation_quiz_questions (public_id, quiz_id, prompt, points, position, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [
-                    self::publicId('orientation_quiz_questions', 'QQ'),
-                    $quizId,
-                    $data['prompt'],
-                    (int) $data['points'],
-                    self::nextQuestionPosition($quizId),
-                    $now,
-                    $now,
-                ],
-            );
+            $questionId = DB::table('orientation_quiz_questions')->insertGetId([
+                'public_id' => self::publicId('orientation_quiz_questions', 'QQ'),
+                'quiz_id' => $quizId,
+                'prompt' => $data['prompt'],
+                'points' => (int) $data['points'],
+                'position' => self::nextQuestionPosition($quizId),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         } else {
-            DB::update(
-                'UPDATE orientation_quiz_questions SET prompt = ?, points = ?, updated_at = ? WHERE id = ? AND quiz_id = ?',
-                [$data['prompt'], (int) $data['points'], $now, $questionId, $quizId],
-            );
-            DB::delete('DELETE FROM orientation_quiz_options WHERE question_id = ?', [$questionId]);
+            DB::table('orientation_quiz_questions')
+                ->where('id', $questionId)
+                ->where('quiz_id', $quizId)
+                ->update([
+                    'prompt' => $data['prompt'],
+                    'points' => (int) $data['points'],
+                    'updated_at' => $now,
+                ]);
+            DB::table('orientation_quiz_options')->where('question_id', $questionId)->delete();
         }
 
         foreach ($data['options'] as $position => $label) {
-            DB::insert(
-                'INSERT INTO orientation_quiz_options (question_id, label, is_correct, position, created_at)
-                 VALUES (?, ?, ?, ?, ?)',
-                [$questionId, $label, ((int) $data['correct'] === $position) ? 1 : 0, $position, $now],
-            );
+            DB::table('orientation_quiz_options')->insert([
+                'question_id' => $questionId,
+                'label' => $label,
+                'is_correct' => ((int) $data['correct'] === $position) ? 1 : 0,
+                'position' => $position,
+                'created_at' => $now,
+            ]);
         }
 
         return (int) $questionId;
@@ -154,36 +157,48 @@ final class OrientationQuizService
 
     public static function deleteQuestion(int $questionId, int $quizId): void
     {
-        DB::delete('DELETE FROM orientation_quiz_questions WHERE id = ? AND quiz_id = ?', [$questionId, $quizId]);
+        DB::table('orientation_quiz_questions')
+            ->where('id', $questionId)
+            ->where('quiz_id', $quizId)
+            ->delete();
     }
 
     /** @return list<array<string, mixed>> */
     public static function attempts(int $quizId, int $userId): array
     {
-        return DB::select(
-            'SELECT * FROM orientation_quiz_attempts WHERE quiz_id = ? AND user_id = ? ORDER BY started_at DESC, id DESC',
-            [$quizId, $userId],
-        );
+        return DB::table('orientation_quiz_attempts')
+            ->where('quiz_id', $quizId)
+            ->where('user_id', $userId)
+            ->orderByDesc('started_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return array<string, mixed>|null */
     public static function activeAttempt(int $quizId, int $userId): ?array
     {
-        return DB::first(
-            'SELECT * FROM orientation_quiz_attempts
-             WHERE quiz_id = ? AND user_id = ? AND status = "In Progress"
-             ORDER BY id DESC LIMIT 1',
-            [$quizId, $userId],
-        );
+        $attempt = DB::table('orientation_quiz_attempts')
+            ->where('quiz_id', $quizId)
+            ->where('user_id', $userId)
+            ->where('status', 'In Progress')
+            ->orderByDesc('id')
+            ->first();
+
+        return $attempt === null ? null : (array) $attempt;
     }
 
     /** @return array<string, mixed>|null */
     public static function latestAttempt(int $quizId, int $userId): ?array
     {
-        return DB::first(
-            'SELECT * FROM orientation_quiz_attempts WHERE quiz_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1',
-            [$quizId, $userId],
-        );
+        $attempt = DB::table('orientation_quiz_attempts')
+            ->where('quiz_id', $quizId)
+            ->where('user_id', $userId)
+            ->orderByDesc('id')
+            ->first();
+
+        return $attempt === null ? null : (array) $attempt;
     }
 
     /** @param array<string, mixed> $quiz */
@@ -192,28 +207,32 @@ final class OrientationQuizService
         $now = date('Y-m-d H:i:s');
         $minutes = max(1, (int) ($quiz['time_limit_minutes'] ?? 20));
 
-        return DB::insert(
-            'INSERT INTO orientation_quiz_attempts
-                (public_id, quiz_id, user_id, score, total_points, percent, passed, status, started_at, expires_at, submitted_at, created_at, updated_at)
-             VALUES (?, ?, ?, 0, 0, 0, 0, "In Progress", ?, ?, NULL, ?, ?)',
-            [
-                self::publicId('orientation_quiz_attempts', 'QAT'),
-                (int) $quiz['id'],
-                $userId,
-                $now,
-                date('Y-m-d H:i:s', strtotime($now . ' +' . $minutes . ' minutes')),
-                $now,
-                $now,
-            ],
-        );
+        return DB::table('orientation_quiz_attempts')->insertGetId([
+            'public_id' => self::publicId('orientation_quiz_attempts', 'QAT'),
+            'quiz_id' => (int) $quiz['id'],
+            'user_id' => $userId,
+            'score' => 0,
+            'total_points' => 0,
+            'percent' => 0,
+            'passed' => 0,
+            'status' => 'In Progress',
+            'started_at' => $now,
+            'expires_at' => date('Y-m-d H:i:s', strtotime($now . ' +' . $minutes . ' minutes')),
+            'submitted_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 
     public static function markExpired(int $attemptId): void
     {
-        DB::update(
-            'UPDATE orientation_quiz_attempts SET status = "Expired", submitted_at = ?, updated_at = ? WHERE id = ?',
-            [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $attemptId],
-        );
+        DB::table('orientation_quiz_attempts')
+            ->where('id', $attemptId)
+            ->update([
+                'status' => 'Expired',
+                'submitted_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
     }
 
     /**
@@ -251,23 +270,30 @@ final class OrientationQuizService
                 $score += $points;
             }
 
-            DB::insert(
-                'INSERT INTO orientation_quiz_answers (attempt_id, question_id, option_id, is_correct, created_at)
-                 VALUES (?, ?, ?, ?, ?)',
-                [(int) $attempt['id'], $questionId, $selected, $isCorrect ? 1 : 0, $now],
-            );
+            DB::table('orientation_quiz_answers')->insert([
+                'attempt_id' => (int) $attempt['id'],
+                'question_id' => $questionId,
+                'option_id' => $selected,
+                'is_correct' => $isCorrect ? 1 : 0,
+                'created_at' => $now,
+            ]);
         }
 
         $percent = $total === 0 ? 0.0 : round(($score / $total) * 100, 2);
         $passingRate = (float) ($quiz['passing_rate'] ?? 80);
         $passed = $percent >= $passingRate;
 
-        DB::update(
-            'UPDATE orientation_quiz_attempts
-             SET score = ?, total_points = ?, percent = ?, passed = ?, status = "Submitted", submitted_at = ?, updated_at = ?
-             WHERE id = ?',
-            [$score, $total, $percent, $passed ? 1 : 0, $now, $now, (int) $attempt['id']],
-        );
+        DB::table('orientation_quiz_attempts')
+            ->where('id', (int) $attempt['id'])
+            ->update([
+                'score' => $score,
+                'total_points' => $total,
+                'percent' => $percent,
+                'passed' => $passed ? 1 : 0,
+                'status' => 'Submitted',
+                'submitted_at' => $now,
+                'updated_at' => $now,
+            ]);
 
         return ['score' => $score, 'total' => $total, 'percent' => $percent, 'passed' => $passed];
     }
@@ -275,28 +301,33 @@ final class OrientationQuizService
     /** @return list<array<string, mixed>> */
     public static function attemptAnswers(int $attemptId): array
     {
-        return DB::select(
-            'SELECT a.*, q.prompt, q.public_id AS question_code
-             FROM orientation_quiz_answers a
-             JOIN orientation_quiz_questions q ON q.id = a.question_id
-             WHERE a.attempt_id = ?
-             ORDER BY q.position ASC, q.id ASC',
-            [$attemptId],
-        );
+        return DB::table('orientation_quiz_answers as a')
+            ->join('orientation_quiz_questions as q', 'q.id', '=', 'a.question_id')
+            ->selectRaw('a.*, q.prompt, q.public_id AS question_code')
+            ->where('a.attempt_id', $attemptId)
+            ->orderBy('q.position')
+            ->orderBy('q.id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return array<string, mixed>|null */
     public static function attempt(int $attemptId, int $userId): ?array
     {
-        return DB::first(
-            'SELECT * FROM orientation_quiz_attempts WHERE id = ? AND user_id = ? LIMIT 1',
-            [$attemptId, $userId],
-        );
+        $attempt = DB::table('orientation_quiz_attempts')
+            ->where('id', $attemptId)
+            ->where('user_id', $userId)
+            ->first();
+
+        return $attempt === null ? null : (array) $attempt;
     }
 
     private static function nextQuestionPosition(int $quizId): int
     {
-        $max = (int) DB::value('SELECT MAX(position) FROM orientation_quiz_questions WHERE quiz_id = ?', [$quizId]);
+        $max = (int) DB::table('orientation_quiz_questions')
+            ->where('quiz_id', $quizId)
+            ->max('position');
 
         return $max + 1;
     }
@@ -305,7 +336,7 @@ final class OrientationQuizService
     {
         do {
             $candidate = $prefix . '-' . strtoupper(bin2hex(random_bytes(3)));
-        } while ((int) DB::value('SELECT COUNT(*) FROM ' . $table . ' WHERE public_id = ?', [$candidate]) > 0);
+        } while (DB::table($table)->where('public_id', $candidate)->count() > 0);
 
         return $candidate;
     }

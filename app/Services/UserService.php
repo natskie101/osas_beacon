@@ -8,9 +8,9 @@ use App\Models\File;
 use App\Models\PasswordReset;
 use App\Models\RememberToken;
 use App\Models\User;
-use App\Support\DB;
 use App\Support\Exceptions\ForbiddenHttpException;
 use App\Support\Exceptions\NotFoundHttpException;
+use Illuminate\Support\Facades\DB;
 
 final class UserService
 {
@@ -272,10 +272,18 @@ final class UserService
     public static function archiveAccount(array $target, array $actor): bool
     {
         return DB::transaction(function () use ($target, $actor): bool {
-            $activeCoordinators = DB::select(
-                'SELECT id FROM users WHERE role = "Coordinator" AND status = "Active" FOR UPDATE',
-            );
-            $current = DB::first('SELECT * FROM users WHERE id = ? FOR UPDATE', [(int) $target['id']]);
+            $activeCoordinators = DB::table('users')
+                ->select('id')
+                ->where('role', 'Coordinator')
+                ->where('status', 'Active')
+                ->lockForUpdate()
+                ->get();
+
+            $current = DB::table('users')
+                ->where('id', (int) $target['id'])
+                ->lockForUpdate()
+                ->first();
+            $current = $current === null ? null : (array) $current;
 
             if ($current === null) {
                 throw new NotFoundHttpException('The account no longer exists.');
@@ -323,7 +331,11 @@ final class UserService
     public static function restoreAccount(array $target, array $actor): void
     {
         DB::transaction(function () use ($target, $actor): void {
-            $current = DB::first('SELECT * FROM users WHERE id = ? FOR UPDATE', [(int) $target['id']]);
+            $current = DB::table('users')
+                ->where('id', (int) $target['id'])
+                ->lockForUpdate()
+                ->first();
+            $current = $current === null ? null : (array) $current;
 
             if ($current === null) {
                 throw new NotFoundHttpException('The account no longer exists.');

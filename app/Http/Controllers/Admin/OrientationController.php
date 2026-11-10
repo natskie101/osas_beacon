@@ -12,7 +12,7 @@ use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\OrientationQuizService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
@@ -85,7 +85,7 @@ final class OrientationController extends Controller
         $module = OrientationModule::find($id);
 
         if ($media !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$module['public_id'], $media['file_id']]);
+            DB::table('files')->where('id', (int) $media['file_id'])->update(['entity_id' => (string) $module['public_id']]);
         }
 
         if ($quizData !== null) {
@@ -170,7 +170,7 @@ final class OrientationController extends Controller
         $updated = OrientationModule::find((int) $module['id']) ?? $module;
 
         if ($media !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $media['file_id']]);
+            DB::table('files')->where('id', (int) $media['file_id'])->update(['entity_id' => (string) $updated['public_id']]);
 
             if ($oldMedia !== null && (int) $oldMedia['id'] !== (int) $media['file_id']) {
                 FileStorage::delete($oldMedia);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\DB;
+
 final class Validator
 {
     private bool $hasRun = false;
@@ -224,15 +226,13 @@ final class Validator
             return;
         }
 
-        $sql = 'SELECT COUNT(*) FROM `' . $table . '` WHERE `' . $column . '` = ?';
-        $bindings = [$value];
+        $query = DB::table($table)->where($column, $value);
 
         if ($exceptId !== null && $exceptId !== '') {
-            $sql .= ' AND `id` <> ?';
-            $bindings[] = $exceptId;
+            $query->where('id', '<>', $exceptId);
         }
 
-        if ((int) DB::value($sql, $bindings) > 0) {
+        if ($query->count() > 0) {
             $this->addError($field, 'The ' . $this->label($field) . ' has already been taken.');
         }
     }

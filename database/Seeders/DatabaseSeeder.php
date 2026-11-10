@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class DatabaseSeeder
 {
@@ -55,33 +55,33 @@ final class DatabaseSeeder
         }
 
         if ($fresh) {
-            DB::statement('DELETE FROM support_messages');
-            DB::statement('DELETE FROM support_tickets');
-            DB::statement('DELETE FROM document_request_events');
-            DB::statement('DELETE FROM document_requests');
-            DB::statement('DELETE FROM lost_found_claims');
-            DB::statement('DELETE FROM lost_found_items');
-            DB::statement('DELETE FROM orientation_quiz_answers');
-            DB::statement('DELETE FROM orientation_quiz_attempts');
-            DB::statement('DELETE FROM orientation_quiz_options');
-            DB::statement('DELETE FROM orientation_quiz_questions');
-            DB::statement('DELETE FROM orientation_quizzes');
-            DB::statement('DELETE FROM orientation_progress');
-            DB::statement('DELETE FROM orientation_modules');
-            DB::statement('DELETE FROM announcements');
-            DB::statement('DELETE FROM regulations');
-            DB::statement('DELETE FROM events');
-            DB::statement('DELETE FROM broadcasts');
-            DB::statement('DELETE FROM reports');
-            DB::statement('DELETE FROM tracking');
-            DB::statement('DELETE FROM audit_log');
-            DB::statement('DELETE FROM event_attendance');
-            DB::statement('DELETE FROM remember_tokens');
-            DB::statement('DELETE FROM password_resets');
-            DB::statement('DELETE FROM login_attempts');
-            DB::statement('DELETE FROM notifications');
-            DB::statement('DELETE FROM files');
-            DB::statement('DELETE FROM users');
+            DB::table('support_messages')->delete();
+            DB::table('support_tickets')->delete();
+            DB::table('document_request_events')->delete();
+            DB::table('document_requests')->delete();
+            DB::table('lost_found_claims')->delete();
+            DB::table('lost_found_items')->delete();
+            DB::table('orientation_quiz_answers')->delete();
+            DB::table('orientation_quiz_attempts')->delete();
+            DB::table('orientation_quiz_options')->delete();
+            DB::table('orientation_quiz_questions')->delete();
+            DB::table('orientation_quizzes')->delete();
+            DB::table('orientation_progress')->delete();
+            DB::table('orientation_modules')->delete();
+            DB::table('announcements')->delete();
+            DB::table('regulations')->delete();
+            DB::table('events')->delete();
+            DB::table('broadcasts')->delete();
+            DB::table('reports')->delete();
+            DB::table('tracking')->delete();
+            DB::table('audit_log')->delete();
+            DB::table('event_attendance')->delete();
+            DB::table('remember_tokens')->delete();
+            DB::table('password_resets')->delete();
+            DB::table('login_attempts')->delete();
+            DB::table('notifications')->delete();
+            DB::table('files')->delete();
+            DB::table('users')->delete();
             DB::statement('ALTER TABLE users AUTO_INCREMENT = 1');
             DB::statement('ALTER TABLE audit_log AUTO_INCREMENT = 1');
             DB::statement('ALTER TABLE files AUTO_INCREMENT = 1');
@@ -89,7 +89,7 @@ final class DatabaseSeeder
         }
 
         DB::transaction(function () use ($data, $minimal, $minimalPasswords): void {
-            if ((int) DB::value('SELECT COUNT(*) FROM users') > 0) {
+            if (DB::table('users')->count() > 0) {
                 echo "Users already exist — skipped. Use --fresh to reseed.\n";
 
                 return;
@@ -111,34 +111,27 @@ final class DatabaseSeeder
 
             foreach ($data['users'] ?? [] as $user) {
                 $email = mb_strtolower((string) $user['email']);
-                DB::insert(
-                    'INSERT INTO users
-                        (public_id, first_name, last_name, email, username, password_hash, role, student_id,
-                         department, program, year_level, access_level, account_tier, status, phone,
-                         created_at, updated_at, requested_at, last_login_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $user['id'],
-                        $user['firstName'],
-                        $user['lastName'],
-                        $email,
-                        $user['username'],
-                        $minimal ? $minimalPasswords[$email] : $defaultPasswordHash,
-                        $user['role'],
-                        $user['studentId'] ?: null,
-                        $user['department'] ?: null,
-                        $user['program'] ?: null,
-                        $user['year'] ?: null,
-                        $user['accessLevel'] ?: null,
-                        $user['accountTier'] ?: 'Student Tier',
-                        $user['status'] ?: 'Pending',
-                        $user['phone'] ?: null,
-                        $user['createdAt'] ?: date('Y-m-d H:i:s'),
-                        $user['createdAt'] ?: date('Y-m-d H:i:s'),
-                        $user['requestedAt'] ?: ($user['createdAt'] ?: date('Y-m-d H:i:s')),
-                        $user['lastLogin'] ?: null,
-                    ],
-                );
+                DB::table('users')->insert([
+                    'public_id' => $user['id'],
+                    'first_name' => $user['firstName'],
+                    'last_name' => $user['lastName'],
+                    'email' => $email,
+                    'username' => $user['username'],
+                    'password_hash' => $minimal ? $minimalPasswords[$email] : $defaultPasswordHash,
+                    'role' => $user['role'],
+                    'student_id' => $user['studentId'] ?: null,
+                    'department' => $user['department'] ?: null,
+                    'program' => $user['program'] ?: null,
+                    'year_level' => $user['year'] ?: null,
+                    'access_level' => $user['accessLevel'] ?: null,
+                    'account_tier' => $user['accountTier'] ?: 'Student Tier',
+                    'status' => $user['status'] ?: 'Pending',
+                    'phone' => $user['phone'] ?: null,
+                    'created_at' => $user['createdAt'] ?: date('Y-m-d H:i:s'),
+                    'updated_at' => $user['createdAt'] ?: date('Y-m-d H:i:s'),
+                    'requested_at' => $user['requestedAt'] ?: ($user['createdAt'] ?: date('Y-m-d H:i:s')),
+                    'last_login_at' => $user['lastLogin'] ?: null,
+                ]);
             }
 
             if ($minimal) {
@@ -148,28 +141,28 @@ final class DatabaseSeeder
             }
 
             foreach ($data['auditLog'] ?? [] as $entry) {
-                DB::insert(
-                    'INSERT INTO audit_log
-                        (actor_user_id, actor_name, target_user_id, action, entity_type, entity_id,
-                         title, text, tone, icon, ip_address, user_agent, created_at)
-                     VALUES (NULL, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)',
-                    [
-                        'System',
-                        $entry['action'] ?? '',
-                        $entry['entity'] ?? '',
-                        $entry['entityId'] ?? '',
-                        $entry['title'] ?? 'System event',
-                        $entry['text'] ?? '',
-                        $entry['tone'] ?? 'brand',
-                        $entry['icon'] ?? 'info',
-                        $entry['at'] ?? date('Y-m-d H:i:s'),
-                    ],
-                );
+                DB::table('audit_log')->insert([
+                    'actor_user_id' => null,
+                    'actor_name' => 'System',
+                    'target_user_id' => null,
+                    'action' => $entry['action'] ?? '',
+                    'entity_type' => $entry['entity'] ?? '',
+                    'entity_id' => $entry['entityId'] ?? '',
+                    'title' => $entry['title'] ?? 'System event',
+                    'text' => $entry['text'] ?? '',
+                    'tone' => $entry['tone'] ?? 'brand',
+                    'icon' => $entry['icon'] ?? 'info',
+                    'ip_address' => null,
+                    'user_agent' => null,
+                    'created_at' => $entry['at'] ?? date('Y-m-d H:i:s'),
+                ]);
             }
 
-            $userRows = DB::select(
-                'SELECT id, email, first_name, last_name, student_id, program, year_level, role, status FROM users'
-            );
+            $userRows = DB::table('users')
+                ->select('id', 'email', 'first_name', 'last_name', 'student_id', 'program', 'year_level', 'role', 'status')
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all();
             $userByEmail = [];
             $coordinatorId = null;
             $coordinatorName = 'OSAS Administration';
@@ -194,141 +187,116 @@ final class DatabaseSeeder
                 }
 
                 foreach ($user['attendedEvents'] ?? [] as $attendance) {
-                    DB::insert(
-                        'INSERT INTO event_attendance
-                            (user_id, event_code, event_name, attended_at, credit_hours, created_at)
-                         VALUES (?, ?, ?, ?, ?, ?)',
-                        [
-                            $userId,
-                            $attendance['code'] ?? '',
-                            $attendance['name'] ?? '',
-                            $toDb($attendance['date'] ?? null) ?? $now,
-                            (int) ($attendance['credit'] ?? 0),
-                            $toDb($attendance['date'] ?? null) ?? $now,
-                        ],
-                    );
+                    DB::table('event_attendance')->insert([
+                        'user_id' => $userId,
+                        'event_code' => $attendance['code'] ?? '',
+                        'event_name' => $attendance['name'] ?? '',
+                        'attended_at' => $toDb($attendance['date'] ?? null) ?? $now,
+                        'credit_hours' => (int) ($attendance['credit'] ?? 0),
+                        'created_at' => $toDb($attendance['date'] ?? null) ?? $now,
+                    ]);
                 }
             }
 
             foreach ($data['announcements'] ?? [] as $announcement) {
-                DB::insert(
-                    'INSERT INTO announcements
-                        (public_id, title, category, audience, status, priority, summary, body, attachments,
-                         author, views, published_at, scheduled_for, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $announcement['id'],
-                        $announcement['title'],
-                        $announcement['category'] ?? '',
-                        $announcement['audience'] ?? 'All Student Portals',
-                        $announcement['status'] ?? 'Draft',
-                        $announcement['priority'] ?? 'Standard Priority',
-                        $announcement['summary'] ?? null,
-                        $announcement['body'] ?? null,
-                        $json($announcement['attachments'] ?? null),
-                        $announcement['author'] ?? $coordinatorName,
-                        (int) ($announcement['views'] ?? 0),
-                        $toDb($announcement['publishedAt'] ?? null),
-                        $toDb($announcement['scheduledFor'] ?? null),
-                        $coordinatorId,
-                        $toDb($announcement['date'] ?? null) ?? $now,
-                        $toDb($announcement['updatedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('announcements')->insert([
+                    'public_id' => $announcement['id'],
+                    'title' => $announcement['title'],
+                    'category' => $announcement['category'] ?? '',
+                    'audience' => $announcement['audience'] ?? 'All Student Portals',
+                    'status' => $announcement['status'] ?? 'Draft',
+                    'priority' => $announcement['priority'] ?? 'Standard Priority',
+                    'summary' => $announcement['summary'] ?? null,
+                    'body' => $announcement['body'] ?? null,
+                    'attachments' => $json($announcement['attachments'] ?? null),
+                    'author' => $announcement['author'] ?? $coordinatorName,
+                    'views' => (int) ($announcement['views'] ?? 0),
+                    'published_at' => $toDb($announcement['publishedAt'] ?? null),
+                    'scheduled_for' => $toDb($announcement['scheduledFor'] ?? null),
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($announcement['date'] ?? null) ?? $now,
+                    'updated_at' => $toDb($announcement['updatedAt'] ?? null) ?? $now,
+                ]);
             }
 
             foreach ($data['regulations'] ?? [] as $regulation) {
-                DB::insert(
-                    'INSERT INTO regulations
-                        (public_id, reference_code, title, category, audience, status, effective_date,
-                         review_schedule, approval_body, views, summary, body, sanctions, created_by,
-                         created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $regulation['id'],
-                        $regulation['referenceCode'] ?? $regulation['code'] ?? '',
-                        $regulation['title'],
-                        $regulation['category'] ?? '',
-                        $regulation['audience'] ?? 'All Students',
-                        $regulation['status'] ?? 'Draft',
-                        $regulation['effectiveDate'] ?? '',
-                        $regulation['reviewSchedule'] ?? '',
-                        $regulation['approvalBody'] ?? '',
-                        (int) ($regulation['views'] ?? 0),
-                        $regulation['summary'] ?? null,
-                        $regulation['body'] ?? null,
-                        $json($regulation['sanctions'] ?? null),
-                        $coordinatorId,
-                        $toDb($regulation['updatedAt'] ?? null) ?? $now,
-                        $toDb($regulation['updatedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('regulations')->insert([
+                    'public_id' => $regulation['id'],
+                    'reference_code' => $regulation['referenceCode'] ?? $regulation['code'] ?? '',
+                    'title' => $regulation['title'],
+                    'category' => $regulation['category'] ?? '',
+                    'audience' => $regulation['audience'] ?? 'All Students',
+                    'status' => $regulation['status'] ?? 'Draft',
+                    'effective_date' => $regulation['effectiveDate'] ?? '',
+                    'review_schedule' => $regulation['reviewSchedule'] ?? '',
+                    'approval_body' => $regulation['approvalBody'] ?? '',
+                    'views' => (int) ($regulation['views'] ?? 0),
+                    'summary' => $regulation['summary'] ?? null,
+                    'body' => $regulation['body'] ?? null,
+                    'sanctions' => $json($regulation['sanctions'] ?? null),
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($regulation['updatedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($regulation['updatedAt'] ?? null) ?? $now,
+                ]);
             }
 
             foreach ($data['modules'] ?? [] as $module) {
-                DB::insert(
-                    'INSERT INTO orientation_modules
-                        (public_id, title, category, status, audience, version, duration_minutes, verification_method,
-                         passing_rate, mandatory, learners, completions, completion_rate, description, objectives, body,
-                         department, attachments_count, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, "Quiz Assessment", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $module['id'],
-                        $module['title'],
-                        $module['category'] ?? '',
-                        $module['status'] ?? 'Draft',
-                        $module['audience'] ?? 'Incoming Freshmen',
-                        $module['version'] ?? 'v1.0',
-                        (int) ($module['duration'] ?? 0),
-                        80,
-                        !empty($module['mandatory']) ? 1 : 0,
-                        (int) ($module['learners'] ?? 0),
-                        (int) ($module['completions'] ?? 0),
-                        (float) ($module['completionRate'] ?? 0),
-                        $module['description'] ?? null,
-                        $json($module['objectives'] ?? null),
-                        $module['body'] ?? null,
-                        $module['department'] ?? '',
-                        (int) ($module['attachments'] ?? 0),
-                        $coordinatorId,
-                        $toDb($module['updatedAt'] ?? null) ?? $now,
-                        $toDb($module['updatedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('orientation_modules')->insert([
+                    'public_id' => $module['id'],
+                    'title' => $module['title'],
+                    'category' => $module['category'] ?? '',
+                    'status' => $module['status'] ?? 'Draft',
+                    'audience' => $module['audience'] ?? 'Incoming Freshmen',
+                    'version' => $module['version'] ?? 'v1.0',
+                    'duration_minutes' => (int) ($module['duration'] ?? 0),
+                    'verification_method' => 'Quiz Assessment',
+                    'passing_rate' => 80,
+                    'mandatory' => !empty($module['mandatory']) ? 1 : 0,
+                    'learners' => (int) ($module['learners'] ?? 0),
+                    'completions' => (int) ($module['completions'] ?? 0),
+                    'completion_rate' => (float) ($module['completionRate'] ?? 0),
+                    'description' => $module['description'] ?? null,
+                    'objectives' => $json($module['objectives'] ?? null),
+                    'body' => $module['body'] ?? null,
+                    'department' => $module['department'] ?? '',
+                    'attachments_count' => (int) ($module['attachments'] ?? 0),
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($module['updatedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($module['updatedAt'] ?? null) ?? $now,
+                ]);
             }
 
-            DB::insert(
-                'INSERT INTO orientation_modules
-                    (public_id, title, category, status, audience, version, duration_minutes, verification_method,
-                     passing_rate, mandatory, learners, completions, completion_rate, description, objectives, body,
-                     department, attachments_count, video_url, created_by, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, "Quiz Assessment", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    'ORIENT-012',
-                    'Demo: Orientation Assessment Module',
-                    'Academic Support',
-                    'Published',
-                    'Incoming Freshmen',
-                    'v1.0',
-                    10,
-                    80,
-                    1,
-                    0,
-                    0,
-                    0,
-                    'A short demo module that lets you test the orientation quiz and assessment flow end to end.',
-                    json_encode(['Watch the short orientation briefing', 'Complete the demo assessment', 'Review the assessment results'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                    '<h4>Demo module</h4><p>This module is for testing the assessment flow. Watch the video and take the quiz.</p>',
-                    'Office of Student Affairs and Services',
-                    0,
-                    'https://www.youtube.com/watch?v=ysz5S6PUM-U',
-                    $coordinatorId,
-                    $now,
-                    $now,
-                ],
-            );
+            DB::table('orientation_modules')->insert([
+                'public_id' => 'ORIENT-012',
+                'title' => 'Demo: Orientation Assessment Module',
+                'category' => 'Academic Support',
+                'status' => 'Published',
+                'audience' => 'Incoming Freshmen',
+                'version' => 'v1.0',
+                'duration_minutes' => 10,
+                'verification_method' => 'Quiz Assessment',
+                'passing_rate' => 80,
+                'mandatory' => 1,
+                'learners' => 0,
+                'completions' => 0,
+                'completion_rate' => 0,
+                'description' => 'A short demo module that lets you test the orientation quiz and assessment flow end to end.',
+                'objectives' => json_encode(['Watch the short orientation briefing', 'Complete the demo assessment', 'Review the assessment results'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'body' => '<h4>Demo module</h4><p>This module is for testing the assessment flow. Watch the video and take the quiz.</p>',
+                'department' => 'Office of Student Affairs and Services',
+                'attachments_count' => 0,
+                'video_url' => 'https://www.youtube.com/watch?v=ysz5S6PUM-U',
+                'created_by' => $coordinatorId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
 
-            $moduleRows = DB::select('SELECT id, public_id FROM orientation_modules ORDER BY id ASC');
+            $moduleRows = DB::table('orientation_modules')
+                ->select('id', 'public_id')
+                ->orderBy('id')
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all();
             $studentRows = array_values(array_filter(
                 $userRows,
                 static fn (array $row): bool => $row['role'] === 'Student' && $row['status'] === 'Active',
@@ -340,53 +308,54 @@ final class DatabaseSeeder
                     $status = $bucket <= 2 ? 'Completed' : ($bucket === 3 ? 'In Progress' : 'Not Started');
                     $progress = $status === 'Completed' ? 100 : ($status === 'In Progress' ? 55 : 0);
 
-                    DB::insert(
-                        'INSERT INTO orientation_progress
-                            (user_id, module_id, status, progress, last_viewed_at, completed_at, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                        [
-                            (int) $student['id'],
-                            (int) $module['id'],
-                            $status,
-                            $progress,
-                            $toDb('2026-09-16T09:20:00') ?? $now,
-                            $status === 'Completed' ? ($toDb('2026-09-15T10:00:00') ?? $now) : null,
-                            $now,
-                            $now,
-                        ],
-                    );
+                    DB::table('orientation_progress')->insert([
+                        'user_id' => (int) $student['id'],
+                        'module_id' => (int) $module['id'],
+                        'status' => $status,
+                        'progress' => $progress,
+                        'last_viewed_at' => $toDb('2026-09-16T09:20:00') ?? $now,
+                        'completed_at' => $status === 'Completed' ? ($toDb('2026-09-15T10:00:00') ?? $now) : null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
                 }
             }
 
-            $demoModule = DB::first('SELECT id FROM orientation_modules WHERE public_id = "ORIENT-012" LIMIT 1');
-            $ryan = DB::first('SELECT id FROM users WHERE email = "ryan.delacruz@uc.edu.ph" LIMIT 1');
+            $demoModule = DB::table('orientation_modules')->where('public_id', 'ORIENT-012')->first();
+            $demoModule = $demoModule === null ? null : (array) $demoModule;
+            $ryan = DB::table('users')->where('email', 'ryan.delacruz@uc.edu.ph')->first();
+            $ryan = $ryan === null ? null : (array) $ryan;
 
             if ($demoModule !== null && $ryan !== null) {
-                DB::update(
-                    'UPDATE orientation_progress
-                     SET status = "Not Started", progress = 0, completed_at = NULL, updated_at = ?
-                     WHERE user_id = ? AND module_id = ?',
-                    [$now, (int) $ryan['id'], (int) $demoModule['id']],
-                );
+                DB::table('orientation_progress')
+                    ->where('user_id', (int) $ryan['id'])
+                    ->where('module_id', (int) $demoModule['id'])
+                    ->update([
+                        'status' => 'Not Started',
+                        'progress' => 0,
+                        'completed_at' => null,
+                        'updated_at' => $now,
+                    ]);
             }
 
-            $quizModule = DB::first('SELECT id, public_id, title, passing_rate FROM orientation_modules WHERE public_id = "ORIENT-001" LIMIT 1');
+            $quizModule = DB::table('orientation_modules')
+                ->select('id', 'public_id', 'title', 'passing_rate')
+                ->where('public_id', 'ORIENT-001')
+                ->first();
+            $quizModule = $quizModule === null ? null : (array) $quizModule;
 
             if ($quizModule !== null && $studentRows !== []) {
-                $quizId = DB::insert(
-                    'INSERT INTO orientation_quizzes
-                        (public_id, module_id, title, instructions, time_limit_minutes, status, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, 20, "Published", ?, ?, ?)',
-                    [
-                        self::publicId('orientation_quizzes', 'QZ'),
-                        (int) $quizModule['id'],
-                        'Orientation Readiness Assessment',
-                        'Answer all questions. You need to reach the passing score to complete the module.',
-                        $coordinatorId,
-                        $now,
-                        $now,
-                    ],
-                );
+                $quizId = DB::table('orientation_quizzes')->insertGetId([
+                    'public_id' => self::publicId('orientation_quizzes', 'QZ'),
+                    'module_id' => (int) $quizModule['id'],
+                    'title' => 'Orientation Readiness Assessment',
+                    'instructions' => 'Answer all questions. You need to reach the passing score to complete the module.',
+                    'time_limit_minutes' => 20,
+                    'status' => 'Published',
+                    'created_by' => $coordinatorId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
 
                 $quizQuestions = [
                     ['What is the main purpose of the OSAS student portal?', ['To centralize announcements, orientation and student services', 'To replace classroom instruction', 'To manage staff payroll'], 0],
@@ -397,90 +366,112 @@ final class DatabaseSeeder
                 ];
 
                 foreach ($quizQuestions as $position => $item) {
-                    $questionId = DB::insert(
-                        'INSERT INTO orientation_quiz_questions (public_id, quiz_id, prompt, points, position, created_at, updated_at)
-                         VALUES (?, ?, ?, 1, ?, ?, ?)',
-                        [self::publicId('orientation_quiz_questions', 'QQ'), $quizId, $item[0], $position, $now, $now],
-                    );
+                    $questionId = DB::table('orientation_quiz_questions')->insertGetId([
+                        'public_id' => self::publicId('orientation_quiz_questions', 'QQ'),
+                        'quiz_id' => $quizId,
+                        'prompt' => $item[0],
+                        'points' => 1,
+                        'position' => $position,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
 
                     foreach ($item[1] as $optionPosition => $label) {
-                        DB::insert(
-                            'INSERT INTO orientation_quiz_options (question_id, label, is_correct, position, created_at)
-                             VALUES (?, ?, ?, ?, ?)',
-                            [$questionId, $label, $item[2] === $optionPosition ? 1 : 0, $optionPosition, $now],
-                        );
+                        DB::table('orientation_quiz_options')->insert([
+                            'question_id' => $questionId,
+                            'label' => $label,
+                            'is_correct' => $item[2] === $optionPosition ? 1 : 0,
+                            'position' => $optionPosition,
+                            'created_at' => $now,
+                        ]);
                     }
                 }
 
                 foreach (array_slice($studentRows, 0, 5) as $index => $student) {
                     $percent = [100, 100, 80, 60, 40][$index] ?? 60;
                     $passed = $percent >= (float) $quizModule['passing_rate'] ? 1 : 0;
-                    $attemptId = DB::insert(
-                        'INSERT INTO orientation_quiz_attempts
-                            (public_id, quiz_id, user_id, score, total_points, percent, passed, status, started_at, expires_at, submitted_at, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, 5, ?, ?, "Submitted", ?, ?, ?, ?, ?)',
-                        [
-                            self::publicId('orientation_quiz_attempts', 'QAT'),
-                            $quizId,
-                            (int) $student['id'],
-                            (int) round($percent / 20),
-                            $percent,
-                            $passed,
-                            $now,
-                            date('Y-m-d H:i:s', strtotime($now . ' +20 minutes')),
-                            $now,
-                            $now,
-                            $now,
-                        ],
-                    );
+                    $attemptId = DB::table('orientation_quiz_attempts')->insertGetId([
+                        'public_id' => self::publicId('orientation_quiz_attempts', 'QAT'),
+                        'quiz_id' => $quizId,
+                        'user_id' => (int) $student['id'],
+                        'score' => (int) round($percent / 20),
+                        'total_points' => 5,
+                        'percent' => $percent,
+                        'passed' => $passed,
+                        'status' => 'Submitted',
+                        'started_at' => $now,
+                        'expires_at' => date('Y-m-d H:i:s', strtotime($now . ' +20 minutes')),
+                        'submitted_at' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
 
-                    $questions = DB::select('SELECT id FROM orientation_quiz_questions WHERE quiz_id = ? ORDER BY id ASC', [$quizId]);
+                    $questions = DB::table('orientation_quiz_questions')
+                        ->where('quiz_id', $quizId)
+                        ->orderBy('id')
+                        ->get()
+                        ->map(static fn (object $row): array => (array) $row)
+                        ->all();
 
                     foreach ($questions as $questionIndex => $question) {
-                        $correctOption = DB::first('SELECT id FROM orientation_quiz_options WHERE question_id = ? AND is_correct = 1 LIMIT 1', [(int) $question['id']]);
+                        $correctOption = DB::table('orientation_quiz_options')
+                            ->where('question_id', (int) $question['id'])
+                            ->where('is_correct', 1)
+                            ->first();
+                        $correctOption = $correctOption === null ? null : (array) $correctOption;
                         $isCorrect = $questionIndex < (int) round($percent / 20) ? 1 : 0;
                         $selectedOption = $correctOption['id'] ?? null;
 
                         if ($isCorrect === 0) {
-                            $wrong = DB::first('SELECT id FROM orientation_quiz_options WHERE question_id = ? AND is_correct = 0 LIMIT 1', [(int) $question['id']]);
+                            $wrong = DB::table('orientation_quiz_options')
+                                ->where('question_id', (int) $question['id'])
+                                ->where('is_correct', 0)
+                                ->first();
+                            $wrong = $wrong === null ? null : (array) $wrong;
                             $selectedOption = $wrong['id'] ?? $selectedOption;
                         }
 
-                        DB::insert(
-                            'INSERT INTO orientation_quiz_answers (attempt_id, question_id, option_id, is_correct, created_at)
-                             VALUES (?, ?, ?, ?, ?)',
-                            [$attemptId, (int) $question['id'], $selectedOption, $isCorrect, $now],
-                        );
+                        DB::table('orientation_quiz_answers')->insert([
+                            'attempt_id' => $attemptId,
+                            'question_id' => (int) $question['id'],
+                            'option_id' => $selectedOption,
+                            'is_correct' => $isCorrect,
+                            'created_at' => $now,
+                        ]);
                     }
 
                     if ($passed === 1) {
-                        DB::update(
-                            'UPDATE orientation_progress
-                             SET status = "Completed", progress = 100, completed_at = ?, updated_at = ?
-                             WHERE user_id = ? AND module_id = ?',
-                            [$now, $now, (int) $student['id'], (int) $quizModule['id']],
-                        );
+                        DB::table('orientation_progress')
+                            ->where('user_id', (int) $student['id'])
+                            ->where('module_id', (int) $quizModule['id'])
+                            ->update([
+                                'status' => 'Completed',
+                                'progress' => 100,
+                                'completed_at' => $now,
+                                'updated_at' => $now,
+                            ]);
                     }
                 }
             }
 
-            $demoQuizModule = DB::first('SELECT id, public_id, title, passing_rate FROM orientation_modules WHERE public_id = "ORIENT-012" LIMIT 1');
+            $demoQuizModule = DB::table('orientation_modules')
+                ->select('id', 'public_id', 'title', 'passing_rate')
+                ->where('public_id', 'ORIENT-012')
+                ->first();
+            $demoQuizModule = $demoQuizModule === null ? null : (array) $demoQuizModule;
 
             if ($demoQuizModule !== null) {
-                $demoQuizId = DB::insert(
-                    'INSERT INTO orientation_quizzes
-                        (public_id, module_id, title, instructions, time_limit_minutes, status, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, 20, "Published", ?, ?, ?)',
-                    [
-                        self::publicId('orientation_quizzes', 'QZ'),
-                        (int) $demoQuizModule['id'],
-                        'Demo Orientation Assessment',
-                        'Answer all questions. You need to reach the passing score to complete the demo module.',
-                        $coordinatorId,
-                        $now,
-                        $now,
-                    ],
-                );
+                $demoQuizId = DB::table('orientation_quizzes')->insertGetId([
+                    'public_id' => self::publicId('orientation_quizzes', 'QZ'),
+                    'module_id' => (int) $demoQuizModule['id'],
+                    'title' => 'Demo Orientation Assessment',
+                    'instructions' => 'Answer all questions. You need to reach the passing score to complete the demo module.',
+                    'time_limit_minutes' => 20,
+                    'status' => 'Published',
+                    'created_by' => $coordinatorId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
 
                 $demoQuestions = [
                     ['What should you do first before taking the orientation assessment?', ['Watch the orientation video', 'Skip the module', 'Submit a document request'], 0],
@@ -489,18 +480,24 @@ final class DatabaseSeeder
                 ];
 
                 foreach ($demoQuestions as $position => $item) {
-                    $questionId = DB::insert(
-                        'INSERT INTO orientation_quiz_questions (public_id, quiz_id, prompt, points, position, created_at, updated_at)
-                         VALUES (?, ?, ?, 1, ?, ?, ?)',
-                        [self::publicId('orientation_quiz_questions', 'QQ'), $demoQuizId, $item[0], $position, $now, $now],
-                    );
+                    $questionId = DB::table('orientation_quiz_questions')->insertGetId([
+                        'public_id' => self::publicId('orientation_quiz_questions', 'QQ'),
+                        'quiz_id' => $demoQuizId,
+                        'prompt' => $item[0],
+                        'points' => 1,
+                        'position' => $position,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
 
                     foreach ($item[1] as $optionPosition => $label) {
-                        DB::insert(
-                            'INSERT INTO orientation_quiz_options (question_id, label, is_correct, position, created_at)
-                             VALUES (?, ?, ?, ?, ?)',
-                            [$questionId, $label, $item[2] === $optionPosition ? 1 : 0, $optionPosition, $now],
-                        );
+                        DB::table('orientation_quiz_options')->insert([
+                            'question_id' => $questionId,
+                            'label' => $label,
+                            'is_correct' => $item[2] === $optionPosition ? 1 : 0,
+                            'position' => $optionPosition,
+                            'created_at' => $now,
+                        ]);
                     }
                 }
 
@@ -512,83 +509,91 @@ final class DatabaseSeeder
                 foreach (array_slice($demoStudents, 0, 2) as $index => $student) {
                     $percent = [100, 80][$index] ?? 80;
                     $passed = $percent >= (float) $demoQuizModule['passing_rate'] ? 1 : 0;
-                    $attemptId = DB::insert(
-                        'INSERT INTO orientation_quiz_attempts
-                            (public_id, quiz_id, user_id, score, total_points, percent, passed, status, started_at, expires_at, submitted_at, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, 3, ?, ?, "Submitted", ?, ?, ?, ?, ?)',
-                        [
-                            self::publicId('orientation_quiz_attempts', 'QAT'),
-                            $demoQuizId,
-                            (int) $student['id'],
-                            (int) round($percent / 34),
-                            $percent,
-                            $passed,
-                            $now,
-                            date('Y-m-d H:i:s', strtotime($now . ' +20 minutes')),
-                            $now,
-                            $now,
-                            $now,
-                        ],
-                    );
+                    $attemptId = DB::table('orientation_quiz_attempts')->insertGetId([
+                        'public_id' => self::publicId('orientation_quiz_attempts', 'QAT'),
+                        'quiz_id' => $demoQuizId,
+                        'user_id' => (int) $student['id'],
+                        'score' => (int) round($percent / 34),
+                        'total_points' => 3,
+                        'percent' => $percent,
+                        'passed' => $passed,
+                        'status' => 'Submitted',
+                        'started_at' => $now,
+                        'expires_at' => date('Y-m-d H:i:s', strtotime($now . ' +20 minutes')),
+                        'submitted_at' => $now,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
 
-                    $demoQuestionRows = DB::select('SELECT id FROM orientation_quiz_questions WHERE quiz_id = ? ORDER BY id ASC', [$demoQuizId]);
+                    $demoQuestionRows = DB::table('orientation_quiz_questions')
+                        ->where('quiz_id', $demoQuizId)
+                        ->orderBy('id')
+                        ->get()
+                        ->map(static fn (object $row): array => (array) $row)
+                        ->all();
 
                     foreach ($demoQuestionRows as $questionIndex => $question) {
-                        $correctOption = DB::first('SELECT id FROM orientation_quiz_options WHERE question_id = ? AND is_correct = 1 LIMIT 1', [(int) $question['id']]);
+                        $correctOption = DB::table('orientation_quiz_options')
+                            ->where('question_id', (int) $question['id'])
+                            ->where('is_correct', 1)
+                            ->first();
+                        $correctOption = $correctOption === null ? null : (array) $correctOption;
                         $isCorrect = $questionIndex < (int) round($percent / 34) ? 1 : 0;
                         $selectedOption = $correctOption['id'] ?? null;
 
                         if ($isCorrect === 0) {
-                            $wrong = DB::first('SELECT id FROM orientation_quiz_options WHERE question_id = ? AND is_correct = 0 LIMIT 1', [(int) $question['id']]);
+                            $wrong = DB::table('orientation_quiz_options')
+                                ->where('question_id', (int) $question['id'])
+                                ->where('is_correct', 0)
+                                ->first();
+                            $wrong = $wrong === null ? null : (array) $wrong;
                             $selectedOption = $wrong['id'] ?? $selectedOption;
                         }
 
-                        DB::insert(
-                            'INSERT INTO orientation_quiz_answers (attempt_id, question_id, option_id, is_correct, created_at)
-                             VALUES (?, ?, ?, ?, ?)',
-                            [$attemptId, (int) $question['id'], $selectedOption, $isCorrect, $now],
-                        );
+                        DB::table('orientation_quiz_answers')->insert([
+                            'attempt_id' => $attemptId,
+                            'question_id' => (int) $question['id'],
+                            'option_id' => $selectedOption,
+                            'is_correct' => $isCorrect,
+                            'created_at' => $now,
+                        ]);
                     }
 
                     if ($passed === 1) {
-                        DB::update(
-                            'UPDATE orientation_progress
-                             SET status = "Completed", progress = 100, completed_at = ?, updated_at = ?
-                             WHERE user_id = ? AND module_id = ?',
-                            [$now, $now, (int) $student['id'], (int) $demoQuizModule['id']],
-                        );
+                        DB::table('orientation_progress')
+                            ->where('user_id', (int) $student['id'])
+                            ->where('module_id', (int) $demoQuizModule['id'])
+                            ->update([
+                                'status' => 'Completed',
+                                'progress' => 100,
+                                'completed_at' => $now,
+                                'updated_at' => $now,
+                            ]);
                     }
                 }
             }
 
             foreach ($data['events'] ?? [] as $event) {
-                DB::insert(
-                    'INSERT INTO events
-                        (public_id, title, category, status, start_at, end_at, venue, mode, audience,
-                         capacity, registered, description, organizer, verification, attachments, created_by,
-                         created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $event['id'],
-                        $event['title'],
-                        $event['category'] ?? '',
-                        $event['status'] ?? 'Scheduled',
-                        $toDb($event['startAt'] ?? null) ?? $now,
-                        $toDb($event['endAt'] ?? null),
-                        $event['venue'] ?? '',
-                        $event['mode'] ?? 'On-campus',
-                        $event['audience'] ?? 'All Students',
-                        (int) ($event['capacity'] ?? 0),
-                        (int) ($event['registered'] ?? 0),
-                        $event['description'] ?? null,
-                        $event['organizer'] ?? '',
-                        $event['verification'] ?? '',
-                        $json($event['attachments'] ?? null),
-                        $coordinatorId,
-                        $toDb($event['startAt'] ?? null) ?? $now,
-                        $toDb($event['startAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('events')->insert([
+                    'public_id' => $event['id'],
+                    'title' => $event['title'],
+                    'category' => $event['category'] ?? '',
+                    'status' => $event['status'] ?? 'Scheduled',
+                    'start_at' => $toDb($event['startAt'] ?? null) ?? $now,
+                    'end_at' => $toDb($event['endAt'] ?? null),
+                    'venue' => $event['venue'] ?? '',
+                    'mode' => $event['mode'] ?? 'On-campus',
+                    'audience' => $event['audience'] ?? 'All Students',
+                    'capacity' => (int) ($event['capacity'] ?? 0),
+                    'registered' => (int) ($event['registered'] ?? 0),
+                    'description' => $event['description'] ?? null,
+                    'organizer' => $event['organizer'] ?? '',
+                    'verification' => $event['verification'] ?? '',
+                    'attachments' => $json($event['attachments'] ?? null),
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($event['startAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($event['startAt'] ?? null) ?? $now,
+                ]);
             }
 
             $lostFoundIds = [];
@@ -596,228 +601,176 @@ final class DatabaseSeeder
             foreach ($data['lostFound'] ?? [] as $item) {
                 $reporter = $userByEmail[mb_strtolower((string) ($item['reporterEmail'] ?? ''))] ?? null;
 
-                DB::insert(
-                    'INSERT INTO lost_found_items
-                        (public_id, type, title, category, description, location, date_occurred, reported_by,
-                         reporter_email, student_id, contact, status, custody, attachment, posted_at,
-                         created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $item['id'],
-                        $item['type'] ?? 'Found',
-                        $item['title'],
-                        $item['category'] ?? '',
-                        $item['description'] ?? null,
-                        $item['location'] ?? '',
-                        $toDb($item['dateOccurred'] ?? null),
-                        $item['reportedBy'] ?? '',
-                        $item['reporterEmail'] ?? '',
-                        $item['studentId'] ?? '',
-                        $item['contact'] ?? '',
-                        $item['status'] ?? 'Open',
-                        $item['custody'] ?? '',
-                        $item['attachment'] ?? '',
-                        $toDb($item['postedAt'] ?? null) ?? $now,
-                        $reporter['id'] ?? $coordinatorId,
-                        $toDb($item['postedAt'] ?? null) ?? $now,
-                        $toDb($item['updatedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('lost_found_items')->insert([
+                    'public_id' => $item['id'],
+                    'type' => $item['type'] ?? 'Found',
+                    'title' => $item['title'],
+                    'category' => $item['category'] ?? '',
+                    'description' => $item['description'] ?? null,
+                    'location' => $item['location'] ?? '',
+                    'date_occurred' => $toDb($item['dateOccurred'] ?? null),
+                    'reported_by' => $item['reportedBy'] ?? '',
+                    'reporter_email' => $item['reporterEmail'] ?? '',
+                    'student_id' => $item['studentId'] ?? '',
+                    'contact' => $item['contact'] ?? '',
+                    'status' => $item['status'] ?? 'Open',
+                    'custody' => $item['custody'] ?? '',
+                    'attachment' => $item['attachment'] ?? '',
+                    'posted_at' => $toDb($item['postedAt'] ?? null) ?? $now,
+                    'created_by' => $reporter['id'] ?? $coordinatorId,
+                    'created_at' => $toDb($item['postedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($item['updatedAt'] ?? null) ?? $now,
+                ]);
 
-                $lostFoundIds[$item['id']] = (int) DB::value('SELECT id FROM lost_found_items WHERE public_id = ?', [$item['id']]);
+                $lostFoundIds[$item['id']] = (int) DB::table('lost_found_items')->where('public_id', $item['id'])->value('id');
 
                 foreach ($item['claims'] ?? [] as $claim) {
                     $claimant = $userByEmail[mb_strtolower((string) ($claim['claimantEmail'] ?? ''))] ?? null;
 
-                    DB::insert(
-                        'INSERT INTO lost_found_claims
-                            (public_id, item_id, claimant_user_id, claimant_name, claimant_email, student_id,
-                             proof, message, attachment, status, verified_by, verified_at, created_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        [
-                            $claim['id'],
-                            $lostFoundIds[$item['id']],
-                            $claimant['id'] ?? null,
-                            $claim['claimantName'] ?? '',
-                            $claim['claimantEmail'] ?? '',
-                            $claim['studentId'] ?? '',
-                            $claim['proof'] ?? null,
-                            $claim['message'] ?? null,
-                            $claim['attachment'] ?? '',
-                            $claim['status'] ?? 'Pending',
-                            $claim['verifiedBy'] ?? '',
-                            $toDb($claim['verifiedAt'] ?? null),
-                            $toDb($claim['at'] ?? null) ?? $now,
-                        ],
-                    );
+                    DB::table('lost_found_claims')->insert([
+                        'public_id' => $claim['id'],
+                        'item_id' => $lostFoundIds[$item['id']],
+                        'claimant_user_id' => $claimant['id'] ?? null,
+                        'claimant_name' => $claim['claimantName'] ?? '',
+                        'claimant_email' => $claim['claimantEmail'] ?? '',
+                        'student_id' => $claim['studentId'] ?? '',
+                        'proof' => $claim['proof'] ?? null,
+                        'message' => $claim['message'] ?? null,
+                        'attachment' => $claim['attachment'] ?? '',
+                        'status' => $claim['status'] ?? 'Pending',
+                        'verified_by' => $claim['verifiedBy'] ?? '',
+                        'verified_at' => $toDb($claim['verifiedAt'] ?? null),
+                        'created_at' => $toDb($claim['at'] ?? null) ?? $now,
+                    ]);
                 }
             }
 
             foreach ($data['documentRequests'] ?? [] as $request) {
                 $student = $userByEmail[mb_strtolower((string) ($request['studentEmail'] ?? ''))] ?? null;
 
-                DB::insert(
-                    'INSERT INTO document_requests
-                        (public_id, student_user_id, student_name, student_id, student_email, program, year_level,
-                         document_type, purpose, copies, delivery_mode, status, priority, requested_at, updated_at,
-                         released_at, processed_by, remarks, attachment, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $request['id'],
-                        $student['id'] ?? null,
-                        $request['student'] ?? '',
-                        $request['studentId'] ?? '',
-                        $request['studentEmail'] ?? '',
-                        $request['program'] ?? '',
-                        $request['year'] ?? '',
-                        $request['documentType'] ?? '',
-                        $request['purpose'] ?? null,
-                        (int) ($request['copies'] ?? 1),
-                        $request['deliveryMode'] ?? 'Pick-up at OSAS',
-                        $request['status'] ?? 'Submitted',
-                        $request['priority'] ?? 'Medium',
-                        $toDb($request['requestedAt'] ?? null) ?? $now,
-                        $toDb($request['updatedAt'] ?? null) ?? $now,
-                        $toDb($request['releasedAt'] ?? null),
-                        $request['processedBy'] ?? 'OSAS Records',
-                        $request['remarks'] ?? null,
-                        $request['attachment'] ?? '',
-                        $toDb($request['requestedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('document_requests')->insert([
+                    'public_id' => $request['id'],
+                    'student_user_id' => $student['id'] ?? null,
+                    'student_name' => $request['student'] ?? '',
+                    'student_id' => $request['studentId'] ?? '',
+                    'student_email' => $request['studentEmail'] ?? '',
+                    'program' => $request['program'] ?? '',
+                    'year_level' => $request['year'] ?? '',
+                    'document_type' => $request['documentType'] ?? '',
+                    'purpose' => $request['purpose'] ?? null,
+                    'copies' => (int) ($request['copies'] ?? 1),
+                    'delivery_mode' => $request['deliveryMode'] ?? 'Pick-up at OSAS',
+                    'status' => $request['status'] ?? 'Submitted',
+                    'priority' => $request['priority'] ?? 'Medium',
+                    'requested_at' => $toDb($request['requestedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($request['updatedAt'] ?? null) ?? $now,
+                    'released_at' => $toDb($request['releasedAt'] ?? null),
+                    'processed_by' => $request['processedBy'] ?? 'OSAS Records',
+                    'remarks' => $request['remarks'] ?? null,
+                    'attachment' => $request['attachment'] ?? '',
+                    'created_at' => $toDb($request['requestedAt'] ?? null) ?? $now,
+                ]);
 
-                $requestId = (int) DB::value('SELECT id FROM document_requests WHERE public_id = ?', [$request['id']]);
+                $requestId = (int) DB::table('document_requests')->where('public_id', $request['id'])->value('id');
 
                 foreach ($request['timeline'] ?? [] as $event) {
-                    DB::insert(
-                        'INSERT INTO document_request_events (request_id, status, by_name, note, created_at)
-                         VALUES (?, ?, ?, ?, ?)',
-                        [
-                            $requestId,
-                            $event['status'] ?? '',
-                            $event['by'] ?? '',
-                            $event['note'] ?? null,
-                            $toDb($event['at'] ?? null) ?? $now,
-                        ],
-                    );
+                    DB::table('document_request_events')->insert([
+                        'request_id' => $requestId,
+                        'status' => $event['status'] ?? '',
+                        'by_name' => $event['by'] ?? '',
+                        'note' => $event['note'] ?? null,
+                        'created_at' => $toDb($event['at'] ?? null) ?? $now,
+                    ]);
                 }
             }
 
             foreach ($data['tickets'] ?? [] as $ticket) {
                 $student = $userByEmail[mb_strtolower((string) ($ticket['studentEmail'] ?? ''))] ?? null;
 
-                DB::insert(
-                    'INSERT INTO support_tickets
-                        (public_id, student_user_id, student_name, student_email, student_id, program, category,
-                         subject, description, priority, status, assigned_to, rating, submitted_at, updated_at, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $ticket['id'],
-                        $student['id'] ?? null,
-                        $ticket['student'] ?? '',
-                        $ticket['studentEmail'] ?? '',
-                        $ticket['studentId'] ?? '',
-                        $ticket['program'] ?? '',
-                        $ticket['category'] ?? '',
-                        $ticket['subject'] ?? '',
-                        $ticket['description'] ?? null,
-                        $ticket['priority'] ?? 'Medium',
-                        $ticket['status'] ?? 'Open',
-                        $ticket['assignedTo'] ?? '',
-                        isset($ticket['rating']) && $ticket['rating'] !== '' ? (int) $ticket['rating'] : null,
-                        $toDb($ticket['submittedAt'] ?? null) ?? $now,
-                        $toDb($ticket['updatedAt'] ?? null) ?? $now,
-                        $toDb($ticket['submittedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('support_tickets')->insert([
+                    'public_id' => $ticket['id'],
+                    'student_user_id' => $student['id'] ?? null,
+                    'student_name' => $ticket['student'] ?? '',
+                    'student_email' => $ticket['studentEmail'] ?? '',
+                    'student_id' => $ticket['studentId'] ?? '',
+                    'program' => $ticket['program'] ?? '',
+                    'category' => $ticket['category'] ?? '',
+                    'subject' => $ticket['subject'] ?? '',
+                    'description' => $ticket['description'] ?? null,
+                    'priority' => $ticket['priority'] ?? 'Medium',
+                    'status' => $ticket['status'] ?? 'Open',
+                    'assigned_to' => $ticket['assignedTo'] ?? '',
+                    'rating' => isset($ticket['rating']) && $ticket['rating'] !== '' ? (int) $ticket['rating'] : null,
+                    'submitted_at' => $toDb($ticket['submittedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($ticket['updatedAt'] ?? null) ?? $now,
+                    'created_at' => $toDb($ticket['submittedAt'] ?? null) ?? $now,
+                ]);
 
-                $ticketId = (int) DB::value('SELECT id FROM support_tickets WHERE public_id = ?', [$ticket['id']]);
+                $ticketId = (int) DB::table('support_tickets')->where('public_id', $ticket['id'])->value('id');
 
                 foreach ($ticket['messages'] ?? [] as $message) {
-                    DB::insert(
-                        'INSERT INTO support_messages (ticket_id, author_name, role, body, created_at)
-                         VALUES (?, ?, ?, ?, ?)',
-                        [
-                            $ticketId,
-                            $message['author'] ?? '',
-                            $message['role'] ?? 'Student',
-                            $message['body'] ?? '',
-                            $toDb($message['at'] ?? null) ?? $now,
-                        ],
-                    );
+                    DB::table('support_messages')->insert([
+                        'ticket_id' => $ticketId,
+                        'author_name' => $message['author'] ?? '',
+                        'role' => $message['role'] ?? 'Student',
+                        'body' => $message['body'] ?? '',
+                        'created_at' => $toDb($message['at'] ?? null) ?? $now,
+                    ]);
                 }
             }
 
             foreach ($data['broadcasts'] ?? [] as $broadcast) {
-                DB::insert(
-                    'INSERT INTO broadcasts
-                        (public_id, subject, message, channel, status, audience, scheduled_at, sent_at,
-                         reach, delivered, opened, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $broadcast['id'],
-                        $broadcast['subject'],
-                        $broadcast['message'],
-                        $broadcast['channel'] ?? 'Portal',
-                        $broadcast['status'] ?? 'Draft',
-                        $broadcast['audience'] ?? 'All Student Portals',
-                        ($broadcast['status'] ?? '') === 'Scheduled' ? $toDb($broadcast['at'] ?? null) : null,
-                        ($broadcast['status'] ?? '') === 'Sent' ? $toDb($broadcast['at'] ?? null) : null,
-                        (int) ($broadcast['reach'] ?? 0),
-                        (int) ($broadcast['delivered'] ?? 0),
-                        (int) ($broadcast['opened'] ?? 0),
-                        $coordinatorId,
-                        $toDb($broadcast['at'] ?? null) ?? $now,
-                        $toDb($broadcast['at'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('broadcasts')->insert([
+                    'public_id' => $broadcast['id'],
+                    'subject' => $broadcast['subject'],
+                    'message' => $broadcast['message'],
+                    'channel' => $broadcast['channel'] ?? 'Portal',
+                    'status' => $broadcast['status'] ?? 'Draft',
+                    'audience' => $broadcast['audience'] ?? 'All Student Portals',
+                    'scheduled_at' => ($broadcast['status'] ?? '') === 'Scheduled' ? $toDb($broadcast['at'] ?? null) : null,
+                    'sent_at' => ($broadcast['status'] ?? '') === 'Sent' ? $toDb($broadcast['at'] ?? null) : null,
+                    'reach' => (int) ($broadcast['reach'] ?? 0),
+                    'delivered' => (int) ($broadcast['delivered'] ?? 0),
+                    'opened' => (int) ($broadcast['opened'] ?? 0),
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($broadcast['at'] ?? null) ?? $now,
+                    'updated_at' => $toDb($broadcast['at'] ?? null) ?? $now,
+                ]);
             }
 
             foreach ($data['reports'] ?? [] as $report) {
-                DB::insert(
-                    'INSERT INTO reports
-                        (public_id, title, category, period, status, format, records, generated_at, generated_by,
-                         scope, created_by, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $report['id'],
-                        $report['title'],
-                        $report['category'] ?? '',
-                        $report['period'] ?? '',
-                        $report['status'] ?? 'Completed',
-                        $report['format'] ?? 'CSV',
-                        (int) ($report['records'] ?? 0),
-                        $toDb($report['generatedAt'] ?? null) ?? $now,
-                        $report['generatedBy'] ?? $coordinatorName,
-                        $report['scope'] ?? '',
-                        $coordinatorId,
-                        $toDb($report['generatedAt'] ?? null) ?? $now,
-                        $toDb($report['generatedAt'] ?? null) ?? $now,
-                    ],
-                );
+                DB::table('reports')->insert([
+                    'public_id' => $report['id'],
+                    'title' => $report['title'],
+                    'category' => $report['category'] ?? '',
+                    'period' => $report['period'] ?? '',
+                    'status' => $report['status'] ?? 'Completed',
+                    'format' => $report['format'] ?? 'CSV',
+                    'records' => (int) ($report['records'] ?? 0),
+                    'generated_at' => $toDb($report['generatedAt'] ?? null) ?? $now,
+                    'generated_by' => $report['generatedBy'] ?? $coordinatorName,
+                    'scope' => $report['scope'] ?? '',
+                    'created_by' => $coordinatorId,
+                    'created_at' => $toDb($report['generatedAt'] ?? null) ?? $now,
+                    'updated_at' => $toDb($report['generatedAt'] ?? null) ?? $now,
+                ]);
             }
 
             foreach ($data['tracking'] ?? [] as $tracking) {
-                DB::insert(
-                    'INSERT INTO tracking
-                        (public_id, title, type, views, unique_visitors, avg_time, engagement, last_viewed,
-                         trend, source_id, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [
-                        $tracking['id'],
-                        $tracking['title'],
-                        $tracking['type'] ?? '',
-                        (int) ($tracking['views'] ?? 0),
-                        (int) ($tracking['uniqueVisitors'] ?? 0),
-                        $tracking['avgTime'] ?? '0m 00s',
-                        (float) ($tracking['engagement'] ?? 0),
-                        $toDb($tracking['lastViewed'] ?? null),
-                        (float) ($tracking['trend'] ?? 0),
-                        $tracking['sourceId'] ?? '',
-                        $now,
-                        $now,
-                    ],
-                );
+                DB::table('tracking')->insert([
+                    'public_id' => $tracking['id'],
+                    'title' => $tracking['title'],
+                    'type' => $tracking['type'] ?? '',
+                    'views' => (int) ($tracking['views'] ?? 0),
+                    'unique_visitors' => (int) ($tracking['uniqueVisitors'] ?? 0),
+                    'avg_time' => $tracking['avgTime'] ?? '0m 00s',
+                    'engagement' => (float) ($tracking['engagement'] ?? 0),
+                    'last_viewed' => $toDb($tracking['lastViewed'] ?? null),
+                    'trend' => (float) ($tracking['trend'] ?? 0),
+                    'source_id' => $tracking['sourceId'] ?? '',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
             }
 
             echo 'Seeded ' . count($data['users'] ?? []) . " users, " . count($data['announcements'] ?? []) . " announcements, "
@@ -834,7 +787,7 @@ final class DatabaseSeeder
     {
         do {
             $candidate = $prefix . '-' . strtoupper(bin2hex(random_bytes(3)));
-        } while ((int) DB::value('SELECT COUNT(*) FROM ' . $table . ' WHERE public_id = ?', [$candidate]) > 0);
+        } while (DB::table($table)->where('public_id', $candidate)->count() > 0);
 
         return $candidate;
     }

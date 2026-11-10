@@ -12,7 +12,7 @@ $charset = 'utf8mb4';
 $collation = 'utf8mb4_unicode_ci';
 
 return [
-    /* Legacy top-level keys for vanilla App\Support\DB compatibility */
+    /* Top-level convenience keys consumed via config('database.driver') etc. */
     'default' => $driver,
     'driver' => $driver,
     'host' => $host,

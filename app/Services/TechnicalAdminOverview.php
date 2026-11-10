@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\SupportTicket;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class TechnicalAdminOverview
 {
@@ -43,13 +43,16 @@ final class TechnicalAdminOverview
             ];
         }
 
-        $loginTrend = DB::select(
-            'SELECT DATE(created_at) AS activity_date, COUNT(DISTINCT actor_user_id) AS total
-             FROM audit_log
-             WHERE action = ? AND actor_user_id IS NOT NULL AND created_at >= ? AND created_at < ?
-             GROUP BY DATE(created_at)',
-            ['auth.login', $trendStart, $tomorrow],
-        );
+        $loginTrend = DB::table('audit_log')
+            ->selectRaw('DATE(created_at) AS activity_date, COUNT(DISTINCT actor_user_id) AS total')
+            ->where('action', 'auth.login')
+            ->whereNotNull('actor_user_id')
+            ->where('created_at', '>=', $trendStart)
+            ->where('created_at', '<', $tomorrow)
+            ->groupByRaw('DATE(created_at)')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
         foreach ($loginTrend as $row) {
             $date = (string) $row['activity_date'];
             if (isset($activityByDate[$date])) {
@@ -57,13 +60,15 @@ final class TechnicalAdminOverview
             }
         }
 
-        $failedTrend = DB::select(
-            'SELECT DATE(attempted_at) AS activity_date, COUNT(*) AS total
-             FROM login_attempts
-             WHERE successful = 0 AND attempted_at >= ? AND attempted_at < ?
-             GROUP BY DATE(attempted_at)',
-            [$trendStart, $tomorrow],
-        );
+        $failedTrend = DB::table('login_attempts')
+            ->selectRaw('DATE(attempted_at) AS activity_date, COUNT(*) AS total')
+            ->where('successful', 0)
+            ->where('attempted_at', '>=', $trendStart)
+            ->where('attempted_at', '<', $tomorrow)
+            ->groupByRaw('DATE(attempted_at)')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
         foreach ($failedTrend as $row) {
             $date = (string) $row['activity_date'];
             if (isset($activityByDate[$date])) {
@@ -100,38 +105,33 @@ final class TechnicalAdminOverview
         );
 
         return [
-            'active_today' => (int) DB::value(
-                'SELECT COUNT(DISTINCT actor_user_id)
-                 FROM audit_log
-                 WHERE action = ? AND actor_user_id IS NOT NULL
-                   AND created_at >= ? AND created_at < ?',
-                ['auth.login', $today, $tomorrow],
-            ),
-            'failed_logins_24h' => (int) DB::value(
-                'SELECT COUNT(*) FROM login_attempts
-                 WHERE successful = 0 AND attempted_at >= ?',
-                [$since],
-            ),
+            'active_today' => DB::table('audit_log')
+                ->where('action', 'auth.login')
+                ->whereNotNull('actor_user_id')
+                ->where('created_at', '>=', $today)
+                ->where('created_at', '<', $tomorrow)
+                ->distinct()
+                ->count('actor_user_id'),
+            'failed_logins_24h' => DB::table('login_attempts')
+                ->where('successful', 0)
+                ->where('attempted_at', '>=', $since)
+                ->count(),
             'activity_trend' => array_values($activityByDate),
-            'account_statuses' => DB::select(
-                'SELECT status, COUNT(*) AS count
-                 FROM users
-                 GROUP BY status
-                 ORDER BY CASE status
-                     WHEN "Active" THEN 1
-                     WHEN "Pending" THEN 2
-                     WHEN "Inactive" THEN 3
-                     ELSE 4
-                 END',
-            ),
-            'student_programs' => DB::select(
-                'SELECT COALESCE(NULLIF(TRIM(program), ""), "Unassigned") AS program, COUNT(*) AS count
-                 FROM users
-                 WHERE role = ?
-                 GROUP BY COALESCE(NULLIF(TRIM(program), ""), "Unassigned")
-                 ORDER BY count DESC, program ASC',
-                ['Student'],
-            ),
+            'account_statuses' => DB::table('users')
+                ->selectRaw('status, COUNT(*) AS count')
+                ->groupBy('status')
+                ->orderByRaw('CASE status WHEN "Active" THEN 1 WHEN "Pending" THEN 2 WHEN "Inactive" THEN 3 ELSE 4 END')
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all(),
+            'student_programs' => DB::table('users')
+                ->selectRaw('COALESCE(NULLIF(TRIM(program), ""), "Unassigned") AS program, COUNT(*) AS count')
+                ->where('role', 'Student')
+                ->groupByRaw('COALESCE(NULLIF(TRIM(program), ""), "Unassigned")')
+                ->orderByRaw('count DESC, program ASC')
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all(),
             'operational_queue' => [
                 'support_open' => $supportCounts['open'],
                 'support_in_progress' => $supportCounts['in_progress'],
@@ -145,7 +145,7 @@ final class TechnicalAdminOverview
             'health_checks' => [
                 [
                     'label' => 'Database',
-                    'ok' => DB::value('SELECT 1') !== null,
+                    'ok' => DB::scalar('SELECT 1') !== null,
                     'detail' => 'Connection and query check passed.',
                 ],
                 [
@@ -168,22 +168,24 @@ final class TechnicalAdminOverview
                         : 'Check: ' . implode(', ', $unwritablePaths),
                 ],
             ],
-            'top_announcements' => DB::select(
-                'SELECT public_id, title, views
-                 FROM announcements
-                 WHERE status = ?
-                 ORDER BY views DESC, id DESC
-                 LIMIT 5',
-                ['Published'],
-            ),
-            'top_orientations' => DB::select(
-                'SELECT public_id, title, learners, completions
-                 FROM orientation_modules
-                 WHERE status = ?
-                 ORDER BY learners DESC, id DESC
-                 LIMIT 5',
-                ['Published'],
-            ),
+            'top_announcements' => DB::table('announcements')
+                ->select('public_id', 'title', 'views')
+                ->where('status', 'Published')
+                ->orderByDesc('views')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all(),
+            'top_orientations' => DB::table('orientation_modules')
+                ->select('public_id', 'title', 'learners', 'completions')
+                ->where('status', 'Published')
+                ->orderByDesc('learners')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all(),
         ];
     }
 
@@ -195,7 +197,13 @@ final class TechnicalAdminOverview
     {
         $counts = array_fill_keys($statuses, 0);
 
-        foreach (DB::select('SELECT status, COUNT(*) AS count FROM ' . $table . ' GROUP BY status') as $row) {
+        $rows = DB::table($table)
+            ->selectRaw('status, COUNT(*) AS count')
+            ->groupBy('status')
+            ->get();
+
+        foreach ($rows as $row) {
+            $row = (array) $row;
             $status = (string) $row['status'];
             if (array_key_exists($status, $counts)) {
                 $counts[$status] = (int) $row['count'];

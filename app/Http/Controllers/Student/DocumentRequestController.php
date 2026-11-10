@@ -9,7 +9,7 @@ use App\Models\DocumentRequest;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use Illuminate\Http\Request;
 use App\Support\Session;
@@ -83,8 +83,8 @@ final class DocumentRequestController extends Controller
 
         NotificationService::send((int) $actor['id'], 'Document Request Received', 'Your request for ' . $data['document_type'] . ' has been received and will be reviewed by OSAS.', 'info', 'document_request', (string) $documentRequest['public_id']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role = "Coordinator" AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'New Document Request', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', 'info', 'document_request', (string) $documentRequest['public_id']);
+        foreach (DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'New Document Request', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', 'info', 'document_request', (string) $documentRequest['public_id']);
         }
 
         AuditLogger::log('document_request.created', 'Document Request Submitted', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', ['entity_type' => 'document_request', 'entity_id' => (string) $documentRequest['public_id'], 'tone' => 'blue', 'icon' => 'printer', 'target_user_id' => (int) $actor['id']]);

@@ -12,10 +12,11 @@ declare(strict_types=1);
  * byte. Writes are intentionally excluded (they mutate the database); those
  * paths are covered by the HTTP check suite instead.
  *
- * Normalisation: the legacy App\Support\DB wrapper fetched rows as PDO
- * FETCH_BOTH, so every row carried duplicate integer keys ("id" => 1, "0" => 1).
- * Those artifacts are stripped here, and associative arrays are key-sorted, so
- * the snapshots stay comparable across the query-builder conversion.
+ * Normalisation: the legacy raw-PDO wrapper (App\Support\DB, removed in Phase
+ * 4c) fetched rows as PDO FETCH_BOTH, so every row carried duplicate integer
+ * keys ("id" => 1, "0" => 1). Those artifacts are stripped here, and
+ * associative arrays are key-sorted, so the snapshots stay comparable across
+ * the query-builder conversion.
  */
 
 use App\Models\Announcement;

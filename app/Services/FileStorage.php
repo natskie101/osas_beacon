@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Response;
 use App\Support\Str;
@@ -93,30 +93,25 @@ final class FileStorage
             throw new RuntimeException('The file could not be saved. Please try again.');
         }
 
-        $id = DB::insert(
-            'INSERT INTO files
-                (owner_user_id, entity_type, entity_id, original_name, stored_name, mime_type, size_bytes, checksum, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-                $ownerId,
-                $entityType,
-                $entityId,
-                $originalName,
-                $relativePath,
-                $mime,
-                $size,
-                hash_file('sha256', $absolutePath) ?: null,
-                date('Y-m-d H:i:s'),
-            ],
-        );
+        $id = DB::table('files')->insertGetId([
+            'owner_user_id' => $ownerId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'original_name' => $originalName,
+            'stored_name' => $relativePath,
+            'mime_type' => $mime,
+            'size_bytes' => $size,
+            'checksum' => hash_file('sha256', $absolutePath) ?: null,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
 
-        $row = DB::first('SELECT * FROM files WHERE id = ?', [$id]);
+        $row = DB::table('files')->where('id', $id)->first();
 
         if ($row === null) {
             throw new RuntimeException('The uploaded file record could not be loaded.');
         }
 
-        return $row;
+        return (array) $row;
     }
 
     /** @param array<string, mixed> $file */
@@ -136,7 +131,7 @@ final class FileStorage
             @unlink($path);
         }
 
-        DB::delete('DELETE FROM files WHERE id = ?', [(int) $file['id']]);
+        DB::table('files')->where('id', (int) $file['id'])->delete();
     }
 
     /** @param array<string, mixed> $file */

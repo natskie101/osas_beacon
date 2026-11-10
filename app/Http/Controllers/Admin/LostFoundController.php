@@ -13,7 +13,7 @@ use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use Illuminate\Http\Request;
@@ -60,12 +60,13 @@ final class LostFoundController extends Controller
 
     public function export(Request $request)
     {
-        $rows = DB::select(
-            'SELECT public_id, type, title, category, status, location, reported_by, reporter_email,
-                    student_id, date_occurred, posted_at
-             FROM lost_found_items
-             ORDER BY posted_at DESC, id DESC',
-        );
+        $rows = DB::table('lost_found_items')
+            ->select('public_id', 'type', 'title', 'category', 'status', 'location', 'reported_by', 'reporter_email', 'student_id', 'date_occurred', 'posted_at')
+            ->orderByDesc('posted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
 
         $stream = fopen('php://temp', 'r+');
         fputcsv($stream, ['Reference', 'Type', 'Title', 'Category', 'Status', 'Location', 'Reported by', 'Reporter email', 'Student ID', 'Date occurred', 'Posted at']);
@@ -115,7 +116,7 @@ final class LostFoundController extends Controller
         $item = LostFoundItem::find($id);
 
         if ($image !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$item['public_id'], $image['file_id']]);
+            DB::table('files')->where('id', (int) $image['file_id'])->update(['entity_id' => (string) $item['public_id']]);
         }
 
         AuditLogger::log('lost_found.created', 'Lost & Found Item Posted', $item['title'] . ' (' . $item['public_id'] . ') was posted.', ['entity_type' => 'lost_found', 'entity_id' => (string) $item['public_id'], 'tone' => 'blue', 'icon' => 'search']);
@@ -168,7 +169,7 @@ final class LostFoundController extends Controller
         $updated = LostFoundItem::find((int) $item['id']) ?? $item;
 
         if ($image !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $image['file_id']]);
+            DB::table('files')->where('id', (int) $image['file_id'])->update(['entity_id' => (string) $updated['public_id']]);
 
             if ($oldImage !== null && (int) $oldImage['id'] !== (int) $image['file_id']) {
                 FileStorage::delete($oldImage);
@@ -373,10 +374,15 @@ final class LostFoundController extends Controller
     /** @return list<string> */
     private function categories(): array
     {
-        return array_values(array_filter(array_map(
-            static fn (array $row): string => (string) $row['category'],
-            DB::select('SELECT DISTINCT category FROM lost_found_items WHERE category <> "" ORDER BY category ASC'),
-        )));
+        return array_values(array_filter(
+            DB::table('lost_found_items')
+                ->distinct()
+                ->where('category', '<>', '')
+                ->orderBy('category')
+                ->pluck('category')
+                ->map(static fn (mixed $category): string => (string) $category)
+                ->all(),
+        ));
     }
 
     /** @return array<string, mixed> */
