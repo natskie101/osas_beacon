@@ -6,7 +6,6 @@ namespace App\Http\Requests;
 
 use App\Support\Exceptions\ForbiddenHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request as PortalRequest;
 use App\Support\Validator;
 use Illuminate\Http\Request;
 
@@ -21,12 +20,9 @@ abstract class FormRequest
     abstract public function rules(): array;
 
     /**
-     * Accepts both the native Illuminate request and the legacy portal
-     * request while controllers are migrated to native Laravel.
-     *
      * @return array<string, mixed>
      */
-    public function validate(PortalRequest|Request $request): array
+    public function validate(Request $request): array
     {
         if (!$this->authorize()) {
             throw new ForbiddenHttpException();

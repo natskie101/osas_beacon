@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Auth\ArrayUserProvider;
 use App\Auth\BeaconSessionGuard;
 use App\Services\NvidiaService;
-use App\Support\Request as PortalRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,10 +16,6 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(NvidiaService::class, fn () => new NvidiaService());
-
-        $this->app->bind(PortalRequest::class, function () {
-            return PortalRequest::capture();
-        });
     }
 
     /**

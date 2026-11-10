@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // The portal's legacy exceptions predate the native kernel (they were
-        // caught by App\Support\Router). Reproduce that behaviour here so
+        // caught by the legacy router). Reproduce that behaviour here so
         // validation failures flash errors + old input and redirect back
         // instead of bubbling up as 500s.
         $exceptions->render(function (ValidationException $e) {

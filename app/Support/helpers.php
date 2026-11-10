@@ -4,56 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\ArrayUser;
 use App\Enums\Role;
-use App\Support\Config;
-use App\Support\Csrf;
-use App\Support\Env;
-use App\Support\Request;
 use Illuminate\Support\Facades\Auth;
-
-if (!function_exists('env')) {
-    function env(string $key, mixed $default = null): mixed
-    {
-        return Env::get($key, $default);
-    }
-}
-
-if (!function_exists('config')) {
-    function config(string $key, mixed $default = null): mixed
-    {
-        return Config::get($key, $default);
-    }
-}
-
-if (!function_exists('e')) {
-    function e(mixed $value): string
-    {
-        return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    }
-}
-
-if (!function_exists('base_path')) {
-    function base_path(string $path = ''): string
-    {
-        static $base = null;
-
-        if ($base === null) {
-            $base = Request::scriptBasePath();
-        }
-
-        return $base . ($path === '' ? '' : '/' . ltrim($path, '/'));
-    }
-}
-
-if (!function_exists('url')) {
-    function url(string $path = ''): string
-    {
-        if (preg_match('#^https?://#i', $path) === 1) {
-            return $path;
-        }
-
-        return base_path($path === '' ? '' : '/' . ltrim($path, '/'));
-    }
-}
 
 if (!function_exists('absolute_url')) {
     function absolute_url(string $path = ''): string
@@ -68,27 +19,6 @@ if (!function_exists('absolute_url')) {
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
 
         return ($secure ? 'https' : 'http') . '://' . $host . url($path);
-    }
-}
-
-if (!function_exists('asset')) {
-    function asset(string $path): string
-    {
-        return url('assets/' . ltrim($path, '/'));
-    }
-}
-
-if (!function_exists('csrf_field')) {
-    function csrf_field(): string
-    {
-        return Csrf::field();
-    }
-}
-
-if (!function_exists('csrf_token')) {
-    function csrf_token(): string
-    {
-        return Csrf::token();
     }
 }
 
@@ -107,13 +37,6 @@ if (!function_exists('auth_role')) {
         $user = auth_user();
 
         return $user === null ? null : Role::tryFrom((string) $user['role']);
-    }
-}
-
-if (!function_exists('current_path')) {
-    function current_path(): string
-    {
-        return Request::capture()->path;
     }
 }
 

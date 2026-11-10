@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request as PortalRequest;
 use App\Support\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -13,13 +12,10 @@ use Illuminate\Http\UploadedFile;
 abstract class Controller
 {
     /**
-     * Accepts both the native Illuminate request and the legacy portal
-     * request while controllers are migrated to native Laravel.
-     *
      * @param array<string, string|list<string>> $rules
      * @return array<string, mixed>
      */
-    protected function validate(PortalRequest|Request $request, array $rules): array
+    protected function validate(Request $request, array $rules): array
     {
         // input() (not all()) so uploaded files never reach the validator
         // or the session's old-input flash.
