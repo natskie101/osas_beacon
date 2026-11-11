@@ -352,9 +352,12 @@ foreach ($studentPages as $path) {
 }
 
 $r = req('GET', '/student/lost-found/report', [], [], $jarB);
-check('report form category is a plain input (no datalist suggestions)',
-    expectStatus($r, 200) && bodyHas($r, 'name="category"') && !bodyHas($r, '<datalist'),
-    'datalist still present');
+check('report form category is a plain input with autocomplete off (no datalist, no browser suggestions)',
+    expectStatus($r, 200)
+        && bodyHas($r, 'name="category"')
+        && !bodyHas($r, '<datalist')
+        && bodyHas($r, 'autocomplete="off"'),
+    'datalist present or autocomplete=off missing');
 
 $r = req('GET', '/student/orientation/ORIENT-2026-001/quiz', [], [], $jarB);
 check('GET student quiz (no published assessment) -> branded 404 "not available"',
