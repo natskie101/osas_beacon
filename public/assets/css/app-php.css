@@ -2870,7 +2870,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   z-index: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: #243247;
   filter: brightness(0.68);
 }
@@ -2893,7 +2893,10 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   position: relative;
   z-index: 1;
 }
-.lf-card--has-image .lf-card__hero {
+/* Higher specificity than the tone rules below (.lf-card--amber .lf-card__hero
+ * etc., same specificity but later in the file) so the photo really shows
+ * edge-to-edge instead of a coloured strip covering the top of the card. */
+.lf-card.lf-card--has-image .lf-card__hero {
   background: transparent;
 }
 .lf-card--has-image .lf-card__letter,
@@ -2902,8 +2905,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   z-index: 2;
 }
 .lf-card--has-image .lf-card__letter {
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  display: none;
 }
 .lf-card--has-image .lf-card__body {
   background: transparent;
