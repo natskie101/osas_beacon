@@ -650,8 +650,9 @@
       setInterval(function () { show(index + 1); }, 7000);
     }
 
-    /* Student dashboard infographic rotation — advances every 7 seconds,
-     * pauses on hover/focus, and stays still for reduced-motion users. */
+    /* Student dashboard infographic rotation — advances every 7 seconds and
+     * pauses on hover/focus. Reduced-motion systems still rotate; the CSS
+     * swaps the slide instantly instead of sliding it. */
     var ingoCarousel = document.querySelector("[data-ingo-carousel]");
 
     if (ingoCarousel) {
@@ -659,7 +660,6 @@
       var ingoSlides = ingoTrack ? ingoTrack.children.length : 0;
       var ingoIndex = 0;
       var ingoTimer = null;
-      var ingoReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       var ingoAdvance = function () {
         ingoIndex = (ingoIndex + 1) % ingoSlides;
@@ -667,7 +667,7 @@
       };
 
       var ingoStart = function () {
-        if (ingoTimer === null && !ingoReduced.matches) {
+        if (ingoTimer === null) {
           ingoTimer = setInterval(ingoAdvance, 7000);
         }
       };
