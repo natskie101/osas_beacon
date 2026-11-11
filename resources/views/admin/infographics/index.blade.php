@@ -11,7 +11,7 @@ $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
 <?php if ($errors !== []): ?><div class="alert alert--danger"><span class="alert__ico">{!! App\Support\Icons::render('alert', 18) !!}</span><div><div class="alert__title">Please correct the highlighted fields</div><div class="alert__text">{{ reset($errors) }}</div></div></div><?php endif; ?>
 
 <section class="card form-card">
-    <div class="panel-card__head"><div><div class="panel-title">Add a picture</div><p class="panel-card__sub">Uploaded pictures rotate on the student dashboard, one every 7 seconds.</p></div></div>
+    <div class="panel-card__head"><div><div class="panel-title">Add a picture</div><p class="panel-card__sub">Uploaded pictures rotate on the student dashboard, one every 5 seconds. Use the dots below a picture to jump back or forward.</p></div></div>
     <form method="POST" action="{!! url('/admin/infographics') !!}" enctype="multipart/form-data">
         {!! csrf_field() !!}
         <div class="field">

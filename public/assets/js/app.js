@@ -650,9 +650,10 @@
       setInterval(function () { show(index + 1); }, 7000);
     }
 
-    /* Student dashboard infographic rotation — advances every 7 seconds and
+    /* Student dashboard infographic rotation — advances every 5 seconds and
      * pauses on hover/focus. Reduced-motion systems still rotate; the CSS
-     * swaps the slide instantly instead of sliding it. */
+     * swaps the slide instantly instead of sliding it. The dots below the
+     * picture jump back/forward on click, like the login portal's dots. */
     var ingoCarousel = document.querySelector("[data-ingo-carousel]");
 
     if (ingoCarousel) {
@@ -660,15 +661,23 @@
       var ingoSlides = ingoTrack ? ingoTrack.children.length : 0;
       var ingoIndex = 0;
       var ingoTimer = null;
+      var ingoDots = ingoCarousel.querySelectorAll("[data-ingo-dot]");
+
+      var ingoGo = function (next) {
+        ingoIndex = ((next % ingoSlides) + ingoSlides) % ingoSlides;
+        ingoTrack.style.transform = "translateX(-" + ingoIndex * 100 + "%)";
+        ingoDots.forEach(function (dot, i) {
+          dot.classList.toggle("pdot--on", i === ingoIndex);
+        });
+      };
 
       var ingoAdvance = function () {
-        ingoIndex = (ingoIndex + 1) % ingoSlides;
-        ingoTrack.style.transform = "translateX(-" + ingoIndex * 100 + "%)";
+        ingoGo(ingoIndex + 1);
       };
 
       var ingoStart = function () {
         if (ingoTimer === null) {
-          ingoTimer = setInterval(ingoAdvance, 7000);
+          ingoTimer = setInterval(ingoAdvance, 5000);
         }
       };
 
@@ -684,6 +693,17 @@
         ingoCarousel.addEventListener("mouseleave", ingoStart);
         ingoCarousel.addEventListener("focusin", ingoStop);
         ingoCarousel.addEventListener("focusout", ingoStart);
+        ingoDots.forEach(function (dot, i) {
+          dot.addEventListener("click", function () {
+            ingoGo(i);
+            /* restart the 5s countdown after a manual jump — but only when
+             * the rotation is running (not paused by hover/focus) */
+            if (ingoTimer !== null) {
+              ingoStop();
+              ingoStart();
+            }
+          });
+        });
         ingoStart();
       }
     }

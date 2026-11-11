@@ -46,6 +46,11 @@ $latest = $announcements[0] ?? null;
                     <div class="sd-carousel__track" data-ingo-track>
                         <?php foreach ($infographics as $i => $ingo): ?><div class="sd-carousel__slide"><img src="{!! url('/student/infographics/' . (int) $ingo['id'] . '/image') !!}" alt="OSAS infographic {{ $i + 1 }}"{!! $i === 0 ? '' : ' loading="lazy"' !!}></div><?php endforeach; ?>
                     </div>
+                    <?php if (count($infographics) > 1): ?>
+                        <div class="sd-carousel__dots" role="tablist" aria-label="Infographic pictures">
+                            <?php foreach ($infographics as $i => $ingo): ?><button type="button" class="pdot{!! $i === 0 ? ' pdot--on' : '' !!}" data-ingo-dot aria-label="Picture {{ $i + 1 }}"></button><?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </section>
             <?php else: ?>
                 <section class="sd-poster">
