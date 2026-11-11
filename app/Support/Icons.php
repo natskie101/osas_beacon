@@ -54,6 +54,7 @@ final class Icons
         'layers' => '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 13.5 12 18.5l9-5"/>',
         'pin' => '<path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10Z"/><circle cx="12" cy="11" r="2.4"/>',
         'dot' => '<circle cx="12" cy="12" r="3.4"/>',
+        'image' => '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5-6 6"/>',
     ];
 
     public static function render(string $name, int $size = 16, string $class = ''): string

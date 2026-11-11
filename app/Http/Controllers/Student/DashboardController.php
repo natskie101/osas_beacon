@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\DocumentRequest;
 use App\Models\Event;
+use App\Models\Infographic;
 use App\Models\OrientationModule;
 use App\Models\OrientationProgress;
 use App\Models\SupportTicket;
@@ -55,6 +56,7 @@ final class DashboardController extends Controller
             'activeTickets' => $activeTickets,
             'requestCount' => count($requests),
             'activeRequests' => $activeRequests,
+            'infographics' => Infographic::all(),
         ]);
     }
 }

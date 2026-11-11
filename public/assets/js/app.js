@@ -649,5 +649,43 @@
 
       setInterval(function () { show(index + 1); }, 7000);
     }
+
+    /* Student dashboard infographic rotation — advances every 7 seconds,
+     * pauses on hover/focus, and stays still for reduced-motion users. */
+    var ingoCarousel = document.querySelector("[data-ingo-carousel]");
+
+    if (ingoCarousel) {
+      var ingoTrack = ingoCarousel.querySelector("[data-ingo-track]");
+      var ingoSlides = ingoTrack ? ingoTrack.children.length : 0;
+      var ingoIndex = 0;
+      var ingoTimer = null;
+      var ingoReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      var ingoAdvance = function () {
+        ingoIndex = (ingoIndex + 1) % ingoSlides;
+        ingoTrack.style.transform = "translateX(-" + ingoIndex * 100 + "%)";
+      };
+
+      var ingoStart = function () {
+        if (ingoTimer === null && !ingoReduced.matches) {
+          ingoTimer = setInterval(ingoAdvance, 7000);
+        }
+      };
+
+      var ingoStop = function () {
+        if (ingoTimer !== null) {
+          clearInterval(ingoTimer);
+          ingoTimer = null;
+        }
+      };
+
+      if (ingoTrack && ingoSlides > 1) {
+        ingoCarousel.addEventListener("mouseenter", ingoStop);
+        ingoCarousel.addEventListener("mouseleave", ingoStart);
+        ingoCarousel.addEventListener("focusin", ingoStop);
+        ingoCarousel.addEventListener("focusout", ingoStart);
+        ingoStart();
+      }
+    }
   });
 })();

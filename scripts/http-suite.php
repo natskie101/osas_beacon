@@ -147,6 +147,74 @@ function bodyHas(array $r, string $needle): bool
     return str_contains($r['body'], $needle);
 }
 
+/** Multipart POST (file upload) — returns status, body and Location. */
+function reqMultipart(string $path, array $fields, array $files, string $jar): array
+{
+    global $base;
+
+    $location = '';
+    $ch = curl_init($base . $path);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER => true,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_COOKIEJAR => $jar,
+        CURLOPT_COOKIEFILE => $jar,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => array_merge($fields, $files),
+        CURLOPT_HEADERFUNCTION => function ($curl, $header) use (&$location) {
+            $len = strlen($header);
+            $line = trim($header);
+            if (stripos($line, 'location:') === 0) {
+                $location = trim(substr($line, 9));
+            }
+            return $len;
+        },
+    ]);
+
+    $raw = curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    $parts = explode("\r\n\r\n", (string) $raw, 2);
+
+    return ['status' => $status, 'body' => $parts[1] ?? '', 'location' => $location];
+}
+
+/** GET returning status + Content-Type (for image route checks). */
+function reqType(string $path, string $jar): array
+{
+    global $base;
+
+    $type = '';
+    $ch = curl_init($base . $path);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER => true,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_COOKIEJAR => $jar,
+        CURLOPT_COOKIEFILE => $jar,
+        CURLOPT_HEADERFUNCTION => function ($curl, $header) use (&$type) {
+            $len = strlen($header);
+            $line = trim($header);
+            if (stripos($line, 'content-type:') === 0) {
+                $type = trim(substr($line, 13));
+            }
+            return $len;
+        },
+    ]);
+
+    $raw = curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    $parts = explode("\r\n\r\n", (string) $raw, 2);
+
+    return ['status' => $status, 'body' => $parts[1] ?? '', 'type' => $type];
+}
+
 echo "== Phase 4a HTTP suite ({$base}) ==\n";
 
 /* ---------- Guest phase (jar A) ---------- */
@@ -302,6 +370,10 @@ $r = reqL('GET', '/admin/system-overview', [], [], $jarA);
 check('coordinator GET /admin/system-overview (Administrator only) -> 302 to /login',
     expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
 
+$r = reqL('GET', '/admin/infographics', [], [], $jarA);
+check('coordinator GET /admin/infographics (Administrator only) -> 302 to /login',
+    expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
+
 $r = reqL('GET', '/student', [], [], $jarA);
 check('coordinator GET /student -> 302 to /login (role denial)',
     expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
@@ -370,6 +442,10 @@ check('student GET /admin -> 302 to /login (role denial)',
 
 $r = reqL('GET', '/admin/users', [], [], $jarB);
 check('student GET /admin/users -> 302 to /login (role denial)',
+    expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
+
+$r = reqL('GET', '/admin/infographics', [], [], $jarB);
+check('student GET /admin/infographics -> 302 to /login (role denial)',
     expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
 
 $r = reqL('GET', '/login', [], [], $jarB);
@@ -502,6 +578,91 @@ check('administrator PUT /profile changing email without current password -> 302
 $r = req('GET', '/profile', [], [], $jarC);
 check('rejected email change shows the current-password error',
     bodyHas($r, 'Enter your current password'), 'error message missing');
+
+/* ---------- Dashboard infographics: Administrator manages, student sees ---------- */
+echo "\n-- infographics --\n";
+
+$r = req('GET', '/admin/infographics', [], [], $jarC);
+check('administrator GET /admin/infographics -> 200 with upload form',
+    expectStatus($r, 200) && bodyHas($r, 'name="image"'), 'got ' . $r['status']);
+
+$r = req('GET', '/student/dashboard', [], [], $jarB);
+check('student dashboard renders the poster area (carousel or default poster)',
+    expectStatus($r, 200) && (bodyHas($r, 'data-ingo-carousel') || bodyHas($r, 'choose-health-poster')),
+    'got ' . $r['status']);
+
+$tokenI = csrfToken($jarC, '/admin/infographics');
+
+/* Wrong file type is rejected before anything touches disk. */
+$txtPath = sys_get_temp_dir() . '/beacon_ingo_test.txt';
+file_put_contents($txtPath, 'this is not an image');
+$r = reqMultipart('/admin/infographics', ['_token' => $tokenI], [
+    'image' => new CURLFile($txtPath, 'text/plain', 'beacon_ingo_test.txt'),
+], $jarC);
+check('infographic upload of a text file -> 302 back with error',
+    expectStatus($r, 302) && locationHas($r, '/admin/infographics'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/admin/infographics', [], [], $jarC);
+check('rejected upload shows the file-type error',
+    bodyHas($r, 'This file type is not accepted.'), 'error message missing');
+
+/* Happy path: upload a 1x1 PNG, then verify it end to end. */
+$pngPath = sys_get_temp_dir() . '/beacon_ingo_test.png';
+file_put_contents($pngPath, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+$r = reqMultipart('/admin/infographics', ['_token' => $tokenI], [
+    'image' => new CURLFile($pngPath, 'image/png', 'beacon_ingo_test.png'),
+], $jarC);
+check('administrator uploads a PNG -> 302 to /admin/infographics',
+    expectStatus($r, 302) && locationHas($r, '/admin/infographics'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/admin/infographics', [], [], $jarC);
+$ingoId = 0;
+if (preg_match_all('#/admin/infographics/(\d+)/image#', $r['body'], $mid)) {
+    $ingoId = (int) end($mid[1]); // newest upload renders last
+}
+check('uploaded picture appears in the management list',
+    bodyHas($r, 'beacon_ingo_test.png') && $ingoId > 0,
+    'list entry or image URL missing');
+
+$r = reqType("/admin/infographics/{$ingoId}/image", $jarC);
+check('administrator image route -> 200 image/png',
+    $r['status'] === 200 && $r['type'] === 'image/png',
+    "got {$r['status']} type={$r['type']}");
+
+/* The student dashboard now rotates the uploaded picture. */
+$r = req('GET', '/student/dashboard', [], [], $jarB);
+check('student dashboard carousel shows the uploaded picture',
+    expectStatus($r, 200)
+        && bodyHas($r, 'data-ingo-carousel')
+        && bodyHas($r, "/student/infographics/{$ingoId}/image"),
+    'got ' . $r['status']);
+
+$r = reqType("/student/infographics/{$ingoId}/image", $jarB);
+check('student image route -> 200 image/png',
+    $r['status'] === 200 && $r['type'] === 'image/png',
+    "got {$r['status']} type={$r['type']}");
+
+$r = req('GET', '/student/infographics/99999999/image', [], [], $jarB);
+check('student image route unknown id -> branded 404',
+    expectStatus($r, 404) && bodyHas($r, 'Page Not Found') && bodyHas($r, 'BEACON OSAS Portal'),
+    'got ' . $r['status']);
+
+/* Cleanup: delete the picture and confirm it is gone everywhere. */
+$tokenI = csrfToken($jarC, '/admin/infographics');
+$r = reqL('POST', "/admin/infographics/{$ingoId}/delete", ['_token' => $tokenI], [], $jarC);
+check('administrator deletes the picture -> 302',
+    expectStatus($r, 302) && locationHas($r, '/admin/infographics'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = reqType("/admin/infographics/{$ingoId}/image", $jarC);
+check('deleted picture image route -> 404', $r['status'] === 404, 'got ' . $r['status']);
+
+$r = req('GET', '/student/dashboard', [], [], $jarB);
+check('student dashboard no longer references the deleted picture',
+    expectStatus($r, 200) && !bodyHas($r, "/student/infographics/{$ingoId}/image"),
+    'got ' . $r['status']);
 
 /* ---------- Rate limit (branded 429), run last ---------- */
 echo "\n-- throttle --\n";

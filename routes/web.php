@@ -25,6 +25,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InfographicController;
 use App\Http\Controllers\LegacyRedirectController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -105,6 +106,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/system-overview', [SystemOverviewController::class, 'index']);
         Route::post('/admin/users/{publicId}/archive', [UserController::class, 'archive']);
         Route::post('/admin/users/{publicId}/restore', [UserController::class, 'restore']);
+
+        /* Dashboard infographics (student dashboard rotation) */
+        Route::get('/admin/infographics', [InfographicController::class, 'index']);
+        Route::post('/admin/infographics', [InfographicController::class, 'store']);
+        Route::post('/admin/infographics/{id}/delete', [InfographicController::class, 'destroy']);
+        Route::get('/admin/infographics/{id}/image', [InfographicController::class, 'image']);
     });
 
     /* Coordinator only */
@@ -201,6 +208,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:Student'])->group(function () {
         Route::get('/student', [StudentDashboardController::class, 'index']);
         Route::get('/student/dashboard', [StudentDashboardController::class, 'index']);
+        Route::get('/student/infographics/{id}/image', [InfographicController::class, 'image']);
 
         Route::get('/student/announcements', [StudentAnnouncementController::class, 'index']);
         Route::get('/student/announcements/{publicId}/attachment/{fileId}', [StudentAnnouncementController::class, 'downloadAttachment']);

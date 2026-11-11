@@ -6,6 +6,7 @@ return [
     'admin' => [
         ['label' => 'Dashboard', 'path' => '/admin/dashboard', 'page' => 'dashboard', 'icon' => 'dashboard', 'roles' => ['Coordinator']],
         ['label' => 'System Overview', 'path' => '/admin/system-overview', 'page' => 'system-overview', 'icon' => 'shield', 'roles' => ['Administrator']],
+        ['label' => 'Infographics', 'path' => '/admin/infographics', 'page' => 'infographics', 'icon' => 'image', 'roles' => ['Administrator']],
         ['label' => 'Announcements', 'path' => '/admin/announcements', 'page' => 'announcements', 'icon' => 'megaphone', 'roles' => ['Coordinator']],
         ['label' => 'Rules & Regulations', 'path' => '/admin/regulations', 'page' => 'regulations', 'icon' => 'scale', 'roles' => ['Coordinator']],
         ['label' => 'Orientation Content', 'path' => '/admin/orientation', 'page' => 'orientation', 'icon' => 'graduation', 'roles' => ['Coordinator']],
@@ -33,6 +34,7 @@ return [
         'admin' => [
             'dashboard' => ['title' => 'Admin Dashboard Overview', 'subtitle' => 'Consolidated real-time status of all OSAS portal modules, content operations and student support activity.'],
             'system-overview' => ['title' => 'System Overview', 'subtitle' => 'Review runtime health, sign-in activity, security signals, and top-performing portal content.'],
+            'infographics' => ['title' => 'Dashboard Infographics', 'subtitle' => 'Upload and manage the rotating pictures shown on the student dashboard.'],
             'announcements' => ['title' => 'Announcements', 'subtitle' => 'Create, publish, and organize school announcements and information notices across the student portal.'],
             'regulations' => ['title' => 'Rules & Regulations', 'subtitle' => 'Maintain and communicate school policies, the student code of conduct, and mandated regulations.'],
             'orientation' => ['title' => 'Orientation', 'subtitle' => 'Manage onboarding materials, orientation modules, and information guides for incoming students.'],

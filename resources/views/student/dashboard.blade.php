@@ -3,6 +3,7 @@
 <?php
 /** @var array<string, mixed> $user */
 /** @var list<array<string, mixed>> $announcements */
+/** @var list<array<string, mixed>> $infographics */
 /** @var array<string, mixed>|null $featuredModule */
 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 $program = $user['program'] ?: ($user['department'] ?: $user['role']);
@@ -40,9 +41,17 @@ $latest = $announcements[0] ?? null;
                 <?php endif; ?>
             </section>
 
-            <section class="sd-poster">
-                <img src="{!! asset('img/choose-health-poster.svg') !!}" alt="Choose health, not smoke" loading="lazy">
-            </section>
+            <?php if ($infographics !== []): ?>
+                <section class="sd-poster sd-carousel" data-ingo-carousel>
+                    <div class="sd-carousel__track" data-ingo-track>
+                        <?php foreach ($infographics as $i => $ingo): ?><div class="sd-carousel__slide"><img src="{!! url('/student/infographics/' . (int) $ingo['id'] . '/image') !!}" alt="OSAS infographic {{ $i + 1 }}"{!! $i === 0 ? '' : ' loading="lazy"' !!}></div><?php endforeach; ?>
+                    </div>
+                </section>
+            <?php else: ?>
+                <section class="sd-poster">
+                    <img src="{!! asset('img/choose-health-poster.svg') !!}" alt="Choose health, not smoke" loading="lazy">
+                </section>
+            <?php endif; ?>
         </div>
 
         <aside class="sd-side">
