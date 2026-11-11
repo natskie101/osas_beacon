@@ -261,6 +261,28 @@ foreach ($coordPages as $path) {
     check("GET {$path} -> 200", expectStatus($r, 200), 'got ' . $r['status']);
 }
 
+/* Coordinator has no authority over Administrator accounts (USR-1009). */
+$r = req('GET', '/admin/users/USR-1009', [], [], $jarA);
+check('coordinator GET admin profile (view) -> 200', expectStatus($r, 200), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users/USR-1009/edit', [], [], $jarA);
+check('coordinator GET admin edit form -> 403', expectStatus($r, 403), 'got ' . $r['status']);
+
+$tokenAdmin = csrfToken($jarA, '/profile');
+$r = reqL('POST', '/admin/users/USR-1009/deactivate', ['_token' => $tokenAdmin], [], $jarA);
+check('coordinator POST admin deactivate -> 403', expectStatus($r, 403), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users?search=USR-1009', [], [], $jarA);
+check('coordinator directory hides admin Manage/Deactivate buttons',
+    bodyHas($r, 'technical.admin@uc.edu.ph')
+        && !bodyHas($r, '/admin/users/USR-1009/edit')
+        && !bodyHas($r, '/admin/users/USR-1009/deactivate'),
+    'admin row still shows a manage/deactivate action');
+
+$r = req('GET', '/admin/users/USR-1001/edit', [], [], $jarA);
+check('coordinator GET coordinator edit form (same-role still allowed) -> 200',
+    expectStatus($r, 200), 'got ' . $r['status']);
+
 $r = req('GET', '/admin/users/USR-9999', [], [], $jarA);
 check('GET missing user -> branded 404', expectStatus($r, 404) && bodyHas($r, 'Page Not Found'),
     'got ' . $r['status']);

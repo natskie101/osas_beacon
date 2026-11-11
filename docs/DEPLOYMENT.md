@@ -167,6 +167,8 @@ server {
 - Visit `/login` and sign in as each role.
 - Confirm the student portal only exposes that student's records.
 - Confirm an Administrator cannot edit Coordinator/Administrator accounts.
+- Confirm a Coordinator can view an Administrator account but cannot edit,
+  deactivate or change its role (action buttons hidden; direct URL returns 403).
 - Download a report CSV and open its print view.
 - Submit a support reply and confirm the student bell updates.
 - Upload a school ID or announcement attachment and download it through the

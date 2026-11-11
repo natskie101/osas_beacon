@@ -41,7 +41,11 @@ final class UserPolicy
         }
 
         if ($actorRole === Role::Coordinator) {
-            return true;
+            // Coordinators manage students and fellow coordinators, but an
+            // Administrator account is outside their authority: they may view
+            // it (directory, profile, activity) and never change it — no edit,
+            // status change, role change, verification or password reset.
+            return $targetRole !== Role::Administrator || $ability === 'view';
         }
 
         if ($actorRole !== Role::Administrator) {
