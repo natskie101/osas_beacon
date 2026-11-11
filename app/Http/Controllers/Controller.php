@@ -27,7 +27,12 @@ abstract class Controller
             throw new ValidationException($validator->errors(), $data);
         }
 
-        return $validator->validated();
+        // Disabled form inputs are never submitted, but validated() reports
+        // them as null — writing those nulls would erase existing values
+        // (e.g. a staff account's department, which the edit form disables
+        // for non-student targets). Return only the fields the request
+        // actually carried, so an absent field means "leave unchanged".
+        return array_intersect_key($validator->validated(), $data);
     }
 
     /**

@@ -17,8 +17,10 @@ declare(strict_types=1);
 $base = getenv('BASE_URL') ?: 'http://127.0.0.1:8000';
 $jarA = sys_get_temp_dir() . '/beacon_suite_a.txt'; // guest -> coordinator
 $jarB = sys_get_temp_dir() . '/beacon_suite_b.txt'; // student
+$jarC = sys_get_temp_dir() . '/beacon_suite_c.txt'; // administrator
 @unlink($jarA);
 @unlink($jarB);
+@unlink($jarC);
 
 $GLOBALS['pass'] = 0;
 $GLOBALS['failures'] = [];
@@ -387,6 +389,66 @@ check('POST /student/support missing fields -> 302 back with validation errors',
 $r = req('GET', '/student/support/create', [], [], $jarB);
 check('validation failure shows error state', bodyHas($r, 'toast') || bodyHas($r, 'error') || bodyHas($r, 'invalid'),
     'no error marker in body');
+
+/* ---------- Administrator phase (jar C) ---------- */
+echo "\n-- administrator --\n";
+
+$token = csrfToken($jarC);
+$r = reqL('POST', '/login', ['_token' => $token, 'email' => 'technical.admin@uc.edu.ph', 'password' => 'Beacon@2026'], [], $jarC);
+check('administrator login -> 302 to /admin/system-overview',
+    expectStatus($r, 302) && locationHas($r, '/admin/system-overview'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/admin/users/USR-1001/edit', [], [], $jarC);
+check('administrator GET coordinator edit form -> 200', expectStatus($r, 200), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users/USR-1002/edit', [], [], $jarC);
+check('administrator GET student edit form -> 200', expectStatus($r, 200), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users/USR-1009/edit', [], [], $jarC);
+check('administrator GET admin edit form -> 403', expectStatus($r, 403), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users/USR-1009', [], [], $jarC);
+check('administrator GET admin profile (view) -> 200', expectStatus($r, 200), 'got ' . $r['status']);
+
+$tokenC = csrfToken($jarC, '/admin/users');
+$r = reqL('POST', '/admin/users/USR-1009/deactivate', ['_token' => $tokenC], [], $jarC);
+check('administrator POST admin deactivate -> 403', expectStatus($r, 403), 'got ' . $r['status']);
+
+$r = req('GET', '/admin/users?search=USR-1001', [], [], $jarC);
+check('administrator directory shows coordinator Manage button',
+    bodyHas($r, 'josefina.reyes@uc.edu.ph') && bodyHas($r, '/admin/users/USR-1001/edit'),
+    'coordinator manage link missing');
+
+$r = req('GET', '/admin/users?search=USR-1009', [], [], $jarC);
+check('administrator directory hides admin Manage/Deactivate buttons',
+    bodyHas($r, 'technical.admin@uc.edu.ph')
+        && !bodyHas($r, '/admin/users/USR-1009/edit')
+        && !bodyHas($r, '/admin/users/USR-1009/deactivate'),
+    'admin row still shows a manage/deactivate action');
+
+/* End-to-end save: administrator can actually update a coordinator, the role
+ * survives (no silent demotion), and omitted fields keep their values
+ * (department/phone must not be nulled by the write). */
+$edit = req('GET', '/admin/users/USR-1001/edit', [], [], $jarC);
+preg_match('/name="_token"\s+value="([^"]+)"/', $edit['body'], $mt);
+$r = reqL('POST', '/admin/users/USR-1001', [
+    '_token' => $mt[1] ?? '',
+    '_method' => 'PUT',
+    'first_name' => 'Josefina',
+    'last_name' => 'Reyes',
+    'email' => 'josefina.reyes@uc.edu.ph',
+    'role' => 'Coordinator',
+    'status' => 'Active',
+], [], $jarC);
+check('administrator PUT save coordinator -> 302 to profile (not 403, not validation back)',
+    expectStatus($r, 302) && locationHas($r, '/admin/users/USR-1001') && !locationHas($r, '/edit'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/admin/users?search=USR-1001', [], [], $jarC);
+check('coordinator keeps role, phone and department after admin save',
+    bodyHas($r, 'COORDINATOR') && bodyHas($r, '+63 917 555 0101') && bodyHas($r, 'Information Systems Office'),
+    'role demoted or fields wiped');
 
 /* ---------- Rate limit (branded 429), run last ---------- */
 echo "\n-- throttle --\n";

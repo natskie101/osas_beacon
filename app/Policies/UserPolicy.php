@@ -56,11 +56,13 @@ final class UserPolicy
             return true;
         }
 
-        if ($targetRole !== Role::Student) {
+        // Students and Coordinators are within the Administrator's authority;
+        // Administrator accounts stay view-only for everyone.
+        if ($targetRole !== Role::Student && $targetRole !== Role::Coordinator) {
             return false;
         }
 
-        return in_array($ability, ['manage', 'verify', 'reset_password', 'upload_school_id', 'download_school_id'], true);
+        return in_array($ability, ['manage', 'verify', 'reset_password', 'upload_school_id', 'download_school_id', 'change_role'], true);
     }
 
     /** @param array<string, mixed>|null $actor @param array<string, mixed> $target */
@@ -88,7 +90,7 @@ final class UserPolicy
         }
 
         if ($role === Role::Administrator) {
-            return ['Student'];
+            return ['Student', 'Coordinator'];
         }
 
         return [];

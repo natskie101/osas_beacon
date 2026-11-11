@@ -460,30 +460,59 @@ final class UserService
         $role = (string) ($data['role'] ?? 'Student');
         $status = (string) ($data['status'] ?? 'Pending');
         $data['first_name'] = trim((string) ($data['first_name'] ?? ''));
-        $data['middle_name'] = trim((string) ($data['middle_name'] ?? '')) ?: null;
         $data['last_name'] = trim((string) ($data['last_name'] ?? ''));
         $data['email'] = mb_strtolower(trim((string) ($data['email'] ?? '')));
-        $data['username'] = trim((string) ($data['username'] ?? ''));
         $data['role'] = $role;
         $data['status'] = $status;
 
-        if ($role === 'Student') {
-            $data['account_tier'] = 'Student Tier';
-            $data['student_id'] = trim((string) ($data['student_id'] ?? '')) ?: null;
-            $data['year_level'] = trim((string) ($data['year_level'] ?? '')) ?: null;
-            $data['age'] = ($data['age'] ?? null) === null || $data['age'] === '' ? null : (int) $data['age'];
-        } else {
-            $data['account_tier'] = 'Admin Tier';
-            $data['student_id'] = null;
-            $data['year_level'] = null;
-            $data['age'] = $role === 'Coordinator' && ($data['age'] ?? '') !== ''
-                ? (int) $data['age']
-                : null;
+        // Optional profile fields are normalised only when the request
+        // actually carried them: an absent field (e.g. an input the edit
+        // form disables for non-student targets) means "leave the stored
+        // value unchanged", never "erase it".
+        if (array_key_exists('middle_name', $data)) {
+            $data['middle_name'] = trim((string) $data['middle_name']) ?: null;
         }
 
-        $data['department'] = trim((string) ($data['department'] ?? '')) ?: null;
-        $data['program'] = $role === 'Student' ? (trim((string) ($data['program'] ?? '')) ?: null) : null;
-        $data['phone'] = trim((string) ($data['phone'] ?? '')) ?: null;
+        if (array_key_exists('username', $data)) {
+            $data['username'] = trim((string) $data['username']);
+        }
+
+        if (array_key_exists('department', $data)) {
+            $data['department'] = trim((string) $data['department']) ?: null;
+        }
+
+        if (array_key_exists('phone', $data)) {
+            $data['phone'] = trim((string) $data['phone']) ?: null;
+        }
+
+        if (array_key_exists('age', $data)) {
+            $age = ($data['age'] === null || $data['age'] === '') ? null : (int) $data['age'];
+            $data['age'] = ($role === 'Student' || $role === 'Coordinator') ? $age : null;
+        }
+
+        if ($role === 'Student') {
+            $data['account_tier'] = 'Student Tier';
+
+            if (array_key_exists('student_id', $data)) {
+                $data['student_id'] = trim((string) $data['student_id']) ?: null;
+            }
+
+            if (array_key_exists('year_level', $data)) {
+                $data['year_level'] = trim((string) $data['year_level']) ?: null;
+            }
+
+            if (array_key_exists('program', $data)) {
+                $data['program'] = trim((string) $data['program']) ?: null;
+            }
+        } else {
+            $data['account_tier'] = 'Admin Tier';
+            // Staff accounts carry no student attributes: clear them so a
+            // demoted student does not keep stale student data.
+            $data['student_id'] = null;
+            $data['year_level'] = null;
+            $data['program'] = null;
+        }
+
         $data['access_level'] = (string) config('people.access_levels.' . $role, '');
 
         return $data;
