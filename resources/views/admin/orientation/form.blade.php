@@ -208,10 +208,16 @@ $moduleCode = $isEdit ? (string) ($module['public_id'] ?? '') : 'Auto-generated'
         <div class="form-grid form-grid--3">
             <div class="field">
                 <label for="category">Category <span class="req">*</span></label>
-                <input class="input{!! $invalid('category') !!}" id="category" name="category" list="orientation-categories" value="{{ $values['category'] ?? '' }}" required>
-                <datalist id="orientation-categories">
-                    <?php foreach (['Campus Life', 'Academic Support', 'Health & Wellness', 'Student Services', 'Safety & Conduct', 'Financial Literacy'] as $category): ?><option value="{{ $category }}"><?php endforeach; ?>
-                </datalist>
+                <select class="input{!! $invalid('category') !!}" id="category" name="category" required>
+                    <option value="">Select a category</option>
+                    <?php $orientationCategoryOptions = ['Campus Life', 'Academic Support', 'Health & Wellness', 'Student Services', 'Safety & Conduct', 'Financial Literacy']; $currentOrientationCategory = (string) ($values['category'] ?? ''); ?>
+                    <?php foreach ($orientationCategoryOptions as $category): ?>
+                        <option value="{{ $category }}"{!! $currentOrientationCategory === $category ? ' selected' : '' !!}>{{ $category }}</option>
+                    <?php endforeach; ?>
+                    <?php if ($currentOrientationCategory !== '' && !in_array($currentOrientationCategory, $orientationCategoryOptions, true)): ?>
+                        <option value="{{ $currentOrientationCategory }}" selected>{{ $currentOrientationCategory }}</option>
+                    <?php endif; ?>
+                </select>
                 <?php if ($errorFor('category')): ?><div class="form-error">{{ $errorFor('category') }}</div><?php endif; ?>
             </div>
             <div class="field">

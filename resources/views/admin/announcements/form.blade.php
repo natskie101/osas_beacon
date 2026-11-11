@@ -109,10 +109,16 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
         <div class="form-grid form-grid--3">
             <div class="field">
                 <label for="category">Category <span class="req">*</span></label>
-                <input class="input{!! $invalid('category') !!}" id="category" name="category" list="announcement-categories" value="{{ $values['category'] ?? '' }}" required>
-                <datalist id="announcement-categories">
-                    <?php foreach (['Registrar & Enrollment', 'Scholarships & Financial Aid', 'Student Affairs', 'Academic Affairs', 'Health & Wellness', 'Campus Life', 'Safety & Security'] as $category): ?><option value="{{ $category }}"><?php endforeach; ?>
-                </datalist>
+                <select class="input{!! $invalid('category') !!}" id="category" name="category" required>
+                    <option value="">Select a category</option>
+                    <?php $announcementCategoryOptions = ['Registrar & Enrollment', 'Scholarships & Financial Aid', 'Student Affairs', 'Academic Affairs', 'Health & Wellness', 'Campus Life', 'Safety & Security']; $currentAnnouncementCategory = (string) ($values['category'] ?? ''); ?>
+                    <?php foreach ($announcementCategoryOptions as $category): ?>
+                        <option value="{{ $category }}"{!! $currentAnnouncementCategory === $category ? ' selected' : '' !!}>{{ $category }}</option>
+                    <?php endforeach; ?>
+                    <?php if ($currentAnnouncementCategory !== '' && !in_array($currentAnnouncementCategory, $announcementCategoryOptions, true)): ?>
+                        <option value="{{ $currentAnnouncementCategory }}" selected>{{ $currentAnnouncementCategory }}</option>
+                    <?php endif; ?>
+                </select>
                 <?php if ($errorFor('category')): ?><div class="form-error">{{ $errorFor('category') }}</div><?php endif; ?>
             </div>
             <div class="field">

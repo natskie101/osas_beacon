@@ -378,6 +378,36 @@ $r = reqL('GET', '/student', [], [], $jarA);
 check('coordinator GET /student -> 302 to /login (role denial)',
     expectStatus($r, 302) && locationHas($r, '/login'), "got {$r['status']} loc={$r['location']}");
 
+/* Dropdown controls must be real <select> menus, not datalist suggestion
+ * boxes (a datalist does nothing on click and only reacts once you type). */
+$r = req('GET', '/admin/events/create', [], [], $jarA);
+check('events form category is a real dropdown (select, no datalist)',
+    expectStatus($r, 200)
+        && preg_match('/<select[^>]*name="category"/', $r['body']) === 1
+        && !bodyHas($r, '<datalist'),
+    'got ' . $r['status']);
+
+$r = req('GET', '/admin/announcements/create', [], [], $jarA);
+check('announcements form category is a real dropdown (select, no datalist)',
+    expectStatus($r, 200)
+        && preg_match('/<select[^>]*name="category"/', $r['body']) === 1
+        && !bodyHas($r, '<datalist'),
+    'got ' . $r['status']);
+
+$r = req('GET', '/admin/orientation/create', [], [], $jarA);
+check('orientation form category is a real dropdown (select, no datalist)',
+    expectStatus($r, 200)
+        && preg_match('/<select[^>]*name="category"/', $r['body']) === 1
+        && !bodyHas($r, '<datalist'),
+    'got ' . $r['status']);
+
+$r = req('GET', '/admin/lost-found/create', [], [], $jarA);
+check('lost and found form category is a plain input (no datalist suggestions)',
+    expectStatus($r, 200)
+        && bodyHas($r, 'autocomplete="off"')
+        && !bodyHas($r, '<datalist'),
+    'got ' . $r['status']);
+
 $token = '';
 preg_match('/name="_token"\s+value="([^"]+)"/', req('GET', '/profile', [], [], $jarA)['body'], $m);
 $token = $m[1] ?? '';
@@ -578,6 +608,14 @@ check('administrator PUT /profile changing email without current password -> 302
 $r = req('GET', '/profile', [], [], $jarC);
 check('rejected email change shows the current-password error',
     bodyHas($r, 'Enter your current password'), 'error message missing');
+
+$r = req('GET', '/admin/users/create', [], [], $jarC);
+check('admin user form department and program are real dropdowns (no datalist)',
+    expectStatus($r, 200)
+        && preg_match('/<select[^>]*name="department"/', $r['body']) === 1
+        && preg_match('/<select[^>]*name="program"/', $r['body']) === 1
+        && !bodyHas($r, '<datalist'),
+    'got ' . $r['status']);
 
 /* ---------- Dashboard infographics: Administrator manages, student sees ---------- */
 echo "\n-- infographics --\n";

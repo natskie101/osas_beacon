@@ -136,18 +136,22 @@ $action = $isEdit ? url('/admin/users/' . $target['public_id']) : url('/admin/us
             </div>
             <div class="field">
                 <label for="department">Department / College</label>
-                <input class="input{!! $invalid('department') !!}" id="department" name="department" list="department-options" value="{{ $values['department'] ?? '' }}"{!! ($values['role'] ?? 'Student') !== 'Student' ? ' disabled' : '' !!}>
-                <datalist id="department-options">
-                    <?php foreach ($departments as $department): ?><option value="{{ $department }}"><?php endforeach; ?>
-                </datalist>
+                <select class="input{!! $invalid('department') !!}" id="department" name="department"{!! ($values['role'] ?? 'Student') !== 'Student' ? ' disabled' : '' !!}>
+                    <option value="">Select department</option>
+                    <?php $currentDepartment = (string) ($values['department'] ?? ''); ?>
+                    <?php foreach ($departments as $department): ?><option value="{{ $department }}"{!! $selected($department, $currentDepartment) !!}>{{ $department }}</option><?php endforeach; ?>
+                    <?php if ($currentDepartment !== '' && !in_array($currentDepartment, $departments, true)): ?><option value="{{ $currentDepartment }}" selected>{{ $currentDepartment }}</option><?php endif; ?>
+                </select>
                 <?php if ($errorFor('department')): ?><div class="form-error">{{ $errorFor('department') }}</div><?php endif; ?>
             </div>
             <div class="field">
                 <label for="program">Program</label>
-                <input class="input{!! $invalid('program') !!}" id="program" name="program" list="program-options" value="{{ $values['program'] ?? '' }}"{!! ($values['role'] ?? 'Student') !== 'Student' ? ' disabled' : '' !!}>
-                <datalist id="program-options">
-                    <?php foreach ($programs as $program): ?><option value="{{ $program }}"><?php endforeach; ?>
-                </datalist>
+                <select class="input{!! $invalid('program') !!}" id="program" name="program"{!! ($values['role'] ?? 'Student') !== 'Student' ? ' disabled' : '' !!}>
+                    <option value="">Select program</option>
+                    <?php $currentProgram = (string) ($values['program'] ?? ''); ?>
+                    <?php foreach ($programs as $program): ?><option value="{{ $program }}"{!! $selected($program, $currentProgram) !!}>{{ $program }}</option><?php endforeach; ?>
+                    <?php if ($currentProgram !== '' && !in_array($currentProgram, $programs, true)): ?><option value="{{ $currentProgram }}" selected>{{ $currentProgram }}</option><?php endif; ?>
+                </select>
                 <?php if ($errorFor('program')): ?><div class="form-error">{{ $errorFor('program') }}</div><?php endif; ?>
             </div>
             <div class="field">
