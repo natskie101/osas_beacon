@@ -7,7 +7,7 @@
 /** @var array<string, int> $counts */
 ?><div class="page-head">
     <div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div>
-    <a class="btn btn--primary" href="{!! url('/admin/broadcasts/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Compose Broadcast</a>
+    <a class="btn btn--primary" href="{!! url('/admin/broadcasts/create') !!}">Compose Broadcast</a>
 </div>
 
 <div class="stats">

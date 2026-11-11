@@ -6,7 +6,7 @@
 /** @var array<string, string> $filters */
 /** @var array<string, int> $counts */
 /** @var list<string> $categories */
-?><div class="page-head"><div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div><a class="btn btn--primary" href="{!! url('/admin/events/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Create Event</a></div>
+?><div class="page-head"><div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div><a class="btn btn--primary" href="{!! url('/admin/events/create') !!}">Create Event</a></div>
 <div class="stats">
     <div class="stat"><div class="stat__label">Scheduled</div><div class="stat__value">{!! number_format($counts['scheduled'] ?? 0) !!}</div><div class="stat__sub">Upcoming activities</div></div>
     <div class="stat"><div class="stat__label">Completed</div><div class="stat__value">{!! number_format($counts['completed'] ?? 0) !!}</div><div class="stat__sub">Finished events</div></div>

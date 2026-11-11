@@ -18,7 +18,7 @@ $statusUrl = static function (string $status) use ($filters): string {
         <h2 class="page-head__title">{{ $pageTitle }}</h2>
         <p class="page-head__sub">{{ $pageSubtitle }}</p>
     </div>
-    <a class="btn btn--primary" href="{!! url('/student/support/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Create New Ticket</a>
+    <a class="btn btn--primary" href="{!! url('/student/support/create') !!}">Create New Ticket</a>
 </div>
 
 <form class="filter-bar support-search" method="GET" action="{!! url('/student/support') !!}">

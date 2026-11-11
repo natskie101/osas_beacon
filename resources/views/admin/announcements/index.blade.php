@@ -18,7 +18,7 @@ $queryFor = static function (array $overrides = []) use ($filters): string {
         <p class="page-head__sub">{{ $pageSubtitle }}</p>
     </div>
     <div class="page-head__actions">
-        <a href="{!! url('/admin/announcements/create') !!}" class="btn btn--primary">{!! App\Support\Icons::render('plus', 14) !!} Create Announcement</a>
+        <a href="{!! url('/admin/announcements/create') !!}" class="btn btn--primary">Create Announcement</a>
     </div>
 </div>
 

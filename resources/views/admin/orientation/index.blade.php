@@ -6,7 +6,7 @@
 /** @var array<string, string> $filters */
 /** @var array<string, mixed> $counts */
 /** @var list<string> $categories */
-?><div class="page-head"><div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div><a class="btn btn--primary" href="{!! url('/admin/orientation/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Add Module</a></div>
+?><div class="page-head"><div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div><a class="btn btn--primary" href="{!! url('/admin/orientation/create') !!}">Add Module</a></div>
 <div class="stats">
     <div class="stat"><div class="stat__label">Published Modules</div><div class="stat__value">{!! number_format($counts['published'] ?? 0) !!}</div><div class="stat__sub">Available to students</div></div>
     <div class="stat"><div class="stat__label">Completion Rate</div><div class="stat__value">{!! number_format((float) ($counts['rate'] ?? 0), 1) !!}%</div><div class="stat__sub">Average across modules</div></div>

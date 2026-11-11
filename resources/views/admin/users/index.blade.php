@@ -24,7 +24,7 @@ $directoryUrl = url('/admin/users?tab=directory');
     </div>
     <div class="page-head__actions">
         <?php if ($canCreate): ?>
-            <a href="{!! url('/admin/users/create') !!}" class="btn btn--primary">{!! App\Support\Icons::render('plus', 14) !!} Add New User</a>
+            <a href="{!! url('/admin/users/create') !!}" class="btn btn--primary">Add New User</a>
         <?php endif; ?>
     </div>
 </div>

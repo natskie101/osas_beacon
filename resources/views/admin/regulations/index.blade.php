@@ -8,7 +8,7 @@
 /** @var list<string> $categories */
 ?><div class="page-head">
     <div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div>
-    <div class="page-head__actions"><a class="btn btn--primary" href="{!! url('/admin/regulations/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Add Regulation</a></div>
+    <div class="page-head__actions"><a class="btn btn--primary" href="{!! url('/admin/regulations/create') !!}">Add Regulation</a></div>
 </div>
 
 <div class="stats">

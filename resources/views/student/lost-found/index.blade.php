@@ -18,7 +18,7 @@ sort($categories);
         <p class="page-head__sub">Report a lost item, browse found items and file an ownership claim.</p>
     </div>
     <div class="page-head__actions">
-        <a class="btn btn--primary" href="{!! url('/student/lost-found/report') !!}">{!! App\Support\Icons::render('plus', 14) !!} Report an Item</a>
+        <a class="btn btn--primary" href="{!! url('/student/lost-found/report') !!}">Report an Item</a>
     </div>
 </div>
 

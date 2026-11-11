@@ -14,7 +14,7 @@
         <p class="page-head__sub">Review reported lost and found items, verify ownership claims, and record items returned to students.</p>
     </div>
     <div class="page-head__actions">
-        <a class="btn btn--outline" href="{!! url('/admin/lost-found/create') !!}">{!! App\Support\Icons::render('plus', 14) !!} Post Item</a>
+        <a class="btn btn--outline" href="{!! url('/admin/lost-found/create') !!}">Post Item</a>
     </div>
 </div>
 
