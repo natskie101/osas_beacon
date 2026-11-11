@@ -21,8 +21,8 @@
                 <?php if (in_array($item['status'], ['Open', 'Unclaimed', 'Claim Pending'], true)): ?>
                     <form method="POST" action="{!! url('/student/lost-found/' . $item['public_id'] . '/claim') !!}" class="form-grid">
                         {!! csrf_field() !!}
-                        <div class="field"><label for="proof">Proof of ownership or information</label><textarea class="input" id="proof" name="proof" rows="3" required placeholder="Describe identifying details that only the owner would know.">{{ old('proof') }}</textarea></div>
-                        <div class="field"><label for="message">Message to OSAS</label><textarea class="input" id="message" name="message" rows="3" required>{{ old('message') }}</textarea></div>
+                        <div class="field"><label for="proof">Proof of ownership or information</label><textarea class="input" id="proof" name="proof" rows="3" required placeholder="e.g. The backpack has a scratched silver buckle and a library card inside.">{{ old('proof') }}</textarea><div class="help-text">Describe identifying details that only the owner would know.</div></div>
+                        <div class="field"><label for="message">Message to OSAS</label><textarea class="input" id="message" name="message" rows="3" required placeholder="e.g. I lost this around 4 PM - happy to pick it up at the OSAS office.">{{ old('message') }}</textarea></div>
                         <button class="btn btn--primary" type="submit">Submit Claim</button>
                     </form>
                 <?php else: ?><p class="panel-card__text">This item is no longer accepting claims.</p><?php endif; ?>

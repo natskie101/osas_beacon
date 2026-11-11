@@ -17,23 +17,23 @@ $action = $isEdit ? url('/admin/lost-found/' . $item['public_id']) : url('/admin
         <div class="form-grid">
             <div class="form-grid form-grid--3">
                 <div class="field"><label for="type">Type</label><select class="input" id="type" name="type"><?php foreach (['Lost', 'Found'] as $type): ?><option value="{{ $type }}"{!! ($values['type'] ?? '') === $type ? ' selected' : '' !!}>{{ $type }}</option><?php endforeach; ?></select></div>
-                <div class="field"><label for="category">Category</label><input class="input" id="category" name="category" list="item-categories" value="{{ $values['category'] ?? '' }}" required><datalist id="item-categories"><?php foreach (['Bags & Wallets', 'Electronics', 'IDs & Documents', 'Books & School Supplies', 'Clothing', 'Keys', 'Jewelry', 'Others'] as $category): ?><option value="{{ $category }}"><?php endforeach; ?></datalist></div>
+                <div class="field"><label for="category">Category</label><input class="input" id="category" name="category" list="item-categories" value="{{ $values['category'] ?? '' }}" placeholder="e.g. Electronics" required><datalist id="item-categories"><?php foreach (['Bags & Wallets', 'Electronics', 'IDs & Documents', 'Books & School Supplies', 'Clothing', 'Keys', 'Jewelry', 'Others'] as $category): ?><option value="{{ $category }}"><?php endforeach; ?></datalist></div>
                 <div class="field"><label for="status">Status</label><select class="input" id="status" name="status"><?php foreach (['Open', 'Claim Pending', 'Unclaimed', 'Returned', 'Archived', 'Closed'] as $status): ?><option value="{{ $status }}"{!! ($values['status'] ?? '') === $status ? ' selected' : '' !!}>{{ $status }}</option><?php endforeach; ?></select></div>
             </div>
-            <div class="field"><label for="title">Item title <span class="req">*</span></label><input class="input{!! $invalid('title') !!}" id="title" name="title" value="{{ $values['title'] ?? '' }}" required></div>
-            <div class="field"><label for="description">Description</label><textarea class="input" id="description" name="description" rows="5">{{ $values['description'] ?? '' }}</textarea></div>
+            <div class="field"><label for="title">Item title <span class="req">*</span></label><input class="input{!! $invalid('title') !!}" id="title" name="title" value="{{ $values['title'] ?? '' }}" placeholder="e.g. Black Jansport backpack" required></div>
+            <div class="field"><label for="description">Description</label><textarea class="input" id="description" name="description" rows="5" placeholder="e.g. Black Jansport backpack with a blue water bottle, left at the library 2nd floor around 4 PM.">{{ $values['description'] ?? '' }}</textarea></div>
             <div class="form-grid form-grid--2">
-                <div class="field"><label for="location">Location</label><input class="input" id="location" name="location" value="{{ $values['location'] ?? '' }}" required></div>
+                <div class="field"><label for="location">Location</label><input class="input" id="location" name="location" value="{{ $values['location'] ?? '' }}" placeholder="e.g. Library 2nd floor" required></div>
                 <div class="field"><label for="date_occurred">Date and time</label><input class="input" id="date_occurred" name="date_occurred" type="datetime-local" value="{{ $values['date_occurred'] ?? '' }}"></div>
             </div>
             <div class="form-grid form-grid--3">
-                <div class="field"><label for="reported_by">Reported by</label><input class="input" id="reported_by" name="reported_by" value="{{ $values['reported_by'] ?? '' }}" required></div>
-                <div class="field"><label for="reporter_email">Reporter email</label><input class="input" id="reporter_email" name="reporter_email" type="email" value="{{ $values['reporter_email'] ?? '' }}" required></div>
-                <div class="field"><label for="student_id">Student ID</label><input class="input" id="student_id" name="student_id" value="{{ $values['student_id'] ?? '' }}"></div>
+                <div class="field"><label for="reported_by">Reported by</label><input class="input" id="reported_by" name="reported_by" value="{{ $values['reported_by'] ?? '' }}" placeholder="e.g. Maria Clara" required></div>
+                <div class="field"><label for="reporter_email">Reporter email</label><input class="input" id="reporter_email" name="reporter_email" type="email" value="{{ $values['reporter_email'] ?? '' }}" placeholder="name@uc.edu.ph" required></div>
+                <div class="field"><label for="student_id">Student ID</label><input class="input" id="student_id" name="student_id" value="{{ $values['student_id'] ?? '' }}" placeholder="22-00104"></div>
             </div>
             <div class="form-grid form-grid--2">
-                <div class="field"><label for="contact">Contact</label><input class="input" id="contact" name="contact" value="{{ $values['contact'] ?? '' }}"></div>
-                <div class="field"><label for="custody">Custody</label><input class="input" id="custody" name="custody" value="{{ $values['custody'] ?? 'OSAS Office' }}"></div>
+                <div class="field"><label for="contact">Contact</label><input class="input" id="contact" name="contact" value="{{ $values['contact'] ?? '' }}" placeholder="+63 9XX XXX XXXX"></div>
+                <div class="field"><label for="custody">Custody</label><input class="input" id="custody" name="custody" value="{{ $values['custody'] ?? 'OSAS Office' }}" placeholder="e.g. OSAS Office"></div>
             </div>
             <div class="field">
                 <label>Item photo</label>
