@@ -351,6 +351,11 @@ foreach ($studentPages as $path) {
     check("GET {$path} -> 200", expectStatus($r, 200), 'got ' . $r['status']);
 }
 
+$r = req('GET', '/student/lost-found/report', [], [], $jarB);
+check('report form category is a plain input (no datalist suggestions)',
+    expectStatus($r, 200) && bodyHas($r, 'name="category"') && !bodyHas($r, '<datalist'),
+    'datalist still present');
+
 $r = req('GET', '/student/orientation/ORIENT-2026-001/quiz', [], [], $jarB);
 check('GET student quiz (no published assessment) -> branded 404 "not available"',
     expectStatus($r, 404) && bodyHas($r, 'Page Not Found') && bodyHas($r, 'not available'),
