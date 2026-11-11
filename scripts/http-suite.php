@@ -450,6 +450,51 @@ check('coordinator keeps role, phone and department after admin save',
     bodyHas($r, 'COORDINATOR') && bodyHas($r, '+63 917 555 0101') && bodyHas($r, 'Information Systems Office'),
     'role demoted or fields wiped');
 
+/* Administrator's own profile: deliberately minimal — email + password only. */
+$r = req('GET', '/profile', [], [], $jarC);
+check('administrator GET /profile -> 200',
+    expectStatus($r, 200), 'got ' . $r['status'] . ' loc=' . $r['location']);
+
+check('administrator profile exposes only email and password fields',
+    bodyHas($r, 'name="email"')
+        && bodyHas($r, 'name="current_password"')
+        && bodyHas($r, 'name="password"')
+        && !bodyHas($r, 'name="first_name"')
+        && !bodyHas($r, 'name="username"')
+        && !bodyHas($r, 'name="department"')
+        && !bodyHas($r, 'name="profile_photo"'),
+    'unexpected editable field on the administrator profile');
+
+preg_match('/name="_token"\s+value="([^"]+)"/', $r['body'], $mp);
+$profToken = $mp[1] ?? '';
+
+$r = reqL('POST', '/profile', [
+    '_token' => $profToken,
+    '_method' => 'PUT',
+    'email' => 'technical.admin@uc.edu.ph',
+], [], $jarC);
+check('administrator PUT /profile (unchanged email, no password) -> 302 to /profile',
+    expectStatus($r, 302) && locationHas($r, '/profile'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/profile', [], [], $jarC);
+check('administrator profile save shows success status',
+    bodyHas($r, 'Your profile has been updated.'), 'success flash missing');
+
+preg_match('/name="_token"\s+value="([^"]+)"/', $r['body'], $mp);
+$r = reqL('POST', '/profile', [
+    '_token' => $mp[1] ?? '',
+    '_method' => 'PUT',
+    'email' => 'notallowed@uc.edu.ph',
+], [], $jarC);
+check('administrator PUT /profile changing email without current password -> 302 back with error',
+    expectStatus($r, 302) && locationHas($r, '/profile'),
+    "got {$r['status']} loc={$r['location']}");
+
+$r = req('GET', '/profile', [], [], $jarC);
+check('rejected email change shows the current-password error',
+    bodyHas($r, 'Enter your current password'), 'error message missing');
+
 /* ---------- Rate limit (branded 429), run last ---------- */
 echo "\n-- throttle --\n";
 

@@ -189,8 +189,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/broadcasts/{publicId}', [BroadcastController::class, 'show']);
     });
 
-    /* Shared routes */
-    Route::middleware(['role:Coordinator,Student'])->group(function () {
+    /* Shared routes — the Administrator's profile is deliberately minimal
+     * (email + password only); see ProfileController::update(). */
+    Route::middleware(['role:Coordinator,Student,Administrator'])->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::get('/profile/photo', [ProfileController::class, 'photo']);
         Route::put('/profile', [ProfileController::class, 'update']);

@@ -32,12 +32,18 @@ final class ProfileController extends Controller
         return view('account/profile', [
             'title' => 'My Profile',
             'pageTitle' => 'My Profile',
-            'pageSubtitle' => 'Manage your personal and account information.',
+            'pageSubtitle' => $user['role'] === 'Administrator'
+                ? 'Manage your sign-in email and password.'
+                : 'Manage your personal and account information.',
             'pageKey' => 'profile',
             'user' => $user,
             'role' => $user['role'],
             'values' => $values,
-            'profilePhotoFile' => File::latestForEntity('user_profile_photo', (string) $user['id']),
+            // Administrators have no photo controls on their minimal profile;
+            // null makes the layout fall back to its role-based computation.
+            'profilePhotoFile' => $user['role'] === 'Administrator'
+                ? null
+                : File::latestForEntity('user_profile_photo', (string) $user['id']),
             'errors' => session('errors', []),
             'departments' => config('people.departments', []),
             'programs' => config('people.programs', []),
@@ -74,26 +80,39 @@ final class ProfileController extends Controller
     {
         $user = auth_user();
         $userId = (int) $user['id'];
-        $rules = [
-            'first_name' => 'required|string|max:80',
-            'middle_name' => 'nullable|string|max:100',
-            'last_name' => 'required|string|max:80',
-            'email' => 'required|email|max:190|unique:users,email,' . $userId,
-            'username' => 'required|string|max:100|unique:users,username,' . $userId,
-            'phone' => 'nullable|string|max:30',
-            'current_password' => 'nullable|string|max:255',
-            'password' => 'nullable|string|min:8|max:255|confirmed',
-        ];
+        $isAdmin = $user['role'] === 'Administrator';
 
-        if ($user['role'] === 'Student') {
-            $rules += [
-                'age' => 'required|integer|min:10|max:100',
-                'department' => 'nullable|in:' . implode(',', config('people.departments', [])),
-                'program' => 'required|in:' . implode(',', config('people.programs', [])),
-                'year_level' => 'required|in:' . implode(',', config('people.year_levels', [])),
+        if ($isAdmin) {
+            // Administrators keep a deliberately minimal self-service profile:
+            // email and password only. Name, role, username and department are
+            // managed by OSAS, never editable from this page.
+            $rules = [
+                'email' => 'required|email|max:190|unique:users,email,' . $userId,
+                'current_password' => 'nullable|string|max:255',
+                'password' => 'nullable|string|min:8|max:255|confirmed',
             ];
         } else {
-            $rules['department'] = 'nullable|in:' . implode(',', config('people.departments', []));
+            $rules = [
+                'first_name' => 'required|string|max:80',
+                'middle_name' => 'nullable|string|max:100',
+                'last_name' => 'required|string|max:80',
+                'email' => 'required|email|max:190|unique:users,email,' . $userId,
+                'username' => 'required|string|max:100|unique:users,username,' . $userId,
+                'phone' => 'nullable|string|max:30',
+                'current_password' => 'nullable|string|max:255',
+                'password' => 'nullable|string|min:8|max:255|confirmed',
+            ];
+
+            if ($user['role'] === 'Student') {
+                $rules += [
+                    'age' => 'required|integer|min:10|max:100',
+                    'department' => 'nullable|in:' . implode(',', config('people.departments', [])),
+                    'program' => 'required|in:' . implode(',', config('people.programs', [])),
+                    'year_level' => 'required|in:' . implode(',', config('people.year_levels', [])),
+                ];
+            } else {
+                $rules['department'] = 'nullable|in:' . implode(',', config('people.departments', []));
+            }
         }
 
         $data = $this->validate($request, $rules);
@@ -108,27 +127,35 @@ final class ProfileController extends Controller
             );
         }
 
-        $updates = [
-            'first_name' => trim((string) $data['first_name']),
-            'middle_name' => trim((string) ($data['middle_name'] ?? '')) ?: null,
-            'last_name' => trim((string) $data['last_name']),
-            'email' => mb_strtolower(trim((string) $data['email'])),
-            'username' => trim((string) $data['username']),
-            'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
-            'department' => trim((string) ($data['department'] ?? '')) ?: null,
-        ];
-
-        if ($user['role'] === 'Student') {
-            $updates += [
-                'age' => (int) $data['age'],
-                'program' => trim((string) $data['program']),
-                'year_level' => trim((string) $data['year_level']),
+        if ($isAdmin) {
+            $updates = [
+                'email' => mb_strtolower(trim((string) $data['email'])),
             ];
+        } else {
+            $updates = [
+                'first_name' => trim((string) $data['first_name']),
+                'middle_name' => trim((string) ($data['middle_name'] ?? '')) ?: null,
+                'last_name' => trim((string) $data['last_name']),
+                'email' => mb_strtolower(trim((string) $data['email'])),
+                'username' => trim((string) $data['username']),
+                'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
+                'department' => trim((string) ($data['department'] ?? '')) ?: null,
+            ];
+
+            if ($user['role'] === 'Student') {
+                $updates += [
+                    'age' => (int) $data['age'],
+                    'program' => trim((string) $data['program']),
+                    'year_level' => trim((string) $data['year_level']),
+                ];
+            }
         }
 
-        $existingPhoto = File::latestForEntity('user_profile_photo', (string) $userId);
-        $newPhoto = $this->storeProfilePhoto($request, $userId);
-        $removePhoto = $request->boolean('remove_profile_photo');
+        // The admin profile form has no photo controls; ignore any crafted
+        // upload/remove flag so the page stays email + password only.
+        $existingPhoto = $isAdmin ? null : File::latestForEntity('user_profile_photo', (string) $userId);
+        $newPhoto = $isAdmin ? null : $this->storeProfilePhoto($request, $userId);
+        $removePhoto = !$isAdmin && $request->boolean('remove_profile_photo');
 
         try {
             DB::transaction(static function () use ($user, $userId, $updates, $emailChanged, $passwordChanged, $data): void {
