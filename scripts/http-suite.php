@@ -702,6 +702,16 @@ check('student dashboard no longer references the deleted picture',
     expectStatus($r, 200) && !bodyHas($r, "/student/infographics/{$ingoId}/image"),
     'got ' . $r['status']);
 
+/* Dropdown menu enhancement ships with the assets. A native <select> popup
+ * is drawn by the browser and is not clamped to a small viewport, so app.js
+ * renders the option list inside the page instead (styled by app-php.css). */
+$rJs = req('GET', '/assets/js/app.js', [], [], $jarB);
+$rCss = req('GET', '/assets/css/app-php.css', [], [], $jarB);
+check('dropdown menu enhancement is served (app.js builds it, css styles it)',
+    expectStatus($rJs, 200) && bodyHas($rJs, 'selectmenu')
+        && expectStatus($rCss, 200) && bodyHas($rCss, '.selectmenu'),
+    "js={$rJs['status']} css={$rCss['status']}");
+
 /* ---------- Rate limit (branded 429), run last ---------- */
 echo "\n-- throttle --\n";
 

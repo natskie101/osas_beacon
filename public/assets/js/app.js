@@ -708,4 +708,225 @@
       }
     }
   });
+
+  /* Dropdown menus, rendered inside the page.
+   *
+   * A native <select> popup is drawn by the browser: it ignores page CSS and
+   * is not clamped to a small viewport, so on phones (and in device
+   * emulation) the option list spills past the edge of the screen and is
+   * hard to read. This renders the same options as an in-page list anchored
+   * to the control and capped to the viewport. The real <select> stays the
+   * form control — picking an option sets its value and fires a normal
+   * bubbling change event, so filters keep auto-submitting and every form
+   * keeps working. Without JavaScript the native select is unchanged. */
+  onReady(function () {
+    var controls = Array.prototype.slice.call(document.querySelectorAll("select.input"));
+
+    if (controls.length === 0) {
+      return;
+    }
+
+    var menu = document.createElement("div");
+    var current = null;
+    var activeIndex = -1;
+    menu.className = "selectmenu";
+    menu.setAttribute("role", "listbox");
+    menu.hidden = true;
+    document.body.appendChild(menu);
+
+    var usable = function (select) {
+      return select && !select.disabled && !select.multiple && select.offsetParent !== null;
+    };
+
+    var close = function () {
+      if (current) {
+        current.removeAttribute("data-selectmenu-open");
+        current.removeAttribute("aria-expanded");
+      }
+      current = null;
+      activeIndex = -1;
+      menu.hidden = true;
+      menu.innerHTML = "";
+    };
+
+    var highlight = function (index) {
+      var items = menu.children;
+
+      if (items.length === 0) {
+        return;
+      }
+
+      activeIndex = (index + items.length) % items.length;
+
+      for (var i = 0; i < items.length; i++) {
+        items[i].classList.toggle("selectmenu__opt--active", i === activeIndex);
+        items[i].setAttribute("aria-selected", i === activeIndex ? "true" : "false");
+      }
+
+      if (items[activeIndex].scrollIntoView) {
+        items[activeIndex].scrollIntoView({ block: "nearest" });
+      }
+    };
+
+    var choose = function (option) {
+      var select = current;
+
+      if (!select || !option) {
+        return;
+      }
+
+      select.value = option.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      close();
+      select.focus({ preventScroll: true });
+    };
+
+    var position = function (select) {
+      var rect = select.getBoundingClientRect();
+      var width = Math.min(rect.width, window.innerWidth - 16);
+      var maxHeight = Math.max(120, Math.round(window.innerHeight * 0.6));
+
+      menu.style.width = Math.round(width) + "px";
+      menu.style.left = Math.round(Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))) + "px";
+      menu.style.maxHeight = maxHeight + "px";
+
+      var height = Math.min(menu.scrollHeight, maxHeight);
+      var below = window.innerHeight - rect.bottom;
+
+      if (below < height + 12 && rect.top > below) {
+        menu.style.top = Math.round(Math.max(8, rect.top - height - 6)) + "px";
+      } else {
+        menu.style.top = Math.round(rect.bottom + 4) + "px";
+      }
+    };
+
+    var open = function (select) {
+      if (!usable(select)) {
+        return;
+      }
+
+      if (current === select) {
+        close();
+        return;
+      }
+
+      close();
+      current = select;
+      activeIndex = -1;
+
+      Array.prototype.slice.call(select.options).forEach(function (option, index) {
+        var item = document.createElement("button");
+        item.type = "button";
+        item.className = "selectmenu__opt" + (option.selected ? " selectmenu__opt--on" : "");
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", option.selected ? "true" : "false");
+        item.textContent = option.textContent;
+        item.addEventListener("click", function () {
+          choose(option);
+        });
+        menu.appendChild(item);
+
+        if (option.selected) {
+          activeIndex = index;
+        }
+      });
+
+      menu.hidden = false;
+      select.setAttribute("data-selectmenu-open", "");
+      select.setAttribute("aria-expanded", "true");
+      position(select);
+      highlight(activeIndex < 0 ? 0 : activeIndex);
+    };
+
+    controls.forEach(function (select) {
+      select.addEventListener("mousedown", function (event) {
+        if (!usable(select)) {
+          return;
+        }
+
+        event.preventDefault();
+        select.focus({ preventScroll: true });
+        open(select);
+      });
+
+      select.addEventListener("touchstart", function (event) {
+        if (!usable(select)) {
+          return;
+        }
+
+        event.preventDefault();
+        open(select);
+      }, { passive: false });
+
+      select.addEventListener("keydown", function (event) {
+        var key = event.key;
+
+        if (key === "Escape") {
+          if (current === select) {
+            event.preventDefault();
+            close();
+          }
+          return;
+        }
+
+        if (key === "ArrowDown" || key === "ArrowUp") {
+          event.preventDefault();
+
+          if (current !== select) {
+            open(select);
+            return;
+          }
+
+          highlight(activeIndex + (key === "ArrowDown" ? 1 : -1));
+          return;
+        }
+
+        if (key === "Enter" || key === " " || key === "Spacebar") {
+          event.preventDefault();
+
+          if (current === select && activeIndex >= 0) {
+            choose(select.options[activeIndex]);
+          } else if (current !== select) {
+            open(select);
+          }
+        }
+      });
+    });
+
+    document.addEventListener("mousedown", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    }, true);
+
+    document.addEventListener("touchstart", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    }, true);
+
+    document.addEventListener("focusin", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    });
+
+    window.addEventListener("resize", function () {
+      if (current) {
+        close();
+      }
+    });
+
+    window.addEventListener("scroll", function () {
+      if (current) {
+        close();
+      }
+    }, true);
+  });
 })();
