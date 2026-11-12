@@ -82,10 +82,12 @@ final class DatabaseSeeder
             DB::table('notifications')->delete();
             DB::table('files')->delete();
             DB::table('users')->delete();
-            DB::statement('ALTER TABLE users AUTO_INCREMENT = 1');
-            DB::statement('ALTER TABLE audit_log AUTO_INCREMENT = 1');
-            DB::statement('ALTER TABLE files AUTO_INCREMENT = 1');
-            DB::statement('ALTER TABLE notifications AUTO_INCREMENT = 1');
+            // Restart the identity sequences so re-seeded rows start at id 1
+            // again (PostgreSQL equivalent of ALTER TABLE ... AUTO_INCREMENT).
+            DB::statement("SELECT setval(pg_get_serial_sequence('users', 'id'), 1, false)");
+            DB::statement("SELECT setval(pg_get_serial_sequence('audit_log', 'id'), 1, false)");
+            DB::statement("SELECT setval(pg_get_serial_sequence('files', 'id'), 1, false)");
+            DB::statement("SELECT setval(pg_get_serial_sequence('notifications', 'id'), 1, false)");
         }
 
         DB::transaction(function () use ($data, $minimal, $minimalPasswords): void {
