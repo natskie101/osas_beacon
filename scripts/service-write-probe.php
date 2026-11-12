@@ -220,8 +220,11 @@ if (isset($match[1])) {
 }
 
 $fileColumns = array_map(
-    static fn (object $column): string => (string) $column->Field,
-    DB::select('SHOW COLUMNS FROM files'),
+    static fn (object $column): string => (string) $column->column_name,
+    DB::select(
+        "SELECT column_name FROM information_schema.columns"
+        . " WHERE table_schema = 'public' AND table_name = 'files'",
+    ),
 );
 $missing = array_values(array_diff($keys, $fileColumns));
 

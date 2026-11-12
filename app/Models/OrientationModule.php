@@ -22,13 +22,13 @@ final class OrientationModule extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('orientation_modules')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Published") AS published,
-                    SUM(status = "Draft") AS draft,
-                    SUM(status = "Archived") AS archived,
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Published' THEN 1 ELSE 0 END) AS published,
+                    SUM(CASE WHEN status = 'Draft' THEN 1 ELSE 0 END) AS draft,
+                    SUM(CASE WHEN status = 'Archived' THEN 1 ELSE 0 END) AS archived,
                     COALESCE(SUM(learners), 0) AS learners,
                     COALESCE(SUM(completions), 0) AS completions,
-                    COALESCE(AVG(completion_rate), 0) AS rate')
+                    COALESCE(AVG(completion_rate), 0) AS rate")
             ->first();
         $row = $row === null ? [] : (array) $row;
 

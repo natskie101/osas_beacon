@@ -49,7 +49,7 @@ final class Participation
             ->where('m.mandatory', 1)
             ->where('m.status', 'Published')
             ->select('p.user_id')
-            ->selectRaw('SUM(p.status = "Completed") AS completed')
+            ->selectRaw("SUM(CASE WHEN p.status = 'Completed' THEN 1 ELSE 0 END) AS completed")
             ->groupBy('p.user_id')
             ->get();
         $progress = [];
@@ -211,7 +211,7 @@ final class Participation
                     COALESCE(MAX(a.percent), 0) AS best_score,
                     COALESCE(MAX(a.passed), 0) AS passed,
                     MAX(a.submitted_at) AS last_attempt')
-            ->groupBy('q.id', 'm.public_id', 'm.title', 'm.passing_rate')
+            ->groupBy('q.id', 'm.id', 'm.public_id', 'm.title', 'm.passing_rate')
             ->orderBy('m.id')
             ->get()
             ->map(static fn (object $row): array => (array) $row)

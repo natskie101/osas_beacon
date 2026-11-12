@@ -20,12 +20,12 @@ final class Event extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('events')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Scheduled") AS scheduled,
-                    SUM(status = "Ongoing") AS ongoing,
-                    SUM(status = "Completed") AS completed,
-                    SUM(status = "Cancelled") AS cancelled,
-                    COALESCE(SUM(registered), 0) AS registered')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Scheduled' THEN 1 ELSE 0 END) AS scheduled,
+                    SUM(CASE WHEN status = 'Ongoing' THEN 1 ELSE 0 END) AS ongoing,
+                    SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
+                    SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                    COALESCE(SUM(registered), 0) AS registered")
             ->first();
 
         return array_map('intval', $row === null ? [] : (array) $row);
@@ -64,7 +64,7 @@ final class Event extends BaseModel
         return DB::table('events')
             ->where('status', '<>', 'Cancelled')
             ->where('audience', '<>', 'Faculty & Staff')
-            ->orderByRaw('CASE WHEN status IN ("Scheduled", "Ongoing") THEN 0 ELSE 1 END, start_at ASC, id ASC')
+            ->orderByRaw("CASE WHEN status IN ('Scheduled', 'Ongoing') THEN 0 ELSE 1 END, start_at ASC, id ASC")
             ->get()
             ->map(static fn (object $row): array => (array) $row)
             ->all();

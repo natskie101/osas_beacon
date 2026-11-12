@@ -20,13 +20,13 @@ final class Broadcast extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('broadcasts')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Draft") AS draft,
-                    SUM(status = "Pending") AS pending,
-                    SUM(status = "Scheduled") AS scheduled,
-                    SUM(status = "Sent") AS sent,
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Draft' THEN 1 ELSE 0 END) AS draft,
+                    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN status = 'Scheduled' THEN 1 ELSE 0 END) AS scheduled,
+                    SUM(CASE WHEN status = 'Sent' THEN 1 ELSE 0 END) AS sent,
                     COALESCE(SUM(reach), 0) AS reach,
-                    COALESCE(SUM(opened), 0) AS opened')
+                    COALESCE(SUM(opened), 0) AS opened")
             ->first();
 
         return array_map('intval', $row === null ? [] : (array) $row);

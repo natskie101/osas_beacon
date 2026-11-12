@@ -21,13 +21,13 @@ final class DocumentRequest extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('document_requests')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Submitted") AS submitted,
-                    SUM(status = "Under Review") AS review,
-                    SUM(status = "Ready for Pick-up") AS ready,
-                    SUM(status = "Released") AS released,
-                    SUM(status = "Rejected") AS rejected,
-                    SUM(status = "Cancelled") AS cancelled')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Submitted' THEN 1 ELSE 0 END) AS submitted,
+                    SUM(CASE WHEN status = 'Under Review' THEN 1 ELSE 0 END) AS review,
+                    SUM(CASE WHEN status = 'Ready for Pick-up' THEN 1 ELSE 0 END) AS ready,
+                    SUM(CASE WHEN status = 'Released' THEN 1 ELSE 0 END) AS released,
+                    SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) AS rejected,
+                    SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled")
             ->first();
 
         return array_map('intval', $row === null ? [] : (array) $row);

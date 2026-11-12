@@ -55,8 +55,8 @@ final class OrientationReportService
     {
         $students = self::studentCount();
         $rows = DB::table('orientation_modules as m')
-            ->selectRaw('m.*, (SELECT COUNT(*) FROM orientation_progress p JOIN users u ON u.id = p.user_id
-                    WHERE p.module_id = m.id AND p.status = "Completed" AND u.role = "Student") AS completed')
+            ->selectRaw("m.*, (SELECT COUNT(*) FROM orientation_progress p JOIN users u ON u.id = p.user_id
+                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student') AS completed")
             ->where('m.mandatory', 1)
             ->where('m.status', 'Published')
             ->orderBy('m.id')
@@ -112,9 +112,9 @@ final class OrientationReportService
     {
         $students = self::studentCount();
         $module = DB::table('orientation_modules as m')
-            ->selectRaw('m.*, (SELECT COUNT(*) FROM orientation_progress p
+            ->selectRaw("m.*, (SELECT COUNT(*) FROM orientation_progress p
                     JOIN users u ON u.id = p.user_id
-                    WHERE p.module_id = m.id AND p.status = "Completed" AND u.role = "Student") AS completed')
+                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student') AS completed")
             ->where('m.public_id', $publicId)
             ->where('m.mandatory', 1)
             ->limit(1)

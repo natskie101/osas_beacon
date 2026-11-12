@@ -32,8 +32,8 @@ final class Str
 
     /**
      * Escape SQL LIKE wildcards so user input is matched literally inside a
-     * LIKE pattern (MySQL uses backslash as the default escape character).
-     * The backslash must be replaced first.
+     * LIKE pattern (both MySQL and PostgreSQL use backslash as the default
+     * escape character). The backslash must be replaced first.
      */
     public static function escapeLike(string $value): string
     {
