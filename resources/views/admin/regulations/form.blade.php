@@ -106,6 +106,11 @@ if ($currentSeverity !== '' && !in_array($currentSeverity, $severities, true)) {
             <?php if ($errorFor('body')): ?><div class="form-error">{{ $errorFor('body') }}</div><?php endif; ?>
             <div class="form-error" data-editor-error hidden>Please enter the policy content.</div>
         </div>
+        <div class="field">
+            <label for="sanctions">Sanctions and penalties</label>
+            <textarea class="input" id="sanctions" name="sanctions" rows="4" placeholder="One sanction per line">{{ $values['sanctions'] ?? '' }}</textarea>
+            <div class="help-text">Each line appears as a separate item on the student-facing policy page.</div>
+        </div>
     </section>
 
     <section class="form-section announcement-section">
@@ -129,7 +134,7 @@ if ($currentSeverity !== '' && !in_array($currentSeverity, $severities, true)) {
                 <?php if ($errorFor('effective_date')): ?><div class="form-error">{{ $errorFor('effective_date') }}</div><?php endif; ?>
             </div>
         </div>
-        <div class="form-grid form-grid--3">
+        <div class="form-grid form-grid--2">
             <div class="field">
                 <label for="review_schedule">Review schedule</label>
                 <input class="input" id="review_schedule" name="review_schedule" value="{{ $values['review_schedule'] ?? '' }}" placeholder="Annual review every June">
@@ -137,11 +142,6 @@ if ($currentSeverity !== '' && !in_array($currentSeverity, $severities, true)) {
             <div class="field">
                 <label for="approval_body">Approving body</label>
                 <input class="input" id="approval_body" name="approval_body" value="{{ $values['approval_body'] ?? '' }}">
-            </div>
-            <div class="field">
-                <label for="sanctions">Sanctions and penalties</label>
-                <textarea class="input" id="sanctions" name="sanctions" rows="4" placeholder="One sanction per line">{{ $values['sanctions'] ?? '' }}</textarea>
-                <div class="help-text">Each line appears as a separate item on the student-facing policy page.</div>
             </div>
         </div>
     </section>
