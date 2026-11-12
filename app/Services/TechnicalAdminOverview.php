@@ -77,7 +77,7 @@ final class TechnicalAdminOverview
         }
 
         $missingExtensions = array_values(array_filter(
-            ['pdo_mysql', 'mbstring', 'fileinfo', 'json', 'openssl'],
+            ['pdo_pgsql', 'mbstring', 'fileinfo', 'json', 'openssl'],
             static fn (string $extension): bool => !extension_loaded($extension),
         ));
         $storagePaths = [
