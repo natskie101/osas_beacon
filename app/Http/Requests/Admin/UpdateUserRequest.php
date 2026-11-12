@@ -28,7 +28,6 @@ final class UpdateUserRequest extends FormRequest
             'program' => 'nullable|string|max:150',
             'year_level' => 'nullable|string|max:30',
             'access_level' => 'nullable|string|max:150',
-            'account_tier' => 'required|in:Student Tier,Admin Tier',
             'status' => 'required|in:Active,Pending,Inactive',
             'phone' => 'nullable|string|max:30',
             'password' => 'nullable|string|min:8|max:255|confirmed',

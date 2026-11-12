@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class OrientationProgress
 {
     /** @return array<string, array<string, mixed>> keyed by module ID */
     public static function forUser(int $userId): array
     {
-        $rows = DB::select('SELECT * FROM orientation_progress WHERE user_id = ?', [$userId]);
+        $rows = DB::table('orientation_progress')
+            ->where('user_id', $userId)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
         $result = [];
 
         foreach ($rows as $row) {
@@ -24,10 +28,12 @@ final class OrientationProgress
     /** @return array<string, mixed>|null */
     public static function find(int $userId, int $moduleId): ?array
     {
-        return DB::first(
-            'SELECT * FROM orientation_progress WHERE user_id = ? AND module_id = ? LIMIT 1',
-            [$userId, $moduleId],
-        );
+        $row = DB::table('orientation_progress')
+            ->where('user_id', $userId)
+            ->where('module_id', $moduleId)
+            ->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     public static function markViewed(int $userId, int $moduleId): void
@@ -36,21 +42,28 @@ final class OrientationProgress
         $existing = self::find($userId, $moduleId);
 
         if ($existing === null) {
-            DB::insert(
-                'INSERT INTO orientation_progress
-                    (user_id, module_id, status, progress, last_viewed_at, created_at, updated_at)
-                 VALUES (?, ?, "In Progress", 25, ?, ?, ?)',
-                [$userId, $moduleId, $now, $now, $now],
-            );
+            DB::table('orientation_progress')->insert([
+                'user_id' => $userId,
+                'module_id' => $moduleId,
+                'status' => 'In Progress',
+                'progress' => 25,
+                'last_viewed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
 
             return;
         }
 
         if ($existing['status'] !== 'Completed') {
-            DB::update(
-                'UPDATE orientation_progress SET status = "In Progress", progress = GREATEST(progress, 25), last_viewed_at = ?, updated_at = ? WHERE id = ?',
-                [$now, $now, (int) $existing['id']],
-            );
+            DB::table('orientation_progress')
+                ->where('id', (int) $existing['id'])
+                ->update([
+                    'status' => 'In Progress',
+                    'progress' => DB::raw('GREATEST(progress, 25)'),
+                    'last_viewed_at' => $now,
+                    'updated_at' => $now,
+                ]);
         }
     }
 
@@ -61,24 +74,32 @@ final class OrientationProgress
         $wasCompleted = $existing !== null && $existing['status'] === 'Completed';
 
         if ($existing === null) {
-            DB::insert(
-                'INSERT INTO orientation_progress
-                    (user_id, module_id, status, progress, last_viewed_at, completed_at, created_at, updated_at)
-                 VALUES (?, ?, "Completed", 100, ?, ?, ?, ?)',
-                [$userId, $moduleId, $now, $now, $now, $now],
-            );
+            DB::table('orientation_progress')->insert([
+                'user_id' => $userId,
+                'module_id' => $moduleId,
+                'status' => 'Completed',
+                'progress' => 100,
+                'last_viewed_at' => $now,
+                'completed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         } else {
-            DB::update(
-                'UPDATE orientation_progress SET status = "Completed", progress = 100, last_viewed_at = ?, completed_at = ?, updated_at = ? WHERE id = ?',
-                [$now, $now, $now, (int) $existing['id']],
-            );
+            DB::table('orientation_progress')
+                ->where('id', (int) $existing['id'])
+                ->update([
+                    'status' => 'Completed',
+                    'progress' => 100,
+                    'last_viewed_at' => $now,
+                    'completed_at' => $now,
+                    'updated_at' => $now,
+                ]);
         }
 
         if (!$wasCompleted) {
-            DB::update(
-                'UPDATE orientation_modules SET completions = completions + 1 WHERE id = ?',
-                [$moduleId],
-            );
+            DB::table('orientation_modules')
+                ->where('id', $moduleId)
+                ->increment('completions');
         }
 
         return !$wasCompleted;
@@ -87,12 +108,12 @@ final class OrientationProgress
     /** @return array{completed:int,in_progress:int,not_started:int,total:int,percent:float} */
     public static function summary(int $userId, int $totalModules): array
     {
-        $row = DB::first(
-            'SELECT SUM(status = "Completed") AS completed,
-                    SUM(status = "In Progress") AS in_progress
-             FROM orientation_progress WHERE user_id = ?',
-            [$userId],
-        );
+        $row = DB::table('orientation_progress')
+            ->where('user_id', $userId)
+            ->selectRaw('SUM(status = "Completed") AS completed,
+                    SUM(status = "In Progress") AS in_progress')
+            ->first();
+        $row = $row === null ? [] : (array) $row;
         $completed = (int) ($row['completed'] ?? 0);
         $inProgress = (int) ($row['in_progress'] ?? 0);
 

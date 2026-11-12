@@ -11,24 +11,22 @@ use App\Models\File;
 use App\Services\AudienceService;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 final class AnnouncementController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = Announcement::paginate(
             $filters,
@@ -39,7 +37,7 @@ final class AnnouncementController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/announcements/index', [
+        return view('admin/announcements/index', [
             'title' => 'Announcements',
             'pageTitle' => config('navigation.meta.admin.announcements.title'),
             'pageSubtitle' => config('navigation.meta.admin.announcements.subtitle'),
@@ -54,17 +52,17 @@ final class AnnouncementController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
         }
 
@@ -84,10 +82,7 @@ final class AnnouncementController extends Controller
 
         foreach (Announcement::decodeList($announcement['attachments'] ?? null) as $attachment) {
             if (!empty($attachment['file_id'])) {
-                \App\Support\DB::update(
-                    'UPDATE files SET entity_id = ? WHERE id = ?',
-                    [$announcement['public_id'], (int) $attachment['file_id']],
-                );
+                DB::table('files')->where('id', (int) $attachment['file_id'])->update(['entity_id' => (string) $announcement['public_id']]);
             }
         }
 
@@ -102,20 +97,20 @@ final class AnnouncementController extends Controller
             $this->announce($announcement);
         }
 
-        Session::flash('status', 'Announcement created successfully.');
+        session()->flash('status', 'Announcement created successfully.');
 
-        return Response::redirect(url('/admin/announcements/' . $announcement['public_id']));
+        return redirect(url('/admin/announcements/' . $announcement['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $announcement = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/announcements/show', [
+        return view('admin/announcements/show', [
             'title' => $announcement['title'],
             'pageTitle' => $announcement['title'],
-            'pageSubtitle' => $announcement['public_id'] . ' · ' . $announcement['status'],
+            'pageSubtitle' => $announcement['public_id'] . ' Â· ' . $announcement['status'],
             'pageKey' => 'announcements',
             'user' => $actor,
             'role' => $actor['role'],
@@ -125,18 +120,18 @@ final class AnnouncementController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $announcement = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
         }
 
@@ -162,12 +157,12 @@ final class AnnouncementController extends Controller
             $this->announce($updated);
         }
 
-        Session::flash('status', 'Announcement saved.');
+        session()->flash('status', 'Announcement saved.');
 
-        return Response::redirect(url('/admin/announcements/' . $updated['public_id']));
+        return redirect(url('/admin/announcements/' . $updated['public_id']));
     }
 
-    public function publish(Request $request, string $publicId): Response
+    public function publish(Request $request, string $publicId)
     {
         $announcement = $this->find($publicId);
         Announcement::update((int) $announcement['id'], [
@@ -185,12 +180,12 @@ final class AnnouncementController extends Controller
         );
 
         $this->announce($updated);
-        Session::flash('status', 'Announcement published to the student portal.');
+        session()->flash('status', 'Announcement published to the student portal.');
 
-        return Response::redirect(url('/admin/announcements/' . $updated['public_id']));
+        return redirect(url('/admin/announcements/' . $updated['public_id']));
     }
 
-    public function archive(Request $request, string $publicId): Response
+    public function archive(Request $request, string $publicId)
     {
         $announcement = $this->find($publicId);
         Announcement::update((int) $announcement['id'], ['status' => 'Archived']);
@@ -202,12 +197,12 @@ final class AnnouncementController extends Controller
             ['entity_type' => 'announcement', 'entity_id' => (string) $announcement['public_id'], 'tone' => 'amber', 'icon' => 'fileText'],
         );
 
-        Session::flash('status', 'Announcement archived.');
+        session()->flash('status', 'Announcement archived.');
 
-        return Response::redirect(url('/admin/announcements/' . $announcement['public_id']));
+        return redirect(url('/admin/announcements/' . $announcement['public_id']));
     }
 
-    public function removeAttachment(Request $request, string $publicId, string $index): Response
+    public function removeAttachment(Request $request, string $publicId, string $index)
     {
         $announcement = $this->find($publicId);
         $attachments = BaseAnnouncementAttachments::from($announcement);
@@ -226,13 +221,13 @@ final class AnnouncementController extends Controller
             Announcement::update((int) $announcement['id'], [
                 'attachments' => $attachments === [] ? null : json_encode(array_values($attachments), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             ]);
-            Session::flash('status', 'Attachment removed.');
+            session()->flash('status', 'Attachment removed.');
         }
 
-        return Response::redirect(url('/admin/announcements/' . $announcement['public_id'] . '/edit'));
+        return redirect(url('/admin/announcements/' . $announcement['public_id'] . '/edit'));
     }
 
-    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    public function downloadAttachment(Request $request, string $publicId, string $fileId)
     {
         $announcement = $this->find($publicId);
         $file = File::find((int) $fileId);
@@ -245,10 +240,10 @@ final class AnnouncementController extends Controller
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $announcement */
-    private function form(array $actor, ?array $announcement): Response
+    private function form(array $actor, ?array $announcement)
     {
         $isEdit = $announcement !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($announcement, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
@@ -261,7 +256,7 @@ final class AnnouncementController extends Controller
             'scheduled_for' => '',
         ], is_array($old) ? $old : []);
 
-        return $this->page('layouts.app', 'admin/announcements/form', [
+        return view('admin/announcements/form', [
             'title' => $isEdit ? 'Edit Announcement' : 'Create Announcement',
             'pageTitle' => $isEdit ? 'Edit Announcement' : 'Create Announcement',
             'pageSubtitle' => $isEdit
@@ -273,7 +268,7 @@ final class AnnouncementController extends Controller
             'announcement' => $announcement,
             'values' => $values,
             'attachments' => $isEdit ? $this->attachments($announcement) : [],
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
@@ -325,12 +320,16 @@ final class AnnouncementController extends Controller
         );
     }
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<string> */
     private function categories(): array
     {
-        $rows = \App\Support\DB::select('SELECT DISTINCT category FROM announcements WHERE category <> "" ORDER BY category ASC');
-
-        return array_map(static fn (array $row): string => (string) $row['category'], $rows);
+        return DB::table('announcements')
+            ->distinct()
+            ->where('category', '<>', '')
+            ->orderBy('category')
+            ->pluck('category')
+            ->map(static fn (mixed $category): string => (string) $category)
+            ->all();
     }
 
     /**
@@ -340,7 +339,7 @@ final class AnnouncementController extends Controller
      */
     private function storeAttachments(Request $request, ?array $announcement, array $actor): array
     {
-        $file = $request->file('attachment');
+        $file = $this->uploadedFile($request, 'attachment');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return [];
@@ -355,7 +354,7 @@ final class AnnouncementController extends Controller
                 (int) $actor['id'],
             );
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['attachment' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['attachment' => $exception->getMessage()], $request->input());
         }
 
         return [[

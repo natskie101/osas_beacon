@@ -8,18 +8,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\DocumentRequest;
 use App\Models\Event;
+use App\Models\Infographic;
 use App\Models\OrientationModule;
 use App\Models\OrientationProgress;
 use App\Models\SupportTicket;
-use App\Support\Auth;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 
 final class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = auth_user();
         $userId = (int) $user['id'];
 
         $modules = OrientationModule::published();
@@ -41,7 +40,7 @@ final class DashboardController extends Controller
             static fn (array $request): bool => in_array($request['status'], ['Submitted', 'Under Review', 'Ready for Pick-up'], true),
         ));
 
-        return $this->page('layouts.app', 'student/dashboard', [
+        return view('student/dashboard', [
             'title' => 'Student Dashboard',
             'pageTitle' => 'Student Dashboard',
             'pageSubtitle' => config('navigation.meta.student.dashboard.subtitle'),
@@ -57,6 +56,7 @@ final class DashboardController extends Controller
             'activeTickets' => $activeTickets,
             'requestCount' => count($requests),
             'activeRequests' => $activeRequests,
+            'infographics' => Infographic::all(),
         ]);
     }
 }

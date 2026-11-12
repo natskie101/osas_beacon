@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "scripts": {
+    "build:technical-css": "tailwindcss -c tailwind.technical.config.js -i resources/css/technical-admin.css -o public/assets/css/technical-admin.css --minify && node scripts/scope-technical-css.js",
+    "build:technical-charts": "node scripts/copy-technical-chart.js",
+    "build:technical-assets": "npm run build:technical-css && npm run build:technical-charts"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.9"
+  }
+}

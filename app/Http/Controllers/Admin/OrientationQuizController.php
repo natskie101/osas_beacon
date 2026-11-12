@@ -8,39 +8,36 @@ use App\Http\Controllers\Controller;
 use App\Models\OrientationModule;
 use App\Services\AuditLogger;
 use App\Services\OrientationQuizService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class OrientationQuizController extends Controller
 {
-    public function show(Request $request, string $modulePublicId): Response
+    public function show(Request $request, string $modulePublicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->module($modulePublicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $questions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
 
-        return $this->page('layouts.app', 'admin/orientation/quiz', [
+        return view('admin/orientation/quiz', [
             'title' => 'Manage Quiz',
             'pageTitle' => $module['title'] . ' Quiz',
-            'pageSubtitle' => $module['public_id'] . ' · ' . count($questions) . ' questions',
+            'pageSubtitle' => $module['public_id'] . ' Â· ' . count($questions) . ' questions',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
             'module' => $module,
             'quiz' => $quiz,
             'questions' => $questions,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
-    public function saveSettings(Request $request, string $modulePublicId): Response
+    public function saveSettings(Request $request, string $modulePublicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->module($modulePublicId);
         $data = $this->validate($request, [
             'title' => 'required|string|max:200',
@@ -58,27 +55,27 @@ final class OrientationQuizController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'blue', 'icon' => 'fileText'],
         );
 
-        Session::flash('status', 'Quiz settings saved.');
+        session()->flash('status', 'Quiz settings saved.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
+        return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
 
-    public function storeQuestion(Request $request, string $modulePublicId): Response
+    public function storeQuestion(Request $request, string $modulePublicId)
     {
         $module = $this->module($modulePublicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
 
         if ($quiz === null) {
-            throw new ValidationException(['prompt' => 'Save the quiz settings first.'], $request->all());
+            throw new ValidationException(['prompt' => 'Save the quiz settings first.'], $request->input());
         }
 
         OrientationQuizService::saveQuestion((int) $quiz['id'], $this->questionData($request));
-        Session::flash('status', 'Question added.');
+        session()->flash('status', 'Question added.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
+        return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
 
-    public function updateQuestion(Request $request, string $modulePublicId, string $questionId): Response
+    public function updateQuestion(Request $request, string $modulePublicId, string $questionId)
     {
         $module = $this->module($modulePublicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
@@ -92,12 +89,12 @@ final class OrientationQuizController extends Controller
         }
 
         OrientationQuizService::saveQuestion((int) $quiz['id'], $this->questionData($request), (int) $questionId);
-        Session::flash('status', 'Question updated.');
+        session()->flash('status', 'Question updated.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
+        return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
 
-    public function deleteQuestion(Request $request, string $modulePublicId, string $questionId): Response
+    public function deleteQuestion(Request $request, string $modulePublicId, string $questionId)
     {
         $module = $this->module($modulePublicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
@@ -106,21 +103,21 @@ final class OrientationQuizController extends Controller
             OrientationQuizService::deleteQuestion((int) $questionId, (int) $quiz['id']);
         }
 
-        Session::flash('status', 'Question removed.');
+        session()->flash('status', 'Question removed.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
+        return redirect(url('/admin/orientation/' . $module['public_id'] . '/quiz'));
     }
 
     /** @return array{prompt:string,points:int,options:list<string>,correct:int} */
     private function questionData(Request $request): array
     {
-        $prompt = trim($request->string('prompt'));
+        $prompt = trim((string) $request->string('prompt'));
         $points = (int) $request->input('points', 1);
         $rawOptions = $request->input('options', []);
         $correct = (int) $request->input('correct', -1);
 
         if ($prompt === '') {
-            throw new ValidationException(['prompt' => 'Enter the question text.'], $request->all());
+            throw new ValidationException(['prompt' => 'Enter the question text.'], $request->input());
         }
 
         if (!is_array($rawOptions)) {
@@ -145,11 +142,11 @@ final class OrientationQuizController extends Controller
         }
 
         if (count($options) < 2) {
-            throw new ValidationException(['options' => 'Provide at least two answer options.'], $request->all());
+            throw new ValidationException(['options' => 'Provide at least two answer options.'], $request->input());
         }
 
         if ($correctIndex === null) {
-            throw new ValidationException(['correct' => 'Choose the correct answer.'], $request->all());
+            throw new ValidationException(['correct' => 'Choose the correct answer.'], $request->input());
         }
 
         return [

@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Participation
 {
     public static function mandatoryModuleCount(): int
     {
-        return (int) DB::value(
-            'SELECT COUNT(*) FROM orientation_modules WHERE mandatory = 1 AND status = "Published"',
-        );
+        return (int) DB::table('orientation_modules')
+            ->where('mandatory', 1)
+            ->where('status', 'Published')
+            ->count();
     }
 
     /**
@@ -22,36 +23,51 @@ final class Participation
      */
     public static function students(): array
     {
-        $students = DB::select(
-            'SELECT id, public_id, first_name, last_name, email, student_id, program, department, year_level, status
-             FROM users
-             WHERE role = "Student"
-             ORDER BY last_name ASC, first_name ASC',
-        );
+        $students = DB::table('users')
+            ->select(
+                'id',
+                'public_id',
+                'first_name',
+                'last_name',
+                'email',
+                'student_id',
+                'program',
+                'department',
+                'year_level',
+                'status',
+            )
+            ->where('role', 'Student')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
         $total = self::mandatoryModuleCount();
 
-        $progressRows = DB::select(
-            'SELECT p.user_id,
-                    SUM(p.status = "Completed") AS completed
-             FROM orientation_progress p
-             JOIN orientation_modules m ON m.id = p.module_id
-             WHERE m.mandatory = 1 AND m.status = "Published"
-             GROUP BY p.user_id',
-        );
+        $progressRows = DB::table('orientation_progress as p')
+            ->join('orientation_modules as m', 'm.id', '=', 'p.module_id')
+            ->where('m.mandatory', 1)
+            ->where('m.status', 'Published')
+            ->select('p.user_id')
+            ->selectRaw('SUM(p.status = "Completed") AS completed')
+            ->groupBy('p.user_id')
+            ->get();
         $progress = [];
 
         foreach ($progressRows as $row) {
+            $row = (array) $row;
             $progress[(int) $row['user_id']] = (int) $row['completed'];
         }
 
-        $attendanceRows = DB::select(
-            'SELECT user_id, COUNT(*) AS events, COALESCE(SUM(credit_hours), 0) AS hours
-             FROM event_attendance
-             GROUP BY user_id',
-        );
+        $attendanceRows = DB::table('event_attendance')
+            ->select('user_id')
+            ->selectRaw('COUNT(*) AS events, COALESCE(SUM(credit_hours), 0) AS hours')
+            ->groupBy('user_id')
+            ->get();
         $attendance = [];
 
         foreach ($attendanceRows as $row) {
+            $row = (array) $row;
             $attendance[(int) $row['user_id']] = [
                 'events' => (int) $row['events'],
                 'hours' => (int) $row['hours'],
@@ -122,53 +138,83 @@ final class Participation
     /** @return array<string, mixed>|null */
     public static function findStudent(string $publicId): ?array
     {
-        return DB::first(
-            'SELECT id, public_id, first_name, last_name, email, student_id, program, department, year_level, status
-             FROM users
-             WHERE public_id = ? AND role = "Student"
-             LIMIT 1',
-            [$publicId],
-        );
+        $row = DB::table('users')
+            ->select(
+                'id',
+                'public_id',
+                'first_name',
+                'last_name',
+                'email',
+                'student_id',
+                'program',
+                'department',
+                'year_level',
+                'status',
+            )
+            ->where('public_id', $publicId)
+            ->where('role', 'Student')
+            ->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return list<array<string, mixed>> */
     public static function mandatoryModulesFor(int $userId): array
     {
-        return DB::select(
-            'SELECT m.id, m.public_id, m.title, m.category, m.duration_minutes,
-                    p.status, p.progress, p.completed_at, p.last_viewed_at
-             FROM orientation_modules m
-             LEFT JOIN orientation_progress p ON p.module_id = m.id AND p.user_id = ?
-             WHERE m.mandatory = 1 AND m.status = "Published"
-             ORDER BY m.id ASC',
-            [$userId],
-        );
+        return DB::table('orientation_modules as m')
+            ->leftJoin('orientation_progress as p', static function ($join) use ($userId): void {
+                $join->on('p.module_id', '=', 'm.id')
+                    ->where('p.user_id', $userId);
+            })
+            ->where('m.mandatory', 1)
+            ->where('m.status', 'Published')
+            ->select(
+                'm.id',
+                'm.public_id',
+                'm.title',
+                'm.category',
+                'm.duration_minutes',
+                'p.status',
+                'p.progress',
+                'p.completed_at',
+                'p.last_viewed_at',
+            )
+            ->orderBy('m.id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return list<array<string, mixed>> */
     public static function attendanceFor(int $userId): array
     {
-        return DB::select(
-            'SELECT * FROM event_attendance WHERE user_id = ? ORDER BY attended_at DESC, id DESC',
-            [$userId],
-        );
+        return DB::table('event_attendance')
+            ->where('user_id', $userId)
+            ->orderBy('attended_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return list<array<string, mixed>> */
     public static function quizAttemptsFor(int $userId): array
     {
-        return DB::select(
-            'SELECT m.public_id AS module_code, m.title AS module_title, m.passing_rate,
+        return DB::table('orientation_quizzes as q')
+            ->join('orientation_modules as m', 'm.id', '=', 'q.module_id')
+            ->leftJoin('orientation_quiz_attempts as a', static function ($join) use ($userId): void {
+                $join->on('a.quiz_id', '=', 'q.id')
+                    ->where('a.user_id', $userId);
+            })
+            ->selectRaw('m.public_id AS module_code, m.title AS module_title, m.passing_rate,
                     COUNT(a.id) AS attempts,
                     COALESCE(MAX(a.percent), 0) AS best_score,
                     COALESCE(MAX(a.passed), 0) AS passed,
-                    MAX(a.submitted_at) AS last_attempt
-             FROM orientation_quizzes q
-             JOIN orientation_modules m ON m.id = q.module_id
-             LEFT JOIN orientation_quiz_attempts a ON a.quiz_id = q.id AND a.user_id = ?
-             GROUP BY q.id, m.public_id, m.title, m.passing_rate
-             ORDER BY m.id ASC',
-            [$userId],
-        );
+                    MAX(a.submitted_at) AS last_attempt')
+            ->groupBy('q.id', 'm.public_id', 'm.title', 'm.passing_rate')
+            ->orderBy('m.id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 }

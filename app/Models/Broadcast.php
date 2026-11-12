@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Broadcast extends BaseModel
 {
@@ -19,31 +19,35 @@ final class Broadcast extends BaseModel
     /** @return array{total:int,draft:int,pending:int,scheduled:int,sent:int,reach:int,opened:int} */
     public static function counts(): array
     {
-        $row = DB::first(
-            'SELECT COUNT(*) AS total,
+        $row = DB::table('broadcasts')
+            ->selectRaw('COUNT(*) AS total,
                     SUM(status = "Draft") AS draft,
                     SUM(status = "Pending") AS pending,
                     SUM(status = "Scheduled") AS scheduled,
                     SUM(status = "Sent") AS sent,
                     COALESCE(SUM(reach), 0) AS reach,
-                    COALESCE(SUM(opened), 0) AS opened
-             FROM broadcasts',
-        );
+                    COALESCE(SUM(opened), 0) AS opened')
+            ->first();
 
-        return array_map('intval', $row ?? []);
+        return array_map('intval', $row === null ? [] : (array) $row);
     }
 
     /** @return list<array<string, mixed>> */
     public static function forStudent(?string $audience = null): array
     {
-        $sql = 'SELECT * FROM broadcasts WHERE status = "Sent"';
-        $bindings = [];
+        $query = DB::table('broadcasts')->where('status', 'Sent');
 
         if ($audience !== null && $audience !== '') {
-            $sql .= ' AND (audience LIKE ? OR audience LIKE "All%")';
-            $bindings[] = '%' . $audience . '%';
+            $query->where(static function ($group) use ($audience): void {
+                $group->where('audience', 'like', '%' . $audience . '%')
+                    ->orWhere('audience', 'like', 'All%');
+            });
         }
 
-        return DB::select($sql . ' ORDER BY COALESCE(sent_at, created_at) DESC, id DESC', $bindings);
+        return $query
+            ->orderByRaw('COALESCE(sent_at, created_at) DESC, id DESC')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 }

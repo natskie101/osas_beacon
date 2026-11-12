@@ -10,24 +10,21 @@ use App\Models\Event;
 use App\Models\File;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
-use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class EventController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = Event::paginate(
             $filters,
@@ -38,7 +35,7 @@ final class EventController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/events/index', [
+        return view('admin/events/index', [
             'title' => 'Events & Activities',
             'pageTitle' => config('navigation.meta.admin.events.title'),
             'pageSubtitle' => config('navigation.meta.admin.events.subtitle'),
@@ -53,14 +50,14 @@ final class EventController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
         $uploaded = $this->storeAttachment($request, null, $actor);
         $data['description'] = trim((string) ($data['description'] ?? ''));
@@ -70,24 +67,24 @@ final class EventController extends Controller
         $event = Event::find($id);
 
         if ($uploaded !== []) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$event['public_id'], $uploaded[0]['file_id']]);
+            DB::table('files')->where('id', (int) $uploaded[0]['file_id'])->update(['entity_id' => (string) $event['public_id']]);
         }
 
         AuditLogger::log('event.created', 'Event Created', $event['title'] . ' (' . $event['public_id'] . ') was scheduled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'blue', 'icon' => 'calendar']);
-        Session::flash('status', 'Event created.');
+        session()->flash('status', 'Event created.');
 
-        return Response::redirect(url('/admin/events/' . $event['public_id']));
+        return redirect(url('/admin/events/' . $event['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $event = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/events/show', [
+        return view('admin/events/show', [
             'title' => $event['title'],
             'pageTitle' => $event['title'],
-            'pageSubtitle' => $event['public_id'] . ' · ' . $event['status'],
+            'pageSubtitle' => $event['public_id'] . ' Â· ' . $event['status'],
             'pageKey' => 'events',
             'user' => $actor,
             'role' => $actor['role'],
@@ -97,12 +94,12 @@ final class EventController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
-    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    public function downloadAttachment(Request $request, string $publicId, string $fileId)
     {
         $event = $this->find($publicId);
         $file = File::find((int) $fileId);
@@ -119,11 +116,11 @@ final class EventController extends Controller
         return FileStorage::download($file);
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $event = $this->find($publicId);
         $data = $this->validated($request);
-        $uploaded = $this->storeAttachment($request, $event, Auth::user());
+        $uploaded = $this->storeAttachment($request, $event, auth_user());
         $data['description'] = trim((string) ($data['description'] ?? ''));
         $attachments = json_items($event['attachments'] ?? null);
         $data['attachments'] = json_encode(array_merge($attachments, $uploaded), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -131,30 +128,30 @@ final class EventController extends Controller
         $updated = Event::find((int) $event['id']) ?? $event;
 
         if ($uploaded !== []) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $uploaded[0]['file_id']]);
+            DB::table('files')->where('id', (int) $uploaded[0]['file_id'])->update(['entity_id' => (string) $updated['public_id']]);
         }
 
         AuditLogger::log('event.updated', 'Event Updated', $updated['title'] . ' (' . $updated['public_id'] . ') was updated.', ['entity_type' => 'event', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit']);
-        Session::flash('status', 'Event saved.');
+        session()->flash('status', 'Event saved.');
 
-        return Response::redirect(url('/admin/events/' . $updated['public_id']));
+        return redirect(url('/admin/events/' . $updated['public_id']));
     }
 
-    public function cancel(Request $request, string $publicId): Response
+    public function cancel(Request $request, string $publicId)
     {
         $event = $this->find($publicId);
         Event::update((int) $event['id'], ['status' => 'Cancelled']);
         AuditLogger::log('event.cancelled', 'Event Cancelled', $event['title'] . ' was cancelled.', ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'amber', 'icon' => 'alert']);
-        Session::flash('status', 'Event cancelled.');
+        session()->flash('status', 'Event cancelled.');
 
-        return Response::redirect(url('/admin/events/' . $event['public_id']));
+        return redirect(url('/admin/events/' . $event['public_id']));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $event */
-    private function form(array $actor, ?array $event): Response
+    private function form(array $actor, ?array $event)
     {
         $isEdit = $event !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($event, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
@@ -176,7 +173,7 @@ final class EventController extends Controller
             $values['end_at'] = datetime_input($values['end_at']);
         }
 
-        return $this->page('layouts.app', 'admin/events/form', [
+        return view('admin/events/form', [
             'title' => $isEdit ? 'Edit Event' : 'Create Event',
             'pageTitle' => $isEdit ? 'Edit Event' : 'Create Event',
             'pageSubtitle' => $isEdit ? 'Update the schedule, venue and publication details for ' . $event['public_id'] . '.' : 'Schedule a university event or student activity.',
@@ -186,7 +183,7 @@ final class EventController extends Controller
             'event' => $event,
             'attachments' => $event === null ? [] : json_items($event['attachments'] ?? null),
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 
@@ -214,7 +211,7 @@ final class EventController extends Controller
         $data['capacity'] = (int) $data['capacity'];
 
         if ($data['end_at'] !== null && $data['end_at'] < $data['start_at']) {
-            throw new ValidationException(['end_at' => 'The end time must be after the start time.'], $request->all());
+            throw new ValidationException(['end_at' => 'The end time must be after the start time.'], $request->input());
         }
 
         return $data;
@@ -223,10 +220,15 @@ final class EventController extends Controller
     /** @return list<string> */
     private function categories(): array
     {
-        return array_values(array_filter(array_map(
-            static fn (array $row): string => (string) $row['category'],
-            DB::select('SELECT DISTINCT category FROM events WHERE category <> "" ORDER BY category ASC'),
-        )));
+        return array_values(array_filter(
+            DB::table('events')
+                ->distinct()
+                ->where('category', '<>', '')
+                ->orderBy('category')
+                ->pluck('category')
+                ->map(static fn (mixed $category): string => (string) $category)
+                ->all(),
+        ));
     }
 
     /**
@@ -236,7 +238,7 @@ final class EventController extends Controller
      */
     private function storeAttachment(Request $request, ?array $event, array $actor): array
     {
-        $file = $request->file('attachment');
+        $file = $this->uploadedFile($request, 'attachment');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return [];
@@ -251,7 +253,7 @@ final class EventController extends Controller
                 (int) $actor['id'],
             );
         } catch (\RuntimeException $exception) {
-            throw new ValidationException(['attachment' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['attachment' => $exception->getMessage()], $request->input());
         }
 
         return [[

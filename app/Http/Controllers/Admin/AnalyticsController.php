@@ -8,21 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Participation;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class AnalyticsController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
-        $search = mb_strtolower($request->string('search'));
-        $tab = $request->string('tab', 'all');
-        $program = $request->string('program');
+        $actor = auth_user();
+        $search = mb_strtolower((string) $request->string('search'));
+        $tab = (string) $request->string('tab', 'all');
+        $program = (string) $request->string('program');
 
         $allStudents = Participation::students();
         $students = $allStudents;
@@ -67,7 +64,7 @@ final class AnalyticsController extends Controller
         ))));
         sort($programs);
 
-        return $this->page('layouts.app', 'admin/analytics/index', [
+        return view('admin/analytics/index', [
             'title' => 'Viewing & Tracking',
             'pageTitle' => config('navigation.meta.admin.analytics.title'),
             'pageSubtitle' => 'Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.',
@@ -80,16 +77,16 @@ final class AnalyticsController extends Controller
             'mandatoryTotal' => Participation::mandatoryModuleCount(),
             'programs' => $programs,
             'filters' => [
-                'search' => $request->string('search'),
+                'search' => (string) $request->string('search'),
                 'tab' => $tab,
                 'program' => $program,
             ],
         ]);
     }
 
-    public function showStudent(Request $request, string $publicId): Response
+    public function showStudent(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $student = Participation::findStudent($publicId);
 
         if ($student === null) {
@@ -113,10 +110,10 @@ final class AnalyticsController extends Controller
             default => 'At Risk',
         };
 
-        return $this->page('layouts.app', 'admin/analytics/show', [
+        return view('admin/analytics/show', [
             'title' => 'Student Tracking Logs',
             'pageTitle' => 'View Student Profile & Tracking Logs',
-            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' · ' . $student['public_id'],
+            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' Â· ' . $student['public_id'],
             'pageKey' => 'analytics',
             'user' => $actor,
             'role' => $actor['role'],
@@ -131,7 +128,7 @@ final class AnalyticsController extends Controller
         ]);
     }
 
-    public function notifyStudent(Request $request, string $publicId): Response
+    public function notifyStudent(Request $request, string $publicId)
     {
         $student = Participation::findStudent($publicId);
 
@@ -148,7 +145,7 @@ final class AnalyticsController extends Controller
         if ($message === '') {
             throw new ValidationException(
                 ['message' => 'Enter a message for the student.'],
-                $request->all(),
+                $request->input(),
             );
         }
 
@@ -173,15 +170,15 @@ final class AnalyticsController extends Controller
             ],
         );
 
-        Session::flash('status', 'Orientation progress notification sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.');
+        session()->flash('status', 'Orientation progress notification sent to ' . trim($student['first_name'] . ' ' . $student['last_name']) . '.');
         $destination = ($data['return_to'] ?? 'list') === 'tracking'
             ? '/admin/analytics/' . $student['public_id']
             : '/admin/analytics';
 
-        return Response::redirect(url($destination));
+        return redirect(url($destination));
     }
 
-    public function notifyAllNonCompliant(Request $request): Response
+    public function notifyAllNonCompliant(Request $request)
     {
         $data = $this->validate($request, [
             'message' => 'required|string|max:1000',
@@ -191,7 +188,7 @@ final class AnalyticsController extends Controller
         if ($message === '') {
             throw new ValidationException(
                 ['message' => 'Enter a message for the students.'],
-                $request->all(),
+                $request->input(),
             );
         }
 
@@ -201,9 +198,9 @@ final class AnalyticsController extends Controller
         ));
 
         if ($recipients === []) {
-            Session::flash('status', 'There are no non-compliant students to notify.');
+            session()->flash('status', 'There are no non-compliant students to notify.');
 
-            return Response::redirect(url('/admin/analytics'));
+            return redirect(url('/admin/analytics'));
         }
 
         foreach ($recipients as $student) {
@@ -229,8 +226,8 @@ final class AnalyticsController extends Controller
             ],
         );
 
-        Session::flash('status', 'Orientation progress notification sent to ' . \count($recipients) . ' non-compliant students.');
+        session()->flash('status', 'Orientation progress notification sent to ' . \count($recipients) . ' non-compliant students.');
 
-        return Response::redirect(url('/admin/analytics'));
+        return redirect(url('/admin/analytics'));
     }
 }

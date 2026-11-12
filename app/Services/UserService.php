@@ -8,7 +8,9 @@ use App\Models\File;
 use App\Models\PasswordReset;
 use App\Models\RememberToken;
 use App\Models\User;
-use App\Support\DB;
+use App\Support\Exceptions\ForbiddenHttpException;
+use App\Support\Exceptions\NotFoundHttpException;
+use Illuminate\Support\Facades\DB;
 
 final class UserService
 {
@@ -266,6 +268,112 @@ final class UserService
         });
     }
 
+    /** @param array<string, mixed> $target @param array<string, mixed> $actor */
+    public static function archiveAccount(array $target, array $actor): bool
+    {
+        return DB::transaction(function () use ($target, $actor): bool {
+            $activeCoordinators = DB::table('users')
+                ->select('id')
+                ->where('role', 'Coordinator')
+                ->where('status', 'Active')
+                ->lockForUpdate()
+                ->get();
+
+            $current = DB::table('users')
+                ->where('id', (int) $target['id'])
+                ->lockForUpdate()
+                ->first();
+            $current = $current === null ? null : (array) $current;
+
+            if ($current === null) {
+                throw new NotFoundHttpException('The account no longer exists.');
+            }
+
+            if (!in_array($current['role'], ['Student', 'Coordinator'], true)
+                || (int) $current['id'] === (int) $actor['id']
+                || $current['status'] === 'Archived') {
+                throw new ForbiddenHttpException();
+            }
+
+            if ($current['role'] === 'Coordinator' && $current['status'] === 'Active') {
+                if (count($activeCoordinators) <= 1) {
+                    return false;
+                }
+            }
+
+            User::update((int) $current['id'], [
+                'status' => 'Archived',
+                'archived_status' => $current['status'],
+            ]);
+            RememberToken::clearForUser((int) $current['id']);
+
+            AuditLogger::log(
+                'user.archived',
+                'Account Archived',
+                User::fullName($current) . ' (' . $current['public_id'] . ', ' . $current['role']
+                    . ') was archived. The profile and all history remain available for restoration.',
+                [
+                    'actor_user_id' => (int) $actor['id'],
+                    'actor_name' => User::fullName($actor),
+                    'target_user_id' => (int) $current['id'],
+                    'entity_type' => 'user',
+                    'entity_id' => (string) $current['public_id'],
+                    'tone' => 'amber',
+                    'icon' => 'archive',
+                ],
+            );
+
+            return true;
+        });
+    }
+
+    /** @param array<string, mixed> $target @param array<string, mixed> $actor */
+    public static function restoreAccount(array $target, array $actor): void
+    {
+        DB::transaction(function () use ($target, $actor): void {
+            $current = DB::table('users')
+                ->where('id', (int) $target['id'])
+                ->lockForUpdate()
+                ->first();
+            $current = $current === null ? null : (array) $current;
+
+            if ($current === null) {
+                throw new NotFoundHttpException('The account no longer exists.');
+            }
+
+            if (!in_array($current['role'], ['Student', 'Coordinator'], true)
+                || (int) $current['id'] === (int) $actor['id']
+                || $current['status'] !== 'Archived') {
+                throw new ForbiddenHttpException();
+            }
+
+            $status = in_array($current['archived_status'] ?? null, ['Active', 'Pending', 'Inactive'], true)
+                ? (string) $current['archived_status']
+                : 'Inactive';
+
+            User::update((int) $current['id'], [
+                'status' => $status,
+                'archived_status' => null,
+            ]);
+
+            AuditLogger::log(
+                'user.restored',
+                'Account Restored',
+                User::fullName($current) . ' (' . $current['public_id'] . ', ' . $current['role']
+                    . ') was restored with its previous ' . strtolower($status) . ' status.',
+                [
+                    'actor_user_id' => (int) $actor['id'],
+                    'actor_name' => User::fullName($actor),
+                    'target_user_id' => (int) $current['id'],
+                    'entity_type' => 'user',
+                    'entity_id' => (string) $current['public_id'],
+                    'tone' => 'green',
+                    'icon' => 'checkCircle',
+                ],
+            );
+        });
+    }
+
     /**
      * @param array<string, mixed> $target
      * @param array<string, mixed> $file
@@ -352,28 +460,59 @@ final class UserService
         $role = (string) ($data['role'] ?? 'Student');
         $status = (string) ($data['status'] ?? 'Pending');
         $data['first_name'] = trim((string) ($data['first_name'] ?? ''));
-        $data['middle_name'] = trim((string) ($data['middle_name'] ?? '')) ?: null;
         $data['last_name'] = trim((string) ($data['last_name'] ?? ''));
         $data['email'] = mb_strtolower(trim((string) ($data['email'] ?? '')));
-        $data['username'] = trim((string) ($data['username'] ?? ''));
         $data['role'] = $role;
         $data['status'] = $status;
 
-        if ($role === 'Student') {
-            $data['account_tier'] = 'Student Tier';
-            $data['student_id'] = trim((string) ($data['student_id'] ?? '')) ?: null;
-            $data['year_level'] = trim((string) ($data['year_level'] ?? '')) ?: null;
-            $data['age'] = ($data['age'] ?? null) === null || $data['age'] === '' ? null : (int) $data['age'];
-        } else {
-            $data['account_tier'] = 'Admin Tier';
-            $data['student_id'] = null;
-            $data['year_level'] = null;
-            $data['age'] = null;
+        // Optional profile fields are normalised only when the request
+        // actually carried them: an absent field (e.g. an input the edit
+        // form disables for non-student targets) means "leave the stored
+        // value unchanged", never "erase it".
+        if (array_key_exists('middle_name', $data)) {
+            $data['middle_name'] = trim((string) $data['middle_name']) ?: null;
         }
 
-        $data['department'] = trim((string) ($data['department'] ?? '')) ?: null;
-        $data['program'] = $role === 'Student' ? (trim((string) ($data['program'] ?? '')) ?: null) : null;
-        $data['phone'] = trim((string) ($data['phone'] ?? '')) ?: null;
+        if (array_key_exists('username', $data)) {
+            $data['username'] = trim((string) $data['username']);
+        }
+
+        if (array_key_exists('department', $data)) {
+            $data['department'] = trim((string) $data['department']) ?: null;
+        }
+
+        if (array_key_exists('phone', $data)) {
+            $data['phone'] = trim((string) $data['phone']) ?: null;
+        }
+
+        if (array_key_exists('age', $data)) {
+            $age = ($data['age'] === null || $data['age'] === '') ? null : (int) $data['age'];
+            $data['age'] = ($role === 'Student' || $role === 'Coordinator') ? $age : null;
+        }
+
+        if ($role === 'Student') {
+            $data['account_tier'] = 'Student Tier';
+
+            if (array_key_exists('student_id', $data)) {
+                $data['student_id'] = trim((string) $data['student_id']) ?: null;
+            }
+
+            if (array_key_exists('year_level', $data)) {
+                $data['year_level'] = trim((string) $data['year_level']) ?: null;
+            }
+
+            if (array_key_exists('program', $data)) {
+                $data['program'] = trim((string) $data['program']) ?: null;
+            }
+        } else {
+            $data['account_tier'] = 'Admin Tier';
+            // Staff accounts carry no student attributes: clear them so a
+            // demoted student does not keep stale student data.
+            $data['student_id'] = null;
+            $data['year_level'] = null;
+            $data['program'] = null;
+        }
+
         $data['access_level'] = (string) config('people.access_levels.' . $role, '');
 
         return $data;

@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use App\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Small table-backed model for the content and service modules.
  *
  * It intentionally supports only the query shapes used by this portal:
  * lookup by public ID, filtered pagination, insert, update and delete.
+ *
+ * Data access goes through Laravel's standard query builder; results are
+ * converted back to plain arrays so controllers and views keep their
+ * array-shape contract.
  */
 abstract class BaseModel
 {
@@ -27,74 +32,67 @@ abstract class BaseModel
     /** @return array<string, mixed>|null */
     public static function find(int $id): ?array
     {
-        return DB::first('SELECT * FROM ' . static::$table . ' WHERE id = ? LIMIT 1', [$id]);
+        $row = DB::table(static::$table)->where('id', $id)->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return array<string, mixed>|null */
     public static function findByPublicId(string $publicId): ?array
     {
-        return DB::first(
-            'SELECT * FROM ' . static::$table . ' WHERE public_id = ? LIMIT 1',
-            [$publicId],
-        );
+        $row = DB::table(static::$table)->where('public_id', $publicId)->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return list<array<string, mixed>> */
     public static function all(string $order = 'created_at DESC, id DESC'): array
     {
-        return DB::select('SELECT * FROM ' . static::$table . ' ORDER BY ' . $order);
+        return DB::table(static::$table)
+            ->orderByRaw($order)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function count(?string $where = null, array $bindings = []): int
     {
-        return (int) DB::value(
-            'SELECT COUNT(*) FROM ' . static::$table . ($where !== null ? ' WHERE ' . $where : ''),
-            $bindings,
-        );
+        $query = DB::table(static::$table);
+
+        if ($where !== null) {
+            $query->whereRaw($where, $bindings);
+        }
+
+        return (int) $query->count();
     }
 
     /** @param array<string, mixed> $data */
     public static function create(array $data, ?string $publicId = null): int
     {
         $now = date('Y-m-d H:i:s');
-        $columns = [];
-        $placeholders = [];
-        $bindings = [];
+        $row = [];
 
         foreach (static::$fillable as $column) {
             if (array_key_exists($column, $data)) {
-                $columns[] = '`' . $column . '`';
-                $placeholders[] = '?';
-                $bindings[] = $data[$column];
+                $row[$column] = $data[$column];
             }
         }
 
-        $columns[] = '`public_id`';
-        $placeholders[] = '?';
-        $bindings[] = $publicId ?? static::nextPublicId();
-        $columns[] = '`created_at`';
-        $placeholders[] = '?';
-        $bindings[] = $data['created_at'] ?? $now;
-        $columns[] = '`updated_at`';
-        $placeholders[] = '?';
-        $bindings[] = $data['updated_at'] ?? $now;
+        $row['public_id'] = $publicId ?? static::nextPublicId();
+        $row['created_at'] = $data['created_at'] ?? $now;
+        $row['updated_at'] = $data['updated_at'] ?? $now;
 
-        return DB::insert(
-            'INSERT INTO ' . static::$table . ' (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')',
-            $bindings,
-        );
+        return (int) DB::table(static::$table)->insertGetId($row);
     }
 
     /** @param array<string, mixed> $data */
     public static function update(int $id, array $data, bool $touch = true): void
     {
         $sets = [];
-        $bindings = [];
 
         foreach (static::$fillable as $column) {
             if (array_key_exists($column, $data)) {
-                $sets[] = '`' . $column . '` = ?';
-                $bindings[] = $data[$column];
+                $sets[$column] = $data[$column];
             }
         }
 
@@ -103,17 +101,15 @@ abstract class BaseModel
         }
 
         if ($touch) {
-            $sets[] = '`updated_at` = ?';
-            $bindings[] = date('Y-m-d H:i:s');
+            $sets['updated_at'] = date('Y-m-d H:i:s');
         }
 
-        $bindings[] = $id;
-        DB::update('UPDATE ' . static::$table . ' SET ' . implode(', ', $sets) . ' WHERE id = ?', $bindings);
+        DB::table(static::$table)->where('id', $id)->update($sets);
     }
 
     public static function delete(int $id): void
     {
-        DB::delete('DELETE FROM ' . static::$table . ' WHERE id = ?', [$id]);
+        DB::table(static::$table)->where('id', $id)->delete();
     }
 
     /**
@@ -130,40 +126,38 @@ abstract class BaseModel
         string $order = 'newest',
         array $columnFilters = [],
     ): array {
-        $where = [];
-        $bindings = [];
         $search = trim((string) ($filters['search'] ?? ''));
+        $searchable = static::$searchable;
 
-        if ($search !== '' && static::$searchable !== []) {
-            $parts = [];
-            $like = '%' . $search . '%';
+        $applyFilters = static function ($query) use ($filters, $statuses, $columnFilters, $search, $searchable): void {
+            if ($search !== '' && $searchable !== []) {
+                $like = '%' . Str::escapeLike($search) . '%';
 
-            foreach (static::$searchable as $column) {
-                $parts[] = '`' . $column . '` LIKE ?';
-                $bindings[] = $like;
+                $query->where(static function ($group) use ($searchable, $like): void {
+                    foreach ($searchable as $column) {
+                        $group->orWhere($column, 'like', $like);
+                    }
+                });
             }
 
-            $where[] = '(' . implode(' OR ', $parts) . ')';
-        }
+            $status = (string) ($filters['status'] ?? '');
 
-        $status = (string) ($filters['status'] ?? '');
-
-        if ($status !== '' && in_array($status, $statuses, true)) {
-            $where[] = '`status` = ?';
-            $bindings[] = $status;
-        }
-
-        foreach ($columnFilters as $filterKey => $column) {
-            $value = trim((string) ($filters[$filterKey] ?? ''));
-
-            if ($value !== '') {
-                $where[] = '`' . $column . '` = ?';
-                $bindings[] = $value;
+            if ($status !== '' && in_array($status, $statuses, true)) {
+                $query->where('status', $status);
             }
-        }
 
-        $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
-        $total = (int) DB::value('SELECT COUNT(*) FROM ' . static::$table . $whereSql, $bindings);
+            foreach ($columnFilters as $filterKey => $column) {
+                $value = trim((string) ($filters[$filterKey] ?? ''));
+
+                if ($value !== '') {
+                    $query->where($column, $value);
+                }
+            }
+        };
+
+        $query = DB::table(static::$table);
+        $applyFilters($query);
+        $total = (int) $query->count();
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $lastPage));
         $offset = ($page - 1) * $perPage;
@@ -176,14 +170,14 @@ abstract class BaseModel
             default => 'created_at DESC, id DESC',
         };
 
-        $data = DB::select(
-            'SELECT * FROM ' . static::$table . $whereSql . ' ORDER BY ' . $orderSql
-            . ' LIMIT ' . $perPage . ' OFFSET ' . $offset,
-            $bindings,
-        );
+        $rows = $query
+            ->orderByRaw($orderSql)
+            ->limit($perPage)
+            ->offset($offset)
+            ->get();
 
         return [
-            'data' => $data,
+            'data' => $rows->map(static fn (object $row): array => (array) $row)->all(),
             'total' => $total,
             'page' => $page,
             'per_page' => $perPage,
@@ -197,15 +191,14 @@ abstract class BaseModel
     {
         $year = date('Y');
         $prefix = preg_quote(static::$prefix, '/');
-        $rows = DB::select(
-            'SELECT public_id FROM ' . static::$table . ' WHERE public_id LIKE ?',
-            [static::$prefix . '-%'],
-        );
+        $publicIds = DB::table(static::$table)
+            ->where('public_id', 'like', static::$prefix . '-%')
+            ->pluck('public_id');
         $max = 0;
         $usesYear = null;
 
-        foreach ($rows as $row) {
-            $publicId = (string) ($row['public_id'] ?? '');
+        foreach ($publicIds as $publicId) {
+            $publicId = (string) $publicId;
 
             if (preg_match('/^' . $prefix . '-(?:(\d{4})-)?(\d+)$/', $publicId, $matches) !== 1) {
                 continue;

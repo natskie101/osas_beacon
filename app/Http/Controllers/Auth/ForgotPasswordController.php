@@ -10,25 +10,23 @@ use App\Models\PasswordReset;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Mailer;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class ForgotPasswordController extends Controller
 {
-    public function show(Request $request): Response
+    public function show(Request $request)
     {
-        return $this->page('layouts.auth', 'auth/forgot-password', [
+        return view('auth/forgot-password', [
             'title' => 'Reset Portal Password',
             'pageTitle' => 'Reset Portal Password',
             'authLogoRight' => true,
-            'errors' => Session::errors(),
-            'status' => Session::getFlash('status'),
-            'old' => ['email' => Session::old('email', '')],
+            'errors' => session('errors', []),
+            'status' => session('status'),
+            'old' => ['email' => old('email', '')],
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
         $data = (new ForgotPasswordRequest())->validate($request);
         $user = User::findByEmail($data['email']);
@@ -56,13 +54,13 @@ final class ForgotPasswordController extends Controller
                     'entity_id' => (string) $user['public_id'],
                     'tone' => 'warning',
                     'icon' => 'mail',
-                    'ip_address' => $request->ip,
+                    'ip_address' => $request->ip(),
                 ],
             );
         }
 
-        Session::flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
+        session()->flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
 
-        return Response::redirect(url('/forgot-password'));
+        return redirect(url('/forgot-password'));
     }
 }

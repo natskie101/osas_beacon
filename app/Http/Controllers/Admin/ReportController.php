@@ -6,19 +6,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\OrientationReportService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
+use Illuminate\Http\Request;
 use App\Support\Response;
 
 final class ReportController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
-        $search = mb_strtolower($request->string('search'));
-        $status = $request->string('status');
-        $period = $request->string('period');
+        $actor = auth_user();
+        $search = mb_strtolower((string) $request->string('search'));
+        $status = (string) $request->string('status');
+        $period = (string) $request->string('period');
 
         $modules = OrientationReportService::moduleProgress();
         $summary = OrientationReportService::summary();
@@ -48,7 +47,7 @@ final class ReportController extends Controller
             ));
         }
 
-        return $this->page('layouts.app', 'admin/reports/index', [
+        return view('admin/reports/index', [
             'title' => 'Reports',
             'pageTitle' => 'Reports',
             'pageSubtitle' => 'Generate and export official reports for the Student Orientation & Information Module.',
@@ -58,23 +57,23 @@ final class ReportController extends Controller
             'modules' => $modules,
             'summary' => $summary,
             'filters' => [
-                'search' => $request->string('search'),
+                'search' => (string) $request->string('search'),
                 'status' => $status,
                 'period' => $period,
             ],
         ]);
     }
 
-    public function moduleReport(Request $request, string $publicId): Response
+    public function moduleReport(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = OrientationReportService::module($publicId);
 
         if ($module === null) {
             throw new NotFoundHttpException('The requested orientation report could not be found.');
         }
 
-        return $this->page('layouts.app', 'admin/reports/module', [
+        return view('admin/reports/module', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
             'pageSubtitle' => $module['public_id'] . ' · ' . $module['version'] . ' · ' . $module['category'],
@@ -86,7 +85,7 @@ final class ReportController extends Controller
         ]);
     }
 
-    public function moduleCsv(Request $request, string $publicId): Response
+    public function moduleCsv(Request $request, string $publicId)
     {
         $module = OrientationReportService::module($publicId);
 
@@ -99,7 +98,7 @@ final class ReportController extends Controller
         return Response::download($module['public_id'] . '-completions.csv', "\xEF\xBB\xBF" . $csv, 'text/csv; charset=UTF-8');
     }
 
-    public function moduleExcel(Request $request, string $publicId): Response
+    public function moduleExcel(Request $request, string $publicId)
     {
         $module = OrientationReportService::module($publicId);
 

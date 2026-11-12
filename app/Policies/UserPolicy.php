@@ -28,8 +28,24 @@ final class UserPolicy
             return true;
         }
 
+        if ($ability === 'archive' || $ability === 'restore') {
+            return $actorRole === Role::Administrator
+                && in_array($targetRole, [Role::Student, Role::Coordinator], true)
+                && ($ability !== 'restore' || ($target['status'] ?? '') === 'Archived')
+                && ($ability !== 'archive' || ($target['status'] ?? '') !== 'Archived')
+                && (int) ($actor['id'] ?? 0) !== (int) ($target['id'] ?? 0);
+        }
+
+        if (($target['status'] ?? '') === 'Archived' && $ability !== 'view') {
+            return false;
+        }
+
         if ($actorRole === Role::Coordinator) {
-            return true;
+            // Coordinators manage students and fellow coordinators, but an
+            // Administrator account is outside their authority: they may view
+            // it (directory, profile, activity) and never change it — no edit,
+            // status change, role change, verification or password reset.
+            return $targetRole !== Role::Administrator || $ability === 'view';
         }
 
         if ($actorRole !== Role::Administrator) {
@@ -40,11 +56,13 @@ final class UserPolicy
             return true;
         }
 
-        if ($targetRole !== Role::Student) {
+        // Students and Coordinators are within the Administrator's authority;
+        // Administrator accounts stay view-only for everyone.
+        if ($targetRole !== Role::Student && $targetRole !== Role::Coordinator) {
             return false;
         }
 
-        return in_array($ability, ['manage', 'verify', 'reset_password', 'upload_school_id', 'download_school_id'], true);
+        return in_array($ability, ['manage', 'verify', 'reset_password', 'upload_school_id', 'download_school_id', 'change_role'], true);
     }
 
     /** @param array<string, mixed>|null $actor @param array<string, mixed> $target */
@@ -72,10 +90,31 @@ final class UserPolicy
         }
 
         if ($role === Role::Administrator) {
+            return ['Student', 'Coordinator'];
+        }
+
+        return [];
+    }
+
+    /** @return list<string> */
+    public static function creatableRoles(?array $actor): array
+    {
+        $role = Role::tryFrom((string) ($actor['role'] ?? ''));
+
+        if ($role === Role::Administrator) {
+            return ['Student', 'Coordinator'];
+        }
+
+        if ($role === Role::Coordinator) {
             return ['Student'];
         }
 
         return [];
+    }
+
+    public static function canCreateRole(?array $actor, string $role): bool
+    {
+        return in_array($role, self::creatableRoles($actor), true);
     }
 
     public static function canAssignRole(?array $actor, string $role): bool

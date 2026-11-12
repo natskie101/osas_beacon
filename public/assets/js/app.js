@@ -75,29 +75,186 @@
       });
     });
 
-    /* Show the selected filename in custom upload areas. */
+    /* Show selected files and support dropping files onto custom upload areas. */
+    function updateUploadLabel(input) {
+      var dropZone = Array.prototype.slice.call(document.querySelectorAll(".upload-drop[for]")).find(function (zone) {
+        return zone.getAttribute("for") === input.id;
+      });
+      var container = dropZone || input.closest(".field") || input.parentElement;
+      var filename = container ? container.querySelector("[data-upload-filename]") : null;
+      var prompts = container ? container.querySelectorAll("[data-upload-prompt]") : [];
+      var file = input.files && input.files.length ? input.files[0] : null;
+
+      if (!filename) return;
+
+      filename.textContent = file ? file.name : "";
+      filename.hidden = !file;
+      prompts.forEach(function (prompt) {
+        prompt.hidden = Boolean(file);
+      });
+    }
+
     document.querySelectorAll(".upload-drop__input").forEach(function (input) {
       input.addEventListener("change", function () {
-        var label = input.labels && input.labels.length ? input.labels[0] : null;
-        var filename = label ? label.querySelector("[data-upload-filename]") : null;
-        var prompts = label ? label.querySelectorAll("[data-upload-prompt]") : [];
-        var file = input.files && input.files.length ? input.files[0] : null;
-
-        if (!filename) return;
-
-        filename.textContent = file ? file.name : "";
-        filename.hidden = !file;
-        prompts.forEach(function (prompt) {
-          prompt.hidden = Boolean(file);
-        });
+        updateUploadLabel(input);
       });
     });
 
-    /* Announcement rich-content toolbar inserts basic HTML into the body field. */
+    document.querySelectorAll(".upload-drop[for]").forEach(function (dropZone) {
+      var input = document.getElementById(dropZone.getAttribute("for") || "");
+      if (!input || !input.matches(".upload-drop__input")) return;
+
+      ["dragenter", "dragover"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          dropZone.classList.add("upload-drop--dragging");
+        });
+      });
+
+      ["dragleave", "dragend"].forEach(function (eventName) {
+        dropZone.addEventListener(eventName, function (event) {
+          if (eventName === "dragleave" && dropZone.contains(event.relatedTarget)) return;
+          dropZone.classList.remove("upload-drop--dragging");
+        });
+      });
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("upload-drop--dragging");
+
+        var files = event.dataTransfer && event.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        var transfer = new DataTransfer();
+        transfer.items.add(files[0]);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+
+    /* Preview a selected profile photo before submitting the profile form. */
+    var profilePhotoInput = document.querySelector("[data-profile-photo-input]");
+    var profilePhotoImage = document.querySelector("[data-profile-photo-image]");
+    var profilePhotoInitials = document.querySelector("[data-profile-photo-initials]");
+    var profilePhotoPreviewUrl = null;
+
+    if (profilePhotoInput && profilePhotoImage) {
+      profilePhotoInput.addEventListener("change", function () {
+        var file = profilePhotoInput.files && profilePhotoInput.files.length ? profilePhotoInput.files[0] : null;
+
+        if (profilePhotoPreviewUrl) {
+          URL.revokeObjectURL(profilePhotoPreviewUrl);
+          profilePhotoPreviewUrl = null;
+        }
+
+        if (!file || !/^image\/(jpeg|png)$/.test(file.type)) return;
+
+        profilePhotoPreviewUrl = URL.createObjectURL(file);
+        profilePhotoImage.src = profilePhotoPreviewUrl;
+        profilePhotoImage.hidden = false;
+        if (profilePhotoInitials) profilePhotoInitials.hidden = true;
+      });
+    }
+
+    /* Toolbars marked data-editor-rich become a visual WYSIWYG editor backed by a
+       hidden textarea, so the stored value stays the same cleaned HTML as before. */
+    function setupRichEditor(toolbar, input) {
+      var surface = document.getElementById(input.id + "-editor");
+
+      if (!surface) return;
+
+      var error = input.form ? input.form.querySelector("[data-editor-error]") : null;
+
+      function sync() {
+        input.value = surface.innerHTML;
+      }
+
+      function isEmpty() {
+        return surface.textContent.replace(/\s+/g, "") === ""
+          && !surface.querySelector("img, hr, table");
+      }
+
+      function hideError() {
+        if (error && !error.hidden) error.hidden = true;
+      }
+
+      function exec(command, value) {
+        surface.focus();
+        document.execCommand(command, false, value || null);
+        sync();
+      }
+
+      /* Build the visual surface from the stored value, then swap it in. */
+      surface.innerHTML = input.value;
+
+      /* Collapse empty markup (e.g. "<p></p>") so the placeholder can show. */
+      if (isEmpty()) surface.innerHTML = "";
+
+      surface.hidden = false;
+      input.hidden = true;
+      input.required = false;
+
+      /* Chrome inserts <div> on Enter; prefer <p> so the cleaner keeps spacing. */
+      try {
+        document.execCommand("defaultParagraphSeparator", false, "p");
+      } catch (ignored) {
+        /* Older browsers ignore this command. */
+      }
+
+      toolbar.querySelectorAll("button[data-editor-command]").forEach(function (button) {
+        /* Keep the text selection when the toolbar button takes focus. */
+        button.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+
+        button.addEventListener("click", function () {
+          var command = button.getAttribute("data-editor-command") || "";
+          var value = button.getAttribute("data-editor-value") || "";
+
+          if (command === "createLink") {
+            var url = window.prompt("Link URL", "https://");
+            if (url) exec("createLink", url);
+            return;
+          }
+
+          if (command === "insertImage") {
+            var image = window.prompt("Image URL", "https://");
+            if (image) exec("insertImage", image);
+            return;
+          }
+
+          exec(command, command === "formatBlock" && value ? "<" + value + ">" : value);
+        });
+      });
+
+      surface.addEventListener("input", function () {
+        sync();
+        if (!isEmpty()) hideError();
+      });
+
+      if (input.form) {
+        input.form.addEventListener("submit", function (event) {
+          sync();
+
+          if (isEmpty()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (error) error.hidden = false;
+            surface.focus();
+          }
+        });
+      }
+    }
+
     document.querySelectorAll("[data-editor-toolbar]").forEach(function (toolbar) {
       var target = document.getElementById(toolbar.getAttribute("data-target") || "");
 
       if (!target) return;
+
+      if (toolbar.hasAttribute("data-editor-rich")) {
+        setupRichEditor(toolbar, target);
+        return;
+      }
 
       toolbar.querySelectorAll("button[data-editor-before]").forEach(function (button) {
         button.addEventListener("click", function () {
@@ -420,6 +577,11 @@
       document.querySelectorAll("details.account[open]").forEach(function (details) {
         if (!details.contains(event.target)) details.removeAttribute("open");
       });
+
+      /* Print buttons (replaces inline onclick so a strict CSP can be used) */
+      if (event.target.closest("[data-print-button]")) {
+        window.print();
+      }
     });
 
     /* Keep derived access fields in sync with the selected role. */
@@ -427,20 +589,39 @@
 
     if (roleSelect) {
       var accessLevel = document.querySelector("[data-access-level]");
-      var accountTier = document.querySelector("[data-account-tier]");
       var studentFields = document.querySelector("[data-student-fields]");
+      var studentIdField = document.querySelector("[data-student-id-field]");
+      var studentIdInput = document.getElementById("student_id");
+      var studentAgeInput = document.getElementById("age");
+      var coordinatorAgeField = document.querySelector("[data-coordinator-age-field]");
+      var coordinatorAgeInput = document.getElementById("coordinator_age");
+      var schoolIdSection = document.querySelector("[data-school-id-section]");
+      var schoolIdInput = document.getElementById("school_id");
       var accessLevels = {
         Student: "Student — Portal Access",
         Administrator: "Administrator — Technical Support Access",
-        Coordinator: "Coordinator — Full System Access"
+        Coordinator: "Coordinator — Coordinator Portal Access"
       };
 
       function syncRole() {
         var role = roleSelect.value;
+        var isStudent = role === "Student";
+        var isCoordinator = role === "Coordinator";
 
         if (accessLevel) accessLevel.value = accessLevels[role] || "";
-        if (accountTier) accountTier.value = role === "Student" ? "Student Tier" : "Admin Tier";
-        if (studentFields) studentFields.hidden = role !== "Student";
+        if (studentFields) studentFields.hidden = !isStudent;
+        if (studentFields) {
+          studentFields.querySelectorAll("input, select, textarea").forEach(function (field) {
+            field.disabled = !isStudent;
+          });
+        }
+        if (studentIdField) studentIdField.hidden = !isStudent;
+        if (studentIdInput) studentIdInput.disabled = !isStudent;
+        if (studentAgeInput) studentAgeInput.disabled = !isStudent;
+        if (coordinatorAgeField) coordinatorAgeField.hidden = !isCoordinator;
+        if (coordinatorAgeInput) coordinatorAgeInput.disabled = !isCoordinator;
+        if (schoolIdSection) schoolIdSection.hidden = !isStudent;
+        if (schoolIdInput) schoolIdInput.disabled = !isStudent;
       }
 
       roleSelect.addEventListener("change", syncRole);
@@ -468,5 +649,284 @@
 
       setInterval(function () { show(index + 1); }, 7000);
     }
+
+    /* Student dashboard infographic rotation — advances every 5 seconds and
+     * pauses on hover/focus. Reduced-motion systems still rotate; the CSS
+     * swaps the slide instantly instead of sliding it. The dots below the
+     * picture jump back/forward on click, like the login portal's dots. */
+    var ingoCarousel = document.querySelector("[data-ingo-carousel]");
+
+    if (ingoCarousel) {
+      var ingoTrack = ingoCarousel.querySelector("[data-ingo-track]");
+      var ingoSlides = ingoTrack ? ingoTrack.children.length : 0;
+      var ingoIndex = 0;
+      var ingoTimer = null;
+      var ingoDots = ingoCarousel.querySelectorAll("[data-ingo-dot]");
+
+      var ingoGo = function (next) {
+        ingoIndex = ((next % ingoSlides) + ingoSlides) % ingoSlides;
+        ingoTrack.style.transform = "translateX(-" + ingoIndex * 100 + "%)";
+        ingoDots.forEach(function (dot, i) {
+          dot.classList.toggle("pdot--on", i === ingoIndex);
+        });
+      };
+
+      var ingoAdvance = function () {
+        ingoGo(ingoIndex + 1);
+      };
+
+      var ingoStart = function () {
+        if (ingoTimer === null) {
+          ingoTimer = setInterval(ingoAdvance, 5000);
+        }
+      };
+
+      var ingoStop = function () {
+        if (ingoTimer !== null) {
+          clearInterval(ingoTimer);
+          ingoTimer = null;
+        }
+      };
+
+      if (ingoTrack && ingoSlides > 1) {
+        ingoCarousel.addEventListener("mouseenter", ingoStop);
+        ingoCarousel.addEventListener("mouseleave", ingoStart);
+        ingoCarousel.addEventListener("focusin", ingoStop);
+        ingoCarousel.addEventListener("focusout", ingoStart);
+        ingoDots.forEach(function (dot, i) {
+          dot.addEventListener("click", function () {
+            ingoGo(i);
+            /* restart the 5s countdown after a manual jump — but only when
+             * the rotation is running (not paused by hover/focus) */
+            if (ingoTimer !== null) {
+              ingoStop();
+              ingoStart();
+            }
+          });
+        });
+        ingoStart();
+      }
+    }
+  });
+
+  /* Dropdown menus, rendered inside the page.
+   *
+   * A native <select> popup is drawn by the browser: it ignores page CSS and
+   * is not clamped to a small viewport, so on phones (and in device
+   * emulation) the option list spills past the edge of the screen and is
+   * hard to read. This renders the same options as an in-page list anchored
+   * to the control and capped to the viewport. The real <select> stays the
+   * form control — picking an option sets its value and fires a normal
+   * bubbling change event, so filters keep auto-submitting and every form
+   * keeps working. Without JavaScript the native select is unchanged. */
+  onReady(function () {
+    var controls = Array.prototype.slice.call(document.querySelectorAll("select.input"));
+
+    if (controls.length === 0) {
+      return;
+    }
+
+    var menu = document.createElement("div");
+    var current = null;
+    var activeIndex = -1;
+    menu.className = "selectmenu";
+    menu.setAttribute("role", "listbox");
+    menu.hidden = true;
+    document.body.appendChild(menu);
+
+    var usable = function (select) {
+      return select && !select.disabled && !select.multiple && select.offsetParent !== null;
+    };
+
+    var close = function () {
+      if (current) {
+        current.removeAttribute("data-selectmenu-open");
+        current.removeAttribute("aria-expanded");
+      }
+      current = null;
+      activeIndex = -1;
+      menu.hidden = true;
+      menu.innerHTML = "";
+    };
+
+    var highlight = function (index) {
+      var items = menu.children;
+
+      if (items.length === 0) {
+        return;
+      }
+
+      activeIndex = (index + items.length) % items.length;
+
+      for (var i = 0; i < items.length; i++) {
+        items[i].classList.toggle("selectmenu__opt--active", i === activeIndex);
+        items[i].setAttribute("aria-selected", i === activeIndex ? "true" : "false");
+      }
+
+      if (items[activeIndex].scrollIntoView) {
+        items[activeIndex].scrollIntoView({ block: "nearest" });
+      }
+    };
+
+    var choose = function (option) {
+      var select = current;
+
+      if (!select || !option) {
+        return;
+      }
+
+      select.value = option.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      close();
+      select.focus({ preventScroll: true });
+    };
+
+    var position = function (select) {
+      var rect = select.getBoundingClientRect();
+      var width = Math.min(rect.width, window.innerWidth - 16);
+      var maxHeight = Math.max(120, Math.round(window.innerHeight * 0.6));
+
+      menu.style.width = Math.round(width) + "px";
+      menu.style.left = Math.round(Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))) + "px";
+      menu.style.maxHeight = maxHeight + "px";
+
+      var height = Math.min(menu.scrollHeight, maxHeight);
+      var below = window.innerHeight - rect.bottom;
+
+      if (below < height + 12 && rect.top > below) {
+        menu.style.top = Math.round(Math.max(8, rect.top - height - 6)) + "px";
+      } else {
+        menu.style.top = Math.round(rect.bottom + 4) + "px";
+      }
+    };
+
+    var open = function (select) {
+      if (!usable(select)) {
+        return;
+      }
+
+      if (current === select) {
+        close();
+        return;
+      }
+
+      close();
+      current = select;
+      activeIndex = -1;
+
+      Array.prototype.slice.call(select.options).forEach(function (option, index) {
+        var item = document.createElement("button");
+        item.type = "button";
+        item.className = "selectmenu__opt" + (option.selected ? " selectmenu__opt--on" : "");
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", option.selected ? "true" : "false");
+        item.textContent = option.textContent;
+        item.addEventListener("click", function () {
+          choose(option);
+        });
+        menu.appendChild(item);
+
+        if (option.selected) {
+          activeIndex = index;
+        }
+      });
+
+      menu.hidden = false;
+      select.setAttribute("data-selectmenu-open", "");
+      select.setAttribute("aria-expanded", "true");
+      position(select);
+      highlight(activeIndex < 0 ? 0 : activeIndex);
+    };
+
+    controls.forEach(function (select) {
+      select.addEventListener("mousedown", function (event) {
+        if (!usable(select)) {
+          return;
+        }
+
+        event.preventDefault();
+        select.focus({ preventScroll: true });
+        open(select);
+      });
+
+      select.addEventListener("touchstart", function (event) {
+        if (!usable(select)) {
+          return;
+        }
+
+        event.preventDefault();
+        open(select);
+      }, { passive: false });
+
+      select.addEventListener("keydown", function (event) {
+        var key = event.key;
+
+        if (key === "Escape") {
+          if (current === select) {
+            event.preventDefault();
+            close();
+          }
+          return;
+        }
+
+        if (key === "ArrowDown" || key === "ArrowUp") {
+          event.preventDefault();
+
+          if (current !== select) {
+            open(select);
+            return;
+          }
+
+          highlight(activeIndex + (key === "ArrowDown" ? 1 : -1));
+          return;
+        }
+
+        if (key === "Enter" || key === " " || key === "Spacebar") {
+          event.preventDefault();
+
+          if (current === select && activeIndex >= 0) {
+            choose(select.options[activeIndex]);
+          } else if (current !== select) {
+            open(select);
+          }
+        }
+      });
+    });
+
+    document.addEventListener("mousedown", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    }, true);
+
+    document.addEventListener("touchstart", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    }, true);
+
+    document.addEventListener("focusin", function (event) {
+      if (!current || event.target === current || menu.contains(event.target)) {
+        return;
+      }
+
+      close();
+    });
+
+    window.addEventListener("resize", function () {
+      if (current) {
+        close();
+      }
+    });
+
+    window.addEventListener("scroll", function () {
+      if (current) {
+        close();
+      }
+    }, true);
   });
 })();

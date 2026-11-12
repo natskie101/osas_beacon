@@ -8,21 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class DocumentRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $requests = DocumentRequest::forStudent((int) $actor['id']);
 
-        return $this->page('layouts.app', 'student/document-requests/index', [
+        return view('student/document-requests/index', [
             'title' => 'Document Requests',
             'pageTitle' => config('navigation.meta.student.document-requests.title'),
             'pageSubtitle' => config('navigation.meta.student.document-requests.subtitle'),
@@ -34,28 +31,28 @@ final class DocumentRequestController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->page('layouts.app', 'student/document-requests/create', [
+        return view('student/document-requests/create', [
             'title' => 'New Document Request',
             'pageTitle' => 'New Document Request',
             'pageSubtitle' => 'Choose the document you need and tell OSAS how it will be used.',
             'pageKey' => 'document-requests',
-            'user' => Auth::user(),
-            'role' => Auth::user()['role'],
+            'user' => auth_user(),
+            'role' => auth_user()['role'],
             'values' => array_merge([
                 'document_type' => '',
                 'purpose' => '',
                 'copies' => 1,
                 'delivery_mode' => 'Pick-up at OSAS',
-            ], Session::getFlash('old', [])),
-            'errors' => Session::errors(),
+            ], old()),
+            'errors' => session('errors', []),
         ]);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validate($request, [
             'document_type' => 'required|string|max:150',
             'purpose' => 'required|string|max:1000',
@@ -84,29 +81,29 @@ final class DocumentRequestController extends Controller
 
         NotificationService::send((int) $actor['id'], 'Document Request Received', 'Your request for ' . $data['document_type'] . ' has been received and will be reviewed by OSAS.', 'info', 'document_request', (string) $documentRequest['public_id']);
 
-        foreach (DB::select('SELECT id FROM users WHERE role = "Coordinator" AND status = "Active"') as $staff) {
-            NotificationService::send((int) $staff['id'], 'New Document Request', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', 'info', 'document_request', (string) $documentRequest['public_id']);
+        foreach (DB::table('users')->where('role', 'Coordinator')->where('status', 'Active')->pluck('id') as $staffId) {
+            NotificationService::send((int) $staffId, 'New Document Request', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', 'info', 'document_request', (string) $documentRequest['public_id']);
         }
 
         AuditLogger::log('document_request.created', 'Document Request Submitted', $documentRequest['student_name'] . ' requested ' . $data['document_type'] . '.', ['entity_type' => 'document_request', 'entity_id' => (string) $documentRequest['public_id'], 'tone' => 'blue', 'icon' => 'printer', 'target_user_id' => (int) $actor['id']]);
-        Session::flash('status', 'Your document request has been submitted.');
+        session()->flash('status', 'Your document request has been submitted.');
 
-        return Response::redirect(url('/student/document-requests/' . $documentRequest['public_id']));
+        return redirect(url('/student/document-requests/' . $documentRequest['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = DocumentRequest::findForStudent($publicId, (int) $actor['id']);
 
         if ($documentRequest === null) {
             throw new NotFoundHttpException('The requested document request could not be found.');
         }
 
-        return $this->page('layouts.app', 'student/document-requests/show', [
+        return view('student/document-requests/show', [
             'title' => $documentRequest['document_type'],
             'pageTitle' => $documentRequest['document_type'],
-            'pageSubtitle' => $documentRequest['public_id'] . ' · ' . $documentRequest['status'],
+            'pageSubtitle' => $documentRequest['public_id'] . ' Â· ' . $documentRequest['status'],
             'pageKey' => 'document-requests',
             'user' => $actor,
             'role' => $actor['role'],
@@ -115,9 +112,9 @@ final class DocumentRequestController extends Controller
         ]);
     }
 
-    public function cancel(Request $request, string $publicId): Response
+    public function cancel(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = DocumentRequest::findForStudent($publicId, (int) $actor['id']);
 
         if ($documentRequest === null) {
@@ -125,17 +122,17 @@ final class DocumentRequestController extends Controller
         }
 
         if (!in_array($documentRequest['status'], ['Submitted', 'Under Review'], true)) {
-            Session::flash('error', 'This request can no longer be cancelled.');
+            session()->flash('error', 'This request can no longer be cancelled.');
 
-            return Response::redirect(url('/student/document-requests/' . $documentRequest['public_id']));
+            return redirect(url('/student/document-requests/' . $documentRequest['public_id']));
         }
 
         DocumentRequest::update((int) $documentRequest['id'], ['status' => 'Cancelled']);
         DocumentRequest::addEvent((int) $documentRequest['id'], 'Cancelled', trim((string) $actor['first_name'] . ' ' . (string) $actor['last_name']), 'Request cancelled by the student.');
         AuditLogger::log('document_request.cancelled', 'Document Request Cancelled', $documentRequest['public_id'] . ' was cancelled by the student.', ['entity_type' => 'document_request', 'entity_id' => (string) $documentRequest['public_id'], 'tone' => 'amber', 'icon' => 'close', 'target_user_id' => (int) $actor['id']]);
-        Session::flash('status', 'Document request cancelled.');
+        session()->flash('status', 'Document request cancelled.');
 
-        return Response::redirect(url('/student/document-requests/' . $documentRequest['public_id']));
+        return redirect(url('/student/document-requests/' . $documentRequest['public_id']));
     }
 
     /** @return array{total:int,active:int,ready:int,released:int} */

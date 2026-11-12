@@ -9,16 +9,14 @@ use App\Models\Event;
 use App\Models\File;
 use App\Services\FileStorage;
 use App\Models\Tracking;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
+use Illuminate\Http\Request;
 
 final class EventController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $events = Event::forStudent();
         $eventCounts = ['all' => count($events), 'upcoming' => 0, 'ongoing' => 0, 'completed' => 0];
 
@@ -35,8 +33,8 @@ final class EventController extends Controller
             }
         }
 
-        $search = mb_strtolower($request->string('search'));
-        $status = $request->string('status');
+        $search = mb_strtolower((string) $request->string('search'));
+        $status = (string) $request->string('status');
         $status = in_array($status, ['Upcoming', 'Ongoing', 'Completed'], true) ? $status : '';
 
         if ($search !== '') {
@@ -57,7 +55,7 @@ final class EventController extends Controller
             ));
         }
 
-        return $this->page('layouts.app', 'student/events/index', [
+        return view('student/events/index', [
             'title' => 'Events and Activities',
             'pageTitle' => config('navigation.meta.student.events.title'),
             'pageSubtitle' => config('navigation.meta.student.events.subtitle'),
@@ -66,13 +64,13 @@ final class EventController extends Controller
             'role' => $actor['role'],
             'events' => $events,
             'eventCounts' => $eventCounts,
-            'filters' => ['search' => $request->string('search'), 'status' => $status],
+            'filters' => ['search' => (string) $request->string('search'), 'status' => $status],
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $event = Event::findVisible($publicId);
 
         if ($event === null) {
@@ -81,7 +79,7 @@ final class EventController extends Controller
 
         Tracking::record((string) $event['title'], 'Event', (string) $event['public_id']);
 
-        return $this->page('layouts.app', 'student/events/show', [
+        return view('student/events/show', [
             'title' => $event['title'],
             'pageTitle' => $event['title'],
             'pageSubtitle' => $event['category'] . ' · ' . fmt_datetime($event['start_at']),
@@ -93,7 +91,7 @@ final class EventController extends Controller
         ]);
     }
 
-    public function downloadAttachment(Request $request, string $publicId, string $fileId): Response
+    public function downloadAttachment(Request $request, string $publicId, string $fileId)
     {
         $event = Event::findVisible($publicId);
         $file = File::find((int) $fileId);

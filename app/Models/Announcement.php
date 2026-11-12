@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Announcement extends BaseModel
 {
@@ -19,17 +19,16 @@ final class Announcement extends BaseModel
     /** @return array{total:int,published:int,draft:int,scheduled:int,archived:int,views:int} */
     public static function counts(): array
     {
-        $row = DB::first(
-            'SELECT COUNT(*) AS total,
+        $row = DB::table('announcements')
+            ->selectRaw('COUNT(*) AS total,
                     SUM(status = "Published") AS published,
                     SUM(status = "Draft") AS draft,
                     SUM(status = "Scheduled") AS scheduled,
                     SUM(status = "Archived") AS archived,
-                    COALESCE(SUM(views), 0) AS views
-             FROM announcements',
-        );
+                    COALESCE(SUM(views), 0) AS views')
+            ->first();
 
-        return array_map('intval', $row ?? []);
+        return array_map('intval', $row === null ? [] : (array) $row);
     }
 
     /** @return list<array<string, mixed>> */
@@ -37,34 +36,38 @@ final class Announcement extends BaseModel
     {
         $limit = max(1, min(100, $limit));
 
-        return DB::select(
-            'SELECT * FROM announcements
-             WHERE status = "Published" AND audience <> "Faculty & Staff"
-             ORDER BY COALESCE(published_at, created_at) DESC, id DESC
-             LIMIT ' . $limit,
-        );
+        return DB::table('announcements')
+            ->where('status', 'Published')
+            ->where('audience', '<>', 'Faculty & Staff')
+            ->orderByRaw('COALESCE(published_at, created_at) DESC, id DESC')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function publishedCount(): int
     {
-        return (int) DB::value(
-            'SELECT COUNT(*) FROM announcements WHERE status = "Published" AND audience <> "Faculty & Staff"',
-        );
+        return (int) DB::table('announcements')
+            ->where('status', 'Published')
+            ->where('audience', '<>', 'Faculty & Staff')
+            ->count();
     }
 
     /** @return array<string, mixed>|null */
     public static function findPublished(string $publicId): ?array
     {
-        return DB::first(
-            'SELECT * FROM announcements
-             WHERE public_id = ? AND status = "Published" AND audience <> "Faculty & Staff"
-             LIMIT 1',
-            [$publicId],
-        );
+        $row = DB::table('announcements')
+            ->where('public_id', $publicId)
+            ->where('status', 'Published')
+            ->where('audience', '<>', 'Faculty & Staff')
+            ->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     public static function incrementViews(int $id): void
     {
-        DB::update('UPDATE announcements SET views = views + 1 WHERE id = ?', [$id]);
+        DB::table('announcements')->where('id', $id)->increment('views');
     }
 }

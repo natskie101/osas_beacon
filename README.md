@@ -13,6 +13,20 @@ notifications, CSV reports and printable HTML reports.
 - Laravel-style layout to make a later framework port straightforward
 - Original portal visual design and CSS preserved
 
+## Technical Admin chart assets
+
+The System Overview uses locally bundled Chart.js and Tailwind assets; no CDN
+is required at runtime. After installing the Node dependencies, rebuild the
+Technical Admin assets with:
+
+```bash
+npm install
+npm run build:technical-assets
+```
+
+The generated styles and chart scripts are loaded only on the Technical Admin
+System Overview page.
+
 ## Quick start
 
 1. Copy `.env.example` to `.env` and set the database credentials.

@@ -7,20 +7,17 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Regulation;
 use App\Models\Tracking;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class RegulationController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulations = Regulation::published();
-        $search = mb_strtolower($request->string('search'));
-        $category = $request->string('category');
+        $search = mb_strtolower((string) $request->string('search'));
+        $category = (string) $request->string('category');
 
         if ($search !== '') {
             $regulations = array_values(array_filter(
@@ -38,7 +35,7 @@ final class RegulationController extends Controller
             ));
         }
 
-        return $this->page('layouts.app', 'student/regulations/index', [
+        return view('student/regulations/index', [
             'title' => 'Rules and Regulations',
             'pageTitle' => config('navigation.meta.student.rules.title'),
             'pageSubtitle' => config('navigation.meta.student.rules.subtitle'),
@@ -49,13 +46,13 @@ final class RegulationController extends Controller
             'categories' => Regulation::categories(),
             'categoryCounts' => Regulation::publishedCategoryCounts(),
             'totalPublished' => count(Regulation::published()),
-            'filters' => ['search' => $request->string('search'), 'category' => $category],
+            'filters' => ['search' => (string) $request->string('search'), 'category' => $category],
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulation = Regulation::findPublished($publicId);
 
         if ($regulation === null) {
@@ -65,10 +62,10 @@ final class RegulationController extends Controller
         Regulation::incrementViews((int) $regulation['id']);
         Tracking::record((string) $regulation['title'], 'Regulation', (string) $regulation['public_id']);
 
-        return $this->page('layouts.app', 'student/regulations/show', [
+        return view('student/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['reference_code'] . ' · ' . $regulation['category'],
+            'pageSubtitle' => $regulation['reference_code'] . ' Â· ' . $regulation['category'],
             'pageKey' => 'rules',
             'user' => $actor,
             'role' => $actor['role'],
@@ -77,7 +74,7 @@ final class RegulationController extends Controller
         ]);
     }
 
-    public function acknowledge(Request $request, string $publicId): Response
+    public function acknowledge(Request $request, string $publicId)
     {
         $regulation = Regulation::findPublished($publicId);
 
@@ -85,8 +82,8 @@ final class RegulationController extends Controller
             throw new NotFoundHttpException('The requested regulation could not be found.');
         }
 
-        Session::flash('status', 'You acknowledged "' . $regulation['title'] . '".');
+        session()->flash('status', 'You acknowledged "' . $regulation['title'] . '".');
 
-        return Response::redirect(url('/student/rules/' . $regulation['public_id']));
+        return redirect(url('/student/rules/' . $regulation['public_id']));
     }
 }

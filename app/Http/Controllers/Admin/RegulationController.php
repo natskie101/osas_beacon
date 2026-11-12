@@ -8,22 +8,19 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Regulation;
 use App\Services\AuditLogger;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Html;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class RegulationController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = Regulation::paginate(
             $filters,
@@ -34,7 +31,7 @@ final class RegulationController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/regulations/index', [
+        return view('admin/regulations/index', [
             'title' => 'Rules & Regulations',
             'pageTitle' => config('navigation.meta.admin.regulations.title'),
             'pageSubtitle' => config('navigation.meta.admin.regulations.subtitle'),
@@ -49,25 +46,25 @@ final class RegulationController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
-        } elseif ($request->string('save_action') === 'publish') {
+        } elseif ((string) $request->string('save_action') === 'publish') {
             $data['status'] = 'Published';
         }
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
-        $sanctions = $this->sanctions($request->string('sanctions'));
+        $sanctions = $this->sanctions((string) $request->string('sanctions'));
         $data['sanctions'] = $sanctions === null ? null : json_encode($sanctions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $data['created_by'] = (int) $actor['id'];
         $id = Regulation::create($data);
@@ -80,20 +77,20 @@ final class RegulationController extends Controller
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'blue', 'icon' => 'scale'],
         );
 
-        Session::flash('status', 'Regulation created.');
+        session()->flash('status', 'Regulation created.');
 
-        return Response::redirect(url('/admin/regulations/' . $regulation['public_id']));
+        return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $regulation = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/regulations/show', [
+        return view('admin/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['public_id'] . ' · ' . $regulation['status'],
+            'pageSubtitle' => $regulation['public_id'] . ' Â· ' . $regulation['status'],
             'pageKey' => 'regulations',
             'user' => $actor,
             'role' => $actor['role'],
@@ -103,25 +100,25 @@ final class RegulationController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $regulation = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
-        } elseif ($request->string('save_action') === 'publish') {
+        } elseif ((string) $request->string('save_action') === 'publish') {
             $data['status'] = 'Published';
         }
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
-        $sanctions = $this->sanctions($request->string('sanctions'));
+        $sanctions = $this->sanctions((string) $request->string('sanctions'));
         $data['sanctions'] = $sanctions === null ? null : json_encode($sanctions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         Regulation::update((int) $regulation['id'], $data);
         $updated = Regulation::find((int) $regulation['id']) ?? $regulation;
@@ -133,12 +130,12 @@ final class RegulationController extends Controller
             ['entity_type' => 'regulation', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit'],
         );
 
-        Session::flash('status', 'Regulation saved.');
+        session()->flash('status', 'Regulation saved.');
 
-        return Response::redirect(url('/admin/regulations/' . $updated['public_id']));
+        return redirect(url('/admin/regulations/' . $updated['public_id']));
     }
 
-    public function publish(Request $request, string $publicId): Response
+    public function publish(Request $request, string $publicId)
     {
         $regulation = $this->find($publicId);
         Regulation::update((int) $regulation['id'], ['status' => 'Published']);
@@ -148,12 +145,12 @@ final class RegulationController extends Controller
             $regulation['title'] . ' is now visible in the student portal.',
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'green', 'icon' => 'scale'],
         );
-        Session::flash('status', 'Regulation published.');
+        session()->flash('status', 'Regulation published.');
 
-        return Response::redirect(url('/admin/regulations/' . $regulation['public_id']));
+        return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
 
-    public function archive(Request $request, string $publicId): Response
+    public function archive(Request $request, string $publicId)
     {
         $regulation = $this->find($publicId);
         Regulation::update((int) $regulation['id'], ['status' => 'Archived']);
@@ -163,16 +160,16 @@ final class RegulationController extends Controller
             $regulation['title'] . ' was archived.',
             ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'amber', 'icon' => 'fileText'],
         );
-        Session::flash('status', 'Regulation archived.');
+        session()->flash('status', 'Regulation archived.');
 
-        return Response::redirect(url('/admin/regulations/' . $regulation['public_id']));
+        return redirect(url('/admin/regulations/' . $regulation['public_id']));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $regulation */
-    private function form(array $actor, ?array $regulation): Response
+    private function form(array $actor, ?array $regulation)
     {
         $isEdit = $regulation !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($regulation, is_array($old) ? $old : []) : array_merge([
             'reference_code' => '',
             'title' => '',
@@ -192,7 +189,7 @@ final class RegulationController extends Controller
             $values['sanctions'] = implode("\n", json_items($values['sanctions'] ?? null));
         }
 
-        return $this->page('layouts.app', 'admin/regulations/form', [
+        return view('admin/regulations/form', [
             'title' => $isEdit ? 'Edit Regulation' : 'Add Regulation',
             'pageTitle' => $isEdit ? 'Edit Regulation' : 'Add Regulation',
             'pageSubtitle' => $isEdit
@@ -203,7 +200,7 @@ final class RegulationController extends Controller
             'role' => $actor['role'],
             'regulation' => $regulation,
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
         ]);
     }
 

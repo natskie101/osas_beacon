@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class AuditLogger
 {
@@ -15,31 +14,25 @@ final class AuditLogger
      */
     public static function log(string $action, string $title, string $text = '', array $options = []): void
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $actorId = $options['actor_user_id'] ?? ($actor['id'] ?? null);
         $actorName = $options['actor_name'] ?? ($actor !== null ? User::fullName($actor) : '');
 
-        DB::insert(
-            'INSERT INTO audit_log
-                (actor_user_id, actor_name, target_user_id, action, entity_type, entity_id,
-                 title, text, tone, icon, ip_address, user_agent, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-                $actorId,
-                $actorName,
-                $options['target_user_id'] ?? null,
-                $action,
-                $options['entity_type'] ?? '',
-                $options['entity_id'] ?? '',
-                $title,
-                $text,
-                $options['tone'] ?? 'brand',
-                $options['icon'] ?? 'info',
-                $options['ip_address'] ?? null,
-                $options['user_agent'] ?? null,
-                date('Y-m-d H:i:s'),
-            ],
-        );
+        DB::table('audit_log')->insert([
+            'actor_user_id' => $actorId,
+            'actor_name' => $actorName,
+            'target_user_id' => $options['target_user_id'] ?? null,
+            'action' => $action,
+            'entity_type' => $options['entity_type'] ?? '',
+            'entity_id' => $options['entity_id'] ?? '',
+            'title' => $title,
+            'text' => $text,
+            'tone' => $options['tone'] ?? 'brand',
+            'icon' => $options['icon'] ?? 'info',
+            'ip_address' => $options['ip_address'] ?? null,
+            'user_agent' => $options['user_agent'] ?? null,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /** @param array<string, mixed> $user */

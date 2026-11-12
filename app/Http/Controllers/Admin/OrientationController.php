@@ -11,24 +11,21 @@ use App\Models\OrientationModule;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\OrientationQuizService;
-use App\Support\Auth;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 use RuntimeException;
 
 final class OrientationController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'category' => $request->string('category'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'category' => (string) $request->string('category'),
         ];
         $pagination = OrientationModule::paginate(
             $filters,
@@ -39,7 +36,7 @@ final class OrientationController extends Controller
             ['category' => 'category'],
         );
 
-        return $this->page('layouts.app', 'admin/orientation/index', [
+        return view('admin/orientation/index', [
             'title' => 'Orientation Content',
             'pageTitle' => config('navigation.meta.admin.orientation.title'),
             'pageSubtitle' => config('navigation.meta.admin.orientation.subtitle'),
@@ -54,19 +51,19 @@ final class OrientationController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
-        return $this->form(Auth::user(), null);
+        return $this->form(auth_user(), null);
     }
 
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
-        } elseif ($request->string('save_action') === 'publish') {
+        } elseif ((string) $request->string('save_action') === 'publish') {
             $data['status'] = 'Published';
         }
 
@@ -79,14 +76,14 @@ final class OrientationController extends Controller
             $data['media_file_id'] = $media['file_id'];
         }
 
-        $objectives = $this->objectives($request->string('objectives'));
+        $objectives = $this->objectives((string) $request->string('objectives'));
         $data['objectives'] = $objectives === null ? null : json_encode($objectives, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $data['created_by'] = (int) $actor['id'];
         $id = OrientationModule::create($data);
         $module = OrientationModule::find($id);
 
         if ($media !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$module['public_id'], $media['file_id']]);
+            DB::table('files')->where('id', (int) $media['file_id'])->update(['entity_id' => (string) $module['public_id']]);
         }
 
         if ($quizData !== null) {
@@ -109,22 +106,22 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'blue', 'icon' => 'graduation'],
         );
 
-        Session::flash('status', 'Orientation module created.');
+        session()->flash('status', 'Orientation module created.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id']));
+        return redirect(url('/admin/orientation/' . $module['public_id']));
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $module = $this->find($publicId);
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $quizQuestions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
 
-        return $this->page('layouts.app', 'admin/orientation/show', [
+        return view('admin/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
-            'pageSubtitle' => $module['public_id'] . ' · ' . $module['status'],
+            'pageSubtitle' => $module['public_id'] . ' Â· ' . $module['status'],
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
@@ -137,24 +134,24 @@ final class OrientationController extends Controller
         ]);
     }
 
-    public function edit(Request $request, string $publicId): Response
+    public function edit(Request $request, string $publicId)
     {
-        return $this->form(Auth::user(), $this->find($publicId));
+        return $this->form(auth_user(), $this->find($publicId));
     }
 
-    public function update(Request $request, string $publicId): Response
+    public function update(Request $request, string $publicId)
     {
         $module = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ($request->string('save_action') === 'draft') {
+        if ((string) $request->string('save_action') === 'draft') {
             $data['status'] = 'Draft';
-        } elseif ($request->string('save_action') === 'publish') {
+        } elseif ((string) $request->string('save_action') === 'publish') {
             $data['status'] = 'Published';
         }
 
         $this->normalizeMediaChoice($data, $request);
-        $media = $this->storeMedia($request, Auth::user());
+        $media = $this->storeMedia($request, auth_user());
         $oldMedia = null;
 
         if ($media !== null) {
@@ -165,13 +162,13 @@ final class OrientationController extends Controller
             }
         }
 
-        $objectives = $this->objectives($request->string('objectives'));
+        $objectives = $this->objectives((string) $request->string('objectives'));
         $data['objectives'] = $objectives === null ? null : json_encode($objectives, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         OrientationModule::update((int) $module['id'], $data);
         $updated = OrientationModule::find((int) $module['id']) ?? $module;
 
         if ($media !== null) {
-            DB::update('UPDATE files SET entity_id = ? WHERE id = ?', [$updated['public_id'], $media['file_id']]);
+            DB::table('files')->where('id', (int) $media['file_id'])->update(['entity_id' => (string) $updated['public_id']]);
 
             if ($oldMedia !== null && (int) $oldMedia['id'] !== (int) $media['file_id']) {
                 FileStorage::delete($oldMedia);
@@ -185,32 +182,32 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit'],
         );
 
-        Session::flash('status', 'Orientation module saved.');
+        session()->flash('status', 'Orientation module saved.');
 
-        return Response::redirect(url('/admin/orientation/' . $updated['public_id']));
+        return redirect(url('/admin/orientation/' . $updated['public_id']));
     }
 
-    public function publish(Request $request, string $publicId): Response
+    public function publish(Request $request, string $publicId)
     {
         $module = $this->find($publicId);
         OrientationModule::update((int) $module['id'], ['status' => 'Published']);
         AuditLogger::log('orientation.published', 'Orientation Module Published', $module['title'] . ' is now available to students.', ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'green', 'icon' => 'graduation']);
-        Session::flash('status', 'Orientation module published.');
+        session()->flash('status', 'Orientation module published.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id']));
+        return redirect(url('/admin/orientation/' . $module['public_id']));
     }
 
-    public function archive(Request $request, string $publicId): Response
+    public function archive(Request $request, string $publicId)
     {
         $module = $this->find($publicId);
         OrientationModule::update((int) $module['id'], ['status' => 'Archived']);
         AuditLogger::log('orientation.archived', 'Orientation Module Archived', $module['title'] . ' was archived.', ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'amber', 'icon' => 'fileText']);
-        Session::flash('status', 'Orientation module archived.');
+        session()->flash('status', 'Orientation module archived.');
 
-        return Response::redirect(url('/admin/orientation/' . $module['public_id']));
+        return redirect(url('/admin/orientation/' . $module['public_id']));
     }
 
-    public function downloadMedia(Request $request, string $publicId): Response
+    public function downloadMedia(Request $request, string $publicId)
     {
         $module = $this->find($publicId);
 
@@ -234,7 +231,7 @@ final class OrientationController extends Controller
      */
     private function inlineQuiz(Request $request): ?array
     {
-        if ($request->string('verification_method') !== 'Quiz Assessment') {
+        if ((string) $request->string('verification_method') !== 'Quiz Assessment') {
             return null;
         }
 
@@ -276,11 +273,11 @@ final class OrientationController extends Controller
             }
 
             if (count($options) < 2) {
-                throw new ValidationException(['questions' => 'Each question needs at least two answer options.'], $request->all());
+                throw new ValidationException(['questions' => 'Each question needs at least two answer options.'], $request->input());
             }
 
             if ($correctIndex === null) {
-                throw new ValidationException(['questions' => 'Mark the correct answer for each question.'], $request->all());
+                throw new ValidationException(['questions' => 'Mark the correct answer for each question.'], $request->input());
             }
 
             $questions[] = [
@@ -321,8 +318,8 @@ final class OrientationController extends Controller
         $videoUrl = trim((string) ($data['video_url'] ?? ''));
 
         if ($contentType === 'Link') {
-            if ($videoUrl === '') {
-                throw new ValidationException(['video_url' => 'Enter the YouTube or Vimeo link.'], $request->all());
+            if (google_drive_video_embed_url($videoUrl) === null) {
+                throw new ValidationException(['video_url' => 'Enter a valid Google Drive video link.'], $request->input());
             }
 
             $data['video_url'] = $videoUrl;
@@ -343,11 +340,11 @@ final class OrientationController extends Controller
      */
     private function storeMedia(Request $request, array $actor): ?array
     {
-        if ($request->string('content_type') === 'Link') {
+        if ((string) $request->string('content_type') === 'Link') {
             return null;
         }
 
-        $file = $request->file('media');
+        $file = $this->uploadedFile($request, 'media');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;
@@ -364,7 +361,7 @@ final class OrientationController extends Controller
                 FileStorage::ORIENTATION_MEDIA,
             );
         } catch (RuntimeException $exception) {
-            throw new ValidationException(['media' => $exception->getMessage()], $request->all());
+            throw new ValidationException(['media' => $exception->getMessage()], $request->input());
         }
 
         return [
@@ -375,10 +372,10 @@ final class OrientationController extends Controller
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $module */
-    private function form(array $actor, ?array $module): Response
+    private function form(array $actor, ?array $module)
     {
         $isEdit = $module !== null;
-        $old = Session::getFlash('old', []);
+        $old = old();
         $values = $isEdit ? array_merge($module, is_array($old) ? $old : []) : array_merge([
             'title' => '',
             'category' => '',
@@ -403,7 +400,7 @@ final class OrientationController extends Controller
             $values['objectives'] = implode("\n", json_items($values['objectives'] ?? null));
         }
 
-        return $this->page('layouts.app', 'admin/orientation/form', [
+        return view('admin/orientation/form', [
             'title' => $isEdit ? 'Edit Orientation Module' : 'Add Orientation Module',
             'pageTitle' => $isEdit ? 'Edit Orientation Module' : 'Add Orientation Module',
             'pageSubtitle' => $isEdit
@@ -414,7 +411,7 @@ final class OrientationController extends Controller
             'role' => $actor['role'],
             'module' => $module,
             'values' => $values,
-            'errors' => Session::errors(),
+            'errors' => session('errors', []),
             'mediaFile' => $isEdit && !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
         ]);
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class Tracking extends BaseModel
 {
@@ -19,13 +19,13 @@ final class Tracking extends BaseModel
     /** @return array{total_views:int,unique_visitors:int,avg_engagement:float,items:int} */
     public static function totals(): array
     {
-        $row = DB::first(
-            'SELECT COALESCE(SUM(views), 0) AS total_views,
+        $row = DB::table('tracking')
+            ->selectRaw('COALESCE(SUM(views), 0) AS total_views,
                     COALESCE(SUM(unique_visitors), 0) AS unique_visitors,
                     COALESCE(AVG(engagement), 0) AS avg_engagement,
-                    COUNT(*) AS items
-             FROM tracking',
-        );
+                    COUNT(*) AS items')
+            ->first();
+        $row = $row === null ? [] : (array) $row;
 
         return [
             'total_views' => (int) ($row['total_views'] ?? 0),
@@ -37,13 +37,20 @@ final class Tracking extends BaseModel
 
     public static function record(string $title, string $type, string $sourceId): void
     {
-        $existing = DB::first('SELECT id, views FROM tracking WHERE source_id = ? LIMIT 1', [$sourceId]);
+        $existing = DB::table('tracking')
+            ->select('id', 'views')
+            ->where('source_id', $sourceId)
+            ->first();
 
         if ($existing !== null) {
-            DB::update(
-                'UPDATE tracking SET views = views + 1, last_viewed = ?, updated_at = ? WHERE id = ?',
-                [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), (int) $existing['id']],
-            );
+            $now = date('Y-m-d H:i:s');
+            DB::table('tracking')
+                ->where('id', (int) $existing->id)
+                ->update([
+                    'views' => DB::raw('views + 1'),
+                    'last_viewed' => $now,
+                    'updated_at' => $now,
+                ]);
 
             return;
         }

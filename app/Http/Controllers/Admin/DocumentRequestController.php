@@ -9,22 +9,19 @@ use App\Models\AuditLog;
 use App\Models\DocumentRequest;
 use App\Services\AuditLogger;
 use App\Services\NotificationService;
-use App\Support\Auth;
 use App\Support\Exceptions\NotFoundHttpException;
-use App\Support\Request;
-use App\Support\Response;
-use App\Support\Session;
+use Illuminate\Http\Request;
 
 final class DocumentRequestController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $filters = [
-            'search' => $request->string('search'),
-            'status' => $request->string('status'),
-            'document_type' => $request->string('document_type'),
-            'delivery_mode' => $request->string('delivery_mode'),
+            'search' => (string) $request->string('search'),
+            'status' => (string) $request->string('status'),
+            'document_type' => (string) $request->string('document_type'),
+            'delivery_mode' => (string) $request->string('delivery_mode'),
         ];
         $pagination = DocumentRequest::paginate(
             $filters,
@@ -38,7 +35,7 @@ final class DocumentRequestController extends Controller
             ],
         );
 
-        return $this->page('layouts.app', 'admin/document-requests/index', [
+        return view('admin/document-requests/index', [
             'title' => 'Document Requests',
             'pageTitle' => config('navigation.meta.admin.document-requests.title'),
             'pageSubtitle' => config('navigation.meta.admin.document-requests.subtitle'),
@@ -53,15 +50,15 @@ final class DocumentRequestController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $publicId): Response
+    public function show(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = $this->find($publicId);
 
-        return $this->page('layouts.app', 'admin/document-requests/show', [
+        return view('admin/document-requests/show', [
             'title' => $documentRequest['document_type'],
             'pageTitle' => $documentRequest['document_type'],
-            'pageSubtitle' => $documentRequest['public_id'] . ' · ' . $documentRequest['student_name'] . ' · ' . $documentRequest['status'],
+            'pageSubtitle' => $documentRequest['public_id'] . ' Â· ' . $documentRequest['student_name'] . ' Â· ' . $documentRequest['status'],
             'pageKey' => 'document-requests',
             'user' => $actor,
             'role' => $actor['role'],
@@ -71,9 +68,9 @@ final class DocumentRequestController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, string $publicId): Response
+    public function updateStatus(Request $request, string $publicId)
     {
-        $actor = Auth::user();
+        $actor = auth_user();
         $documentRequest = $this->find($publicId);
         $data = $this->validate($request, [
             'status' => 'required|in:Submitted,Under Review,Ready for Pick-up,Released,Rejected,Cancelled',
@@ -101,9 +98,9 @@ final class DocumentRequestController extends Controller
         }
 
         AuditLogger::log('document_request.updated', 'Document Request Updated', $updated['public_id'] . ' was moved from ' . $oldStatus . ' to ' . $newStatus . '.', ['entity_type' => 'document_request', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'printer', 'target_user_id' => $updated['student_user_id'] ?? null]);
-        Session::flash('status', 'Document request updated.');
+        session()->flash('status', 'Document request updated.');
 
-        return Response::redirect(url('/admin/document-requests/' . $updated['public_id']));
+        return redirect(url('/admin/document-requests/' . $updated['public_id']));
     }
 
     /** @return array<string, mixed> */

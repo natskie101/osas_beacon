@@ -4,39 +4,58 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\DB;
 use App\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 final class User
 {
     /** @return array<string, mixed>|null */
     public static function find(int $id): ?array
     {
-        return DB::first('SELECT * FROM users WHERE id = ? LIMIT 1', [$id]);
+        $row = DB::table('users')->where('id', $id)->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return array<string, mixed>|null */
     public static function findByEmail(string $email): ?array
     {
-        return DB::first('SELECT * FROM users WHERE email = ? LIMIT 1', [mb_strtolower(trim($email))]);
+        $row = DB::table('users')
+            ->where('email', mb_strtolower(trim($email)))
+            ->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return array<string, mixed>|null */
     public static function findByPublicId(string $publicId): ?array
     {
-        return DB::first('SELECT * FROM users WHERE public_id = ? LIMIT 1', [$publicId]);
+        $row = DB::table('users')->where('public_id', $publicId)->first();
+
+        return $row === null ? null : (array) $row;
     }
 
     /** @return list<array<string, mixed>> */
     public static function all(): array
     {
-        return DB::select('SELECT * FROM users ORDER BY last_name ASC, first_name ASC');
+        return DB::table('users')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @return list<array<string, mixed>> */
     public static function byRole(string $role): array
     {
-        return DB::select('SELECT * FROM users WHERE role = ? ORDER BY last_name ASC, first_name ASC', [$role]);
+        return DB::table('users')
+            ->where('role', $role)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     /** @param array<string, mixed> $data */
@@ -52,36 +71,29 @@ final class User
 
         $username = self::uniqueUsername($username);
 
-        $id = DB::insert(
-            'INSERT INTO users
-                (public_id, first_name, middle_name, last_name, email, username, password_hash, role, student_id, age,
-                 department, program, year_level, access_level, account_tier, status, phone,
-                 email_verified_at, created_at, updated_at, requested_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-                'TMP-' . Str::random(6),
-                $data['first_name'],
-                $data['middle_name'] ?? null,
-                $data['last_name'],
-                mb_strtolower((string) $data['email']),
-                $username,
-                password_hash($password, PASSWORD_DEFAULT),
-                $data['role'] ?? 'Student',
-                $data['student_id'] ?? null,
-                $data['age'] ?? null,
-                $data['department'] ?? null,
-                $data['program'] ?? null,
-                $data['year_level'] ?? null,
-                $data['access_level'] ?? null,
-                $data['account_tier'] ?? 'Student Tier',
-                $data['status'] ?? 'Pending',
-                $data['phone'] ?? null,
-                ($data['status'] ?? 'Pending') === 'Active' ? $now : null,
-                $now,
-                $now,
-                $data['requested_at'] ?? $now,
-            ],
-        );
+        $id = (int) DB::table('users')->insertGetId([
+            'public_id' => 'TMP-' . Str::random(6),
+            'first_name' => $data['first_name'],
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
+            'email' => mb_strtolower((string) $data['email']),
+            'username' => $username,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'role' => $data['role'] ?? 'Student',
+            'student_id' => $data['student_id'] ?? null,
+            'age' => $data['age'] ?? null,
+            'department' => $data['department'] ?? null,
+            'program' => $data['program'] ?? null,
+            'year_level' => $data['year_level'] ?? null,
+            'access_level' => $data['access_level'] ?? null,
+            'account_tier' => $data['account_tier'] ?? 'Student Tier',
+            'status' => $data['status'] ?? 'Pending',
+            'phone' => $data['phone'] ?? null,
+            'email_verified_at' => ($data['status'] ?? 'Pending') === 'Active' ? $now : null,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'requested_at' => $data['requested_at'] ?? $now,
+        ]);
 
         $publicId = 'USR-' . str_pad((string) (1000 + $id), 4, '0', STR_PAD_LEFT);
         self::update($id, ['public_id' => $publicId], false);
@@ -94,18 +106,16 @@ final class User
     {
         $allowed = [
             'public_id', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'role', 'student_id', 'age',
-            'department', 'program', 'year_level', 'access_level', 'account_tier', 'status',
+            'department', 'program', 'year_level', 'access_level', 'account_tier', 'status', 'archived_status',
             'phone', 'school_id_file_id', 'last_login_at', 'last_seen_at', 'email_verified_at',
             'requested_at',
         ];
 
         $sets = [];
-        $bindings = [];
 
         foreach ($allowed as $column) {
             if (array_key_exists($column, $data)) {
-                $sets[] = '`' . $column . '` = ?';
-                $bindings[] = $data[$column];
+                $sets[$column] = $data[$column];
             }
         }
 
@@ -114,51 +124,54 @@ final class User
         }
 
         if ($touch) {
-            $sets[] = '`updated_at` = ?';
-            $bindings[] = date('Y-m-d H:i:s');
+            $sets['updated_at'] = date('Y-m-d H:i:s');
         }
 
-        $bindings[] = $id;
-        DB::update('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = ?', $bindings);
+        DB::table('users')->where('id', $id)->update($sets);
     }
 
     public static function updatePassword(int $id, string $plainPassword): void
     {
-        DB::update(
-            'UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?',
-            [password_hash($plainPassword, PASSWORD_DEFAULT), date('Y-m-d H:i:s'), $id],
-        );
+        DB::table('users')->where('id', $id)->update([
+            'password_hash' => password_hash($plainPassword, PASSWORD_DEFAULT),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public static function recordLogin(int $id): void
     {
         $now = date('Y-m-d H:i:s');
-        DB::update('UPDATE users SET last_login_at = ?, last_seen_at = ?, updated_at = ? WHERE id = ?', [$now, $now, $now, $id]);
+        DB::table('users')->where('id', $id)->update([
+            'last_login_at' => $now,
+            'last_seen_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 
     public static function touchSeen(int $id): void
     {
-        DB::update('UPDATE users SET last_seen_at = ? WHERE id = ?', [date('Y-m-d H:i:s'), $id]);
+        DB::table('users')->where('id', $id)->update([
+            'last_seen_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /** @return array{total: int, students: int, active: int, active_students: int, signed_in_students: int, pending: int, inactive: int, staff: int, coordinators: int, administrators: int, latest_created_at: string|null} */
     public static function counts(): array
     {
-        $row = DB::first(
-            'SELECT
-                COUNT(*) AS total,
-                SUM(role = "Student") AS students,
-                SUM(status = "Active") AS active,
-                SUM(role = "Student" AND status = "Active") AS active_students,
-                SUM(role = "Student" AND last_login_at IS NOT NULL) AS signed_in_students,
-                SUM(status = "Pending") AS pending,
-                SUM(status = "Inactive") AS inactive,
-                SUM(role <> "Student") AS staff,
-                SUM(role = "Coordinator") AS coordinators,
-                SUM(role = "Administrator") AS administrators,
-                MAX(created_at) AS latest_created_at
-             FROM users',
-        );
+        $row = DB::table('users')
+            ->selectRaw('COUNT(*) AS total,
+                    SUM(role = "Student") AS students,
+                    SUM(status = "Active") AS active,
+                    SUM(role = "Student" AND status = "Active") AS active_students,
+                    SUM(role = "Student" AND last_login_at IS NOT NULL) AS signed_in_students,
+                    SUM(status = "Pending") AS pending,
+                    SUM(status = "Inactive") AS inactive,
+                    SUM(role <> "Student") AS staff,
+                    SUM(role = "Coordinator") AS coordinators,
+                    SUM(role = "Administrator") AS administrators,
+                    MAX(created_at) AS latest_created_at')
+            ->first();
+        $row = $row === null ? [] : (array) $row;
 
         return [
             'total' => (int) ($row['total'] ?? 0),
@@ -181,48 +194,49 @@ final class User
      */
     public static function paginate(array $filters, int $page = 1, int $perPage = 12): array
     {
-        $where = [];
-        $bindings = [];
-
         $search = trim((string) ($filters['search'] ?? ''));
 
-        if ($search !== '') {
-            $like = '%' . $search . '%';
-            $where[] = '(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR student_id LIKE ? OR public_id LIKE ?)';
-            array_push($bindings, $like, $like, $like, $like, $like);
-        }
+        $applyFilters = static function ($query) use ($filters, $search): void {
+            if ($search !== '') {
+                $like = '%' . Str::escapeLike($search) . '%';
 
-        $role = (string) ($filters['role'] ?? '');
+                $query->where(static function ($group) use ($like): void {
+                    $group->where('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('student_id', 'like', $like)
+                        ->orWhere('public_id', 'like', $like);
+                });
+            }
 
-        if (in_array($role, ['Coordinator', 'Administrator', 'Student'], true)) {
-            $where[] = 'role = ?';
-            $bindings[] = $role;
-        }
+            $role = (string) ($filters['role'] ?? '');
 
-        $status = (string) ($filters['status'] ?? '');
+            if (in_array($role, ['Coordinator', 'Administrator', 'Student'], true)) {
+                $query->where('role', $role);
+            }
 
-        if (in_array($status, ['Active', 'Pending', 'Inactive'], true)) {
-            $where[] = 'status = ?';
-            $bindings[] = $status;
-        }
+            $status = (string) ($filters['status'] ?? '');
 
-        $group = (string) ($filters['group'] ?? '');
+            if (in_array($status, ['Active', 'Pending', 'Inactive', 'Archived'], true)) {
+                $query->where('status', $status);
+            }
 
-        if ($group === 'students') {
-            $where[] = 'role = ?';
-            $bindings[] = 'Student';
-        } elseif ($group === 'staff') {
-            $where[] = 'role <> ?';
-            $bindings[] = 'Student';
-        }
+            $group = (string) ($filters['group'] ?? '');
 
-        if (!empty($filters['exclude_pending'])) {
-            $where[] = 'status <> ?';
-            $bindings[] = 'Pending';
-        }
+            if ($group === 'students') {
+                $query->where('role', 'Student');
+            } elseif ($group === 'staff') {
+                $query->where('role', '<>', 'Student');
+            }
 
-        $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
-        $total = (int) DB::value('SELECT COUNT(*) FROM users' . $whereSql, $bindings);
+            if (!empty($filters['exclude_pending'])) {
+                $query->whereNotIn('status', ['Pending', 'Archived']);
+            }
+        };
+
+        $query = DB::table('users');
+        $applyFilters($query);
+        $total = (int) $query->count();
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = max(1, min($page, $lastPage));
         $offset = ($page - 1) * $perPage;
@@ -238,13 +252,14 @@ final class User
             default => 'last_name ' . $direction . ', first_name ' . $direction,
         };
 
-        $data = DB::select(
-            'SELECT * FROM users' . $whereSql . ' ORDER BY ' . $orderBy . ' LIMIT ' . $perPage . ' OFFSET ' . $offset,
-            $bindings,
-        );
+        $rows = $query
+            ->orderByRaw($orderBy)
+            ->limit($perPage)
+            ->offset($offset)
+            ->get();
 
         return [
-            'data' => $data,
+            'data' => $rows->map(static fn (object $row): array => (array) $row)->all(),
             'total' => $total,
             'page' => $page,
             'per_page' => $perPage,
@@ -265,10 +280,11 @@ final class User
         $candidate = $base;
         $suffix = 1;
 
-        while ((int) DB::value(
-            'SELECT COUNT(*) FROM users WHERE username = ?' . ($ignoreId !== null ? ' AND id <> ?' : ''),
-            $ignoreId !== null ? [$candidate, $ignoreId] : [$candidate],
-        ) > 0) {
+        while (DB::table('users')
+            ->where('username', $candidate)
+            ->when($ignoreId !== null, static fn ($query) => $query->where('id', '<>', $ignoreId))
+            ->exists()
+        ) {
             $candidate = $base . $suffix;
             $suffix++;
         }

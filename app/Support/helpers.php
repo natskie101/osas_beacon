@@ -2,57 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Support\Auth;
-use App\Support\Config;
-use App\Support\Csrf;
-use App\Support\Env;
-use App\Support\Request;
-use App\Support\Session;
-
-if (!function_exists('env')) {
-    function env(string $key, mixed $default = null): mixed
-    {
-        return Env::get($key, $default);
-    }
-}
-
-if (!function_exists('config')) {
-    function config(string $key, mixed $default = null): mixed
-    {
-        return Config::get($key, $default);
-    }
-}
-
-if (!function_exists('e')) {
-    function e(mixed $value): string
-    {
-        return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    }
-}
-
-if (!function_exists('base_path')) {
-    function base_path(string $path = ''): string
-    {
-        static $base = null;
-
-        if ($base === null) {
-            $base = Request::scriptBasePath();
-        }
-
-        return $base . ($path === '' ? '' : '/' . ltrim($path, '/'));
-    }
-}
-
-if (!function_exists('url')) {
-    function url(string $path = ''): string
-    {
-        if (preg_match('#^https?://#i', $path) === 1) {
-            return $path;
-        }
-
-        return base_path($path === '' ? '' : '/' . ltrim($path, '/'));
-    }
-}
+use App\Auth\ArrayUser;
+use App\Enums\Role;
+use Illuminate\Support\Facades\Auth;
 
 if (!function_exists('absolute_url')) {
     function absolute_url(string $path = ''): string
@@ -70,45 +22,21 @@ if (!function_exists('absolute_url')) {
     }
 }
 
-if (!function_exists('asset')) {
-    function asset(string $path): string
-    {
-        return url('assets/' . ltrim($path, '/'));
-    }
-}
-
-if (!function_exists('csrf_field')) {
-    function csrf_field(): string
-    {
-        return Csrf::field();
-    }
-}
-
-if (!function_exists('csrf_token')) {
-    function csrf_token(): string
-    {
-        return Csrf::token();
-    }
-}
-
-if (!function_exists('old')) {
-    function old(string $key, mixed $default = null): mixed
-    {
-        return Session::old($key, $default);
-    }
-}
-
 if (!function_exists('auth_user')) {
     function auth_user(): ?array
     {
-        return Auth::user();
+        $user = Auth::user();
+
+        return $user instanceof ArrayUser ? $user->toArray() : null;
     }
 }
 
-if (!function_exists('current_path')) {
-    function current_path(): string
+if (!function_exists('auth_role')) {
+    function auth_role(): ?Role
     {
-        return Request::capture()->path;
+        $user = auth_user();
+
+        return $user === null ? null : Role::tryFrom((string) $user['role']);
     }
 }
 
@@ -137,6 +65,41 @@ if (!function_exists('format_bytes')) {
     }
 }
 
+if (!function_exists('google_drive_video_embed_url')) {
+    function google_drive_video_embed_url(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = (string) ($parts['path'] ?? '');
+
+        if (!in_array($scheme, ['http', 'https'], true) || $host !== 'drive.google.com') {
+            return null;
+        }
+
+        if (preg_match('~^/file/d/([A-Za-z0-9_-]+)(?:/(?:preview|view))?/?$~', $path, $matches) === 1) {
+            return 'https://drive.google.com/file/d/' . $matches[1] . '/preview';
+        }
+
+        if (in_array($path, ['/open', '/uc'], true)) {
+            parse_str((string) ($parts['query'] ?? ''), $query);
+            $fileId = (string) ($query['id'] ?? '');
+
+            if (preg_match('~^[A-Za-z0-9_-]+$~', $fileId) === 1) {
+                return 'https://drive.google.com/file/d/' . $fileId . '/preview';
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('video_embed_url')) {
     function video_embed_url(?string $url): ?string
     {
@@ -146,23 +109,39 @@ if (!function_exists('video_embed_url')) {
             return null;
         }
 
+        $driveEmbedUrl = google_drive_video_embed_url($url);
+
+        if ($driveEmbedUrl !== null) {
+            return $driveEmbedUrl;
+        }
+
         if (preg_match('~youtu\.be/([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~youtube\.com/watch\?.*v=([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~youtube\.com/embed/([A-Za-z0-9_-]{6,})~', $url, $matches) === 1) {
-            return 'https://www.youtube.com/embed/' . $matches[1];
+            return 'https://www.youtube.com/embed/' . $matches[1] . '?rel=0';
         }
 
         if (preg_match('~vimeo\.com/(?:video/)?(\d+)~', $url, $matches) === 1) {
-            return 'https://player.vimeo.com/video/' . $matches[1];
+            return 'https://player.vimeo.com/video/' . $matches[1] . '?rel=0';
         }
 
-        return filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : null;
+        // Fallback for other providers: only https URLs may be embedded, and
+        // never any URL containing credentials or unusual characters.
+        if (
+            str_starts_with(strtolower($url), 'https://')
+            && filter_var($url, FILTER_VALIDATE_URL) !== false
+            && !str_contains($url, '@')
+        ) {
+            return $url;
+        }
+
+        return null;
     }
 }
 

@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\User;
-use App\Support\DB;
+use Illuminate\Support\Facades\DB;
 
 final class AudienceService
 {
@@ -14,25 +14,24 @@ final class AudienceService
     public static function recipients(string $audience): array
     {
         $audience = trim($audience);
-        $sql = 'SELECT * FROM users WHERE status = "Active"';
-        $bindings = [];
+        $query = DB::table('users')->where('status', 'Active');
 
         if ($audience === 'Faculty & Staff') {
-            $sql .= ' AND role <> "Student"';
+            $query->where('role', '<>', 'Student');
         } else {
-            $sql .= ' AND role = "Student"';
+            $query->where('role', 'Student');
 
             if ($audience === 'Incoming Freshmen') {
-                $sql .= ' AND year_level = ?';
-                $bindings[] = 'First Year';
+                $query->where('year_level', 'First Year');
             } elseif ($audience === 'Graduating Students') {
-                $sql .= ' AND year_level IN (?, ?)';
-                $bindings[] = 'Fourth Year';
-                $bindings[] = 'Graduate';
+                $query->whereIn('year_level', ['Fourth Year', 'Graduate']);
             }
         }
 
-        return DB::select($sql . ' ORDER BY id ASC', $bindings);
+        return $query->orderBy('id')
+            ->get()
+            ->map(static fn (object $row): array => (array) $row)
+            ->all();
     }
 
     public static function notify(

@@ -81,11 +81,11 @@ existing portal data before importing the seeded dataset.
 
 Demo accounts after reseeding (password `Beacon@2026`):
 
-| Role | Email |
-| --- | --- |
-| Coordinator | `josefina.reyes@uc.edu.ph` |
+| Role          | Email                       |
+| ------------- | --------------------------- |
+| Coordinator   | `josefina.reyes@uc.edu.ph`  |
 | Administrator | `technical.admin@uc.edu.ph` |
-| Student | `ryan.delacruz@uc.edu.ph` |
+| Student       | `ryan.delacruz@uc.edu.ph`   |
 
 ## 4. Laragon virtual host
 
@@ -166,7 +166,12 @@ server {
 
 - Visit `/login` and sign in as each role.
 - Confirm the student portal only exposes that student's records.
-- Confirm an Administrator cannot edit Coordinator/Administrator accounts.
+- Confirm an Administrator can manage Student and Coordinator accounts but
+  cannot edit, deactivate or change the role of an Administrator account.
+- Confirm a Coordinator can view an Administrator account but cannot edit,
+  deactivate or change its role (action buttons hidden; direct URL returns 403).
+- Confirm an Administrator's My Profile page offers only email and password
+  editing (name, role and username read-only; no photo or department fields).
 - Download a report CSV and open its print view.
 - Submit a support reply and confirm the student bell updates.
 - Upload a school ID or announcement attachment and download it through the
