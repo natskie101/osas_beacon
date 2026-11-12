@@ -49,7 +49,7 @@
                         <span>{{ $announcement['author'] }}</span>
                     </div>
                 </div>
-                <a class="btn btn--outline btn--sm" href="{!! url('/student/announcements/' . $announcement['public_id']) !!}">Read</a>
+                <a class="btn sr-view-btn" href="{!! url('/student/announcements/' . $announcement['public_id']) !!}">View Announcement</a>
             </article>
         <?php endforeach; ?>
     </div>
