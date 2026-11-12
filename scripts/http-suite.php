@@ -292,6 +292,11 @@ check('coordinator login -> 302 to /admin',
     expectStatus($r, 302) && locationHas($r, '/admin'),
     "got {$r['status']} loc={$r['location']}");
 
+/* Seeded demo fixtures (database/data/seed.json): ORIENT-001 is a published
+ * module that has a quiz; ORIENT-002 is published with no assessment at all. */
+$moduleCode = 'ORIENT-001';
+$moduleWithoutQuiz = 'ORIENT-002';
+
 $coordPages = [
     '/admin',
     '/admin/users',
@@ -306,9 +311,9 @@ $coordPages = [
     '/admin/regulations/create',
     '/admin/orientation',
     '/admin/orientation/create',
-    '/admin/orientation/ORIENT-2026-001',
-    '/admin/orientation/ORIENT-2026-001/edit',
-    '/admin/orientation/ORIENT-2026-001/quiz',
+    "/admin/orientation/{$moduleCode}",
+    "/admin/orientation/{$moduleCode}/edit",
+    "/admin/orientation/{$moduleCode}/quiz",
     '/admin/events',
     '/admin/events/create',
     '/admin/lost-found',
@@ -319,9 +324,9 @@ $coordPages = [
     '/admin/reports',
     '/admin/broadcasts',
     '/admin/broadcasts/create',
-    '/admin/reports/orientation/ORIENT-2026-001',
-    '/admin/reports/orientation/ORIENT-2026-001/csv',
-    '/admin/reports/orientation/ORIENT-2026-001/excel',
+    "/admin/reports/orientation/{$moduleCode}",
+    "/admin/reports/orientation/{$moduleCode}/csv",
+    "/admin/reports/orientation/{$moduleCode}/excel",
     '/profile',
     '/notifications',
 ];
@@ -436,7 +441,7 @@ $studentPages = [
     '/student/announcements',
     '/student/rules',
     '/student/orientation',
-    '/student/orientation/ORIENT-2026-001',
+    "/student/orientation/{$moduleCode}",
     '/student/events',
     '/student/lost-found',
     '/student/lost-found/report',
@@ -461,7 +466,7 @@ check('report form category is a plain input with autocomplete off (no datalist,
         && bodyHas($r, 'autocomplete="off"'),
     'datalist present or autocomplete=off missing');
 
-$r = req('GET', '/student/orientation/ORIENT-2026-001/quiz', [], [], $jarB);
+$r = req('GET', "/student/orientation/{$moduleWithoutQuiz}/quiz", [], [], $jarB);
 check('GET student quiz (no published assessment) -> branded 404 "not available"',
     expectStatus($r, 404) && bodyHas($r, 'Page Not Found') && bodyHas($r, 'not available'),
     'got ' . $r['status']);

@@ -244,6 +244,7 @@ $probeActor = User::find(1);
 $probeAdmin = User::find(9);
 $ryanStatusBefore = (string) User::find(2)['status'];
 $ryanUpdatedAtBefore = (string) User::find(2)['updated_at'];
+$ryanVerifiedBefore = User::find(2)['email_verified_at'];
 
 // Defensive re-run safety: drop leftovers from a previously failed probe.
 DB::table('users')->where('email', 'probe-rollback@example.com')->delete();
@@ -379,13 +380,15 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
             ->where('title', 'Probe Status')
             ->count() === 1,
     );
-}, static function () use ($ryanUpdatedAtBefore): void {
-    // Net-zero: restore the student account (including updated_at, which the
-    // archive/restore/setStatus writes re-stamp) and remove probe side rows.
+}, static function () use ($ryanUpdatedAtBefore, $ryanVerifiedBefore): void {
+    // Net-zero: restore the student account (including updated_at and
+    // email_verified_at, which the restore/setStatus writes re-stamp when an
+    // account becomes Active) and remove probe side rows.
     DB::table('users')->where('id', 2)->update([
         'status' => 'Active',
         'archived_status' => null,
         'updated_at' => $ryanUpdatedAtBefore,
+        'email_verified_at' => $ryanVerifiedBefore,
     ]);
     DB::table('audit_log')->where('action', 'probe.setStatus')->delete();
     DB::table('audit_log')->where('action', 'user.archived')->where('target_user_id', 2)->delete();
@@ -399,26 +402,46 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
 
 $check('userservice.net-zero-status', (string) User::find(2)['status'] === $ryanStatusBefore);
 $check('userservice.net-zero-updated-at', (string) User::find(2)['updated_at'] === $ryanUpdatedAtBefore);
+$check('userservice.net-zero-email-verified', User::find(2)['email_verified_at'] === $ryanVerifiedBefore);
 
 // ---------------------------------------------------------------------------
 // OrientationQuizService — full lifecycle against real rows (net-zero).
 // ---------------------------------------------------------------------------
 
-$preexistingQuiz = OrientationQuizService::findForModule(512);
+// Resolve any module that does not already have a quiz so the probe works
+// regardless of the seeded data (fresh installs ship quiz-less modules).
+$probeModuleRow = DB::table('orientation_modules as m')
+    ->whereNotExists(static function ($query): void {
+        $query->selectRaw('1')
+            ->from('orientation_quizzes as q')
+            ->whereColumn('q.module_id', 'm.id');
+    })
+    ->orderBy('m.id')
+    ->first(['m.id', 'm.public_id']);
+
+$probeModuleId = $probeModuleRow === null ? 0 : (int) $probeModuleRow->id;
+$probeModuleCode = $probeModuleRow === null ? '' : (string) $probeModuleRow->public_id;
+$check(
+    'quiz.precondition-module-exists',
+    $probeModuleId > 0,
+    'no quiz-less orientation module found',
+);
+
+$preexistingQuiz = $probeModuleId > 0 ? OrientationQuizService::findForModule($probeModuleId) : null;
 $check(
     'quiz.precondition-empty',
     $preexistingQuiz === null,
-    $preexistingQuiz === null ? '' : 'unexpected quiz for module 512: ' . ($preexistingQuiz['title'] ?? '?'),
+    $preexistingQuiz === null ? '' : 'unexpected quiz for module ' . $probeModuleCode . ': ' . ($preexistingQuiz['title'] ?? '?'),
 );
 
-if ($preexistingQuiz === null) {
+if ($preexistingQuiz === null && $probeModuleId > 0) {
     $quizId = 0;
     $q1Id = 0;
     $q2Id = 0;
     $attemptIds = [];
 
-    $guarded(static function () use ($check, &$quizId, &$q1Id, &$q2Id, &$attemptIds): void {
-        $moduleId = 512;
+    $guarded(static function () use ($check, $probeModuleId, $probeModuleCode, &$quizId, &$q1Id, &$q2Id, &$attemptIds): void {
+        $moduleId = $probeModuleId;
 
         $quizId = OrientationQuizService::saveSettings($moduleId, [
             'title' => 'Probe Quiz',
@@ -434,12 +457,12 @@ if ($preexistingQuiz === null) {
             $quiz !== null && (int) $quiz['id'] === $quizId && $quiz['title'] === 'Probe Quiz',
         );
 
-        $byPublicId = OrientationQuizService::findByModulePublicId('ORIENT-2026-001');
+        $byPublicId = OrientationQuizService::findByModulePublicId($probeModuleCode);
         $check(
             'quiz.findByModulePublicId',
             $byPublicId !== null
                 && (int) $byPublicId['id'] === $quizId
-                && ($byPublicId['module_code'] ?? null) === 'ORIENT-2026-001'
+                && ($byPublicId['module_code'] ?? null) === $probeModuleCode
                 && ($byPublicId['module_title'] ?? null) !== null
                 && array_key_exists('passing_rate', $byPublicId)
                 && array_key_exists('verification_method', $byPublicId),
@@ -537,7 +560,7 @@ if ($preexistingQuiz === null) {
         $q1Options = OrientationQuizService::options($q1Id);
         $q2Options = OrientationQuizService::options($q2Id);
         $answers = [$q1Id => (int) $q1Options[1]['id'], $q2Id => (int) $q2Options[0]['id']];
-        $quizForSubmit = OrientationQuizService::findByModulePublicId('ORIENT-2026-001');
+        $quizForSubmit = OrientationQuizService::findByModulePublicId($probeModuleCode);
         $attemptRow = OrientationQuizService::attempt($attempt1, 2);
         $result = OrientationQuizService::submitAttempt($quizForSubmit, $attemptRow, $answers);
         $check(

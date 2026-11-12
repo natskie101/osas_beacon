@@ -64,6 +64,39 @@ $guarded = static function (callable $body, callable $cleanup): void {
     }
 };
 
+/**
+ * Mirror of BaseModel::nextPublicId() over a snapshot of existing rows, so the
+ * expected "next" public ID can be computed against whatever is seeded.
+ *
+ * @param list<string> $existingIds
+ */
+$nextPublicId = static function (string $prefix, array $existingIds): string {
+    $year = (int) date('Y');
+    $max = 0;
+    $usesYear = null;
+
+    foreach ($existingIds as $publicId) {
+        if (preg_match('/^' . preg_quote($prefix, '/') . '-(?:(\d{4})-)?(\d+)$/', (string) $publicId, $matches) !== 1) {
+            continue;
+        }
+
+        $rowYear = $matches[1] !== '' ? (int) $matches[1] : null;
+
+        if ($rowYear !== null && $rowYear !== $year) {
+            continue;
+        }
+
+        $number = (int) $matches[2];
+
+        if ($number >= $max) {
+            $max = $number;
+            $usesYear = $rowYear !== null;
+        }
+    }
+
+    return sprintf($usesYear === false ? $prefix . '-%03d' : $prefix . '-' . $year . '-%03d', $max + 1);
+};
+
 // ---------------------------------------------------------------------------
 // Remember tokens: issue -> validate (rotate) -> clear.
 // ---------------------------------------------------------------------------
@@ -95,6 +128,8 @@ $guarded(static function () use ($check): void {
 $announcementId = null;
 
 $guarded(static function () use ($check, &$announcementId): void {
+    $countsBefore = Announcement::counts();
+
     $announcementId = Announcement::create([
         'title' => 'PROBE announcement',
         'category' => 'General',
@@ -135,7 +170,13 @@ $guarded(static function () use ($check, &$announcementId): void {
     );
 
     $counts = Announcement::counts();
-    $check('announcement.counts-includes-row', $counts['total'] === 1 && $counts['draft'] === 0 && $counts['published'] === 1, json_encode($counts));
+    $check(
+        'announcement.counts-includes-row',
+        $counts['total'] === $countsBefore['total'] + 1
+            && $counts['draft'] === $countsBefore['draft']
+            && $counts['published'] === $countsBefore['published'] + 1,
+        json_encode($counts),
+    );
 
     $page = Announcement::paginate(['search' => 'PROBE'], 1);
     $check(
@@ -145,11 +186,16 @@ $guarded(static function () use ($check, &$announcementId): void {
     );
 
     $pageAll = Announcement::paginate([], 1);
-    $check('announcement.paginate-all', $pageAll['total'] === 1 && count($pageAll['data']) === 1);
+    $check(
+        'announcement.paginate-all',
+        $pageAll['total'] === $countsBefore['total'] + 1
+            && (int) ($pageAll['data'][0]['id'] ?? 0) === $announcementId,
+        'total=' . $pageAll['total'],
+    );
 
     Announcement::delete($announcementId);
     $check('announcement.delete', Announcement::find($announcementId) === null);
-    $check('announcement.counts-restored', Announcement::counts()['total'] === 0);
+    $check('announcement.counts-restored', Announcement::counts()['total'] === $countsBefore['total']);
 }, static function () use (&$announcementId): void {
     if ($announcementId !== null) {
         DB::table('announcements')->where('id', $announcementId)->delete();
@@ -236,8 +282,12 @@ $guarded(static function () use ($check, &$userIds): void {
 // ---------------------------------------------------------------------------
 
 $ticketId = null;
+$ticketPublicId = '';
 
-$guarded(static function () use ($check, &$ticketId): void {
+$guarded(static function () use ($check, $nextPublicId, &$ticketId, &$ticketPublicId): void {
+    $ticketCountBefore = SupportTicket::counts()['total'];
+    $expectedPublicId = $nextPublicId('TCS', DB::table('support_tickets')->pluck('public_id')->all());
+
     $ticketId = SupportTicket::create([
         'student_user_id' => 2,
         'student_name' => 'Ryan Dela Cruz',
@@ -253,20 +303,25 @@ $guarded(static function () use ($check, &$ticketId): void {
     ]);
 
     $ticket = SupportTicket::find($ticketId);
+    $ticketPublicId = $ticket === null ? '' : (string) $ticket['public_id'];
     $check(
         'ticket.create-next-public-id',
-        $ticket !== null && $ticket['public_id'] === 'TCS-2026-002',
-        $ticket === null ? 'missing row' : $ticket['public_id'],
+        $ticket !== null && $ticketPublicId === $expectedPublicId,
+        ($ticket === null ? 'missing row' : $ticketPublicId) . ' expected ' . $expectedPublicId,
     );
 
     $before = SupportTicket::counts()['total'];
     SupportTicket::addMessage($ticketId, 'Probe User', 'Student', 'probe message');
     $check('ticket.addMessage', count(SupportTicket::messages($ticketId)) === 1);
-    $check('ticket.counts-includes-row', $before === 2 && SupportTicket::counts()['total'] === $before, 'before=' . $before);
+    $check(
+        'ticket.counts-includes-row',
+        $before === $ticketCountBefore + 1 && SupportTicket::counts()['total'] === $before,
+        'before=' . $before,
+    );
 
-    $found = SupportTicket::findForStudent('TCS-2026-002', 2);
+    $found = SupportTicket::findForStudent($ticketPublicId, 2);
     $check('ticket.findForStudent', $found !== null);
-    $check('ticket.findForStudent-wrong-user', SupportTicket::findForStudent('TCS-2026-002', 1) === null);
+    $check('ticket.findForStudent-wrong-user', SupportTicket::findForStudent($ticketPublicId, 1) === null);
 }, static function () use (&$ticketId): void {
     if ($ticketId !== null) {
         DB::table('support_messages')->where('ticket_id', $ticketId)->delete();
@@ -279,8 +334,11 @@ $guarded(static function () use ($check, &$ticketId): void {
 // ---------------------------------------------------------------------------
 
 $requestId = null;
+$requestPublicId = '';
 
-$guarded(static function () use ($check, &$requestId): void {
+$guarded(static function () use ($check, $nextPublicId, &$requestId, &$requestPublicId): void {
+    $expectedPublicId = $nextPublicId('DR', DB::table('document_requests')->pluck('public_id')->all());
+
     $requestId = DocumentRequest::create([
         'student_user_id' => 2,
         'student_name' => 'Ryan Dela Cruz',
@@ -298,15 +356,16 @@ $guarded(static function () use ($check, &$requestId): void {
     ]);
 
     $request = DocumentRequest::find($requestId);
+    $requestPublicId = $request === null ? '' : (string) $request['public_id'];
     $check(
         'documentRequest.create-public-id',
-        $request !== null && $request['public_id'] === 'DR-2026-001',
-        $request === null ? 'missing row' : $request['public_id'],
+        $request !== null && $requestPublicId === $expectedPublicId,
+        ($request === null ? 'missing row' : $requestPublicId) . ' expected ' . $expectedPublicId,
     );
 
     DocumentRequest::addEvent($requestId, 'Submitted', 'Probe User', 'probe note');
     $check('documentRequest.timeline', count(DocumentRequest::timeline($requestId)) === 1);
-    $check('documentRequest.findForStudent', DocumentRequest::findForStudent('DR-2026-001', 2) !== null);
+    $check('documentRequest.findForStudent', DocumentRequest::findForStudent($requestPublicId, 2) !== null);
 }, static function () use (&$requestId): void {
     if ($requestId !== null) {
         DB::table('document_request_events')->where('request_id', $requestId)->delete();
@@ -319,41 +378,66 @@ $guarded(static function () use ($check, &$requestId): void {
 // counter, then restore the module counter and delete the probe row.
 // ---------------------------------------------------------------------------
 
-$module = DB::table('orientation_modules')->where('id', 512)->first();
-$completionsBefore = $module !== null ? (int) $module->completions : 0;
+// Resolve a module the probed user has no progress row for yet, so the probe
+// works against any seeded dataset (net-zero either way).
+$probeModule = DB::table('orientation_modules as m')
+    ->whereNotExists(static function ($query): void {
+        $query->selectRaw('1')
+            ->from('orientation_progress as p')
+            ->whereColumn('p.module_id', 'm.id')
+            ->where('p.user_id', 1);
+    })
+    ->orderBy('m.id')
+    ->first(['m.id', 'm.completions']);
 
-$guarded(static function () use ($check): void {
-    OrientationProgress::markViewed(1, 512);
-    $row = OrientationProgress::find(1, 512);
+if ($probeModule === null) {
+    $probeModule = DB::table('orientation_modules')->orderBy('id')->first(['id', 'completions']);
+}
+
+$progressModuleId = $probeModule === null ? 0 : (int) $probeModule->id;
+$completionsBefore = $probeModule === null ? 0 : (int) $probeModule->completions;
+$summaryBefore = OrientationProgress::summary(1, 5);
+
+$guarded(static function () use ($check, $progressModuleId, $summaryBefore): void {
+    $check('progress.precondition-module-exists', $progressModuleId > 0, 'no orientation module available');
+
+    if ($progressModuleId === 0) {
+        return;
+    }
+
+    OrientationProgress::markViewed(1, $progressModuleId);
+    $row = OrientationProgress::find(1, $progressModuleId);
     $check(
         'progress.markViewed-insert',
         $row !== null && $row['status'] === 'In Progress' && (int) $row['progress'] === 25,
         $row === null ? 'missing row' : $row['status'] . '/' . $row['progress'],
     );
 
-    OrientationProgress::markViewed(1, 512);
-    $row = OrientationProgress::find(1, 512);
+    OrientationProgress::markViewed(1, $progressModuleId);
+    $row = OrientationProgress::find(1, $progressModuleId);
     $check('progress.markViewed-update', $row !== null && (int) $row['progress'] === 25);
 
-    $wasNew = OrientationProgress::complete(1, 512);
-    $row = OrientationProgress::find(1, 512);
+    $wasNew = OrientationProgress::complete(1, $progressModuleId);
+    $row = OrientationProgress::find(1, $progressModuleId);
     $check(
         'progress.complete',
         $wasNew === true && $row !== null && $row['status'] === 'Completed' && (int) $row['progress'] === 100,
     );
 
-    $wasAgain = OrientationProgress::complete(1, 512);
+    $wasAgain = OrientationProgress::complete(1, $progressModuleId);
     $check('progress.complete-idempotent', $wasAgain === false);
 
     $summary = OrientationProgress::summary(1, 5);
-    $check('progress.summary', $summary['completed'] === 1 && $summary['percent'] === 20.0, json_encode($summary));
-}, static function () use ($completionsBefore): void {
-    DB::table('orientation_progress')->where('user_id', 1)->where('module_id', 512)->delete();
-
-    if ($completionsBefore > 0) {
-        DB::table('orientation_modules')->where('id', 512)->update(['completions' => $completionsBefore]);
-    } else {
-        DB::table('orientation_modules')->where('id', 512)->update(['completions' => 0]);
+    $check(
+        'progress.summary',
+        $summary['completed'] === $summaryBefore['completed'] + 1
+            && $summary['percent'] === round((($summaryBefore['completed'] + 1) / 5) * 100, 1),
+        json_encode($summary),
+    );
+}, static function () use ($progressModuleId, $completionsBefore): void {
+    if ($progressModuleId > 0) {
+        DB::table('orientation_progress')->where('user_id', 1)->where('module_id', $progressModuleId)->delete();
+        DB::table('orientation_modules')->where('id', $progressModuleId)->update(['completions' => $completionsBefore]);
     }
 });
 
@@ -362,8 +446,26 @@ $guarded(static function () use ($check): void {
 // ---------------------------------------------------------------------------
 
 $restoredNotifications = [];
+$notificationSnapshot = [];
 
-$guarded(static function () use ($check, &$restoredNotifications): void {
+$guarded(static function () use ($check, &$restoredNotifications, &$notificationSnapshot): void {
+    // The seeded dataset may ship no notifications at all, so stage one unread
+    // row for the probed user and snapshot the pre-existing read states.
+    $notificationSnapshot = DB::table('notifications')
+        ->where('user_id', 2)
+        ->pluck('read_at', 'id')
+        ->all();
+
+    $probeNotificationId = DB::table('notifications')->insertGetId([
+        'user_id' => 2,
+        'title' => 'PROBE notification',
+        'message' => 'probe notification',
+        'type' => 'info',
+        'entity_type' => '',
+        'entity_id' => '',
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+
     $unreadBefore = Notification::unreadCount(2);
     $check('notification.unread-baseline', $unreadBefore > 0, 'count=' . $unreadBefore);
 
@@ -377,12 +479,20 @@ $guarded(static function () use ($check, &$restoredNotifications): void {
 
     Notification::markAllRead(2);
     $check('notification.markAllRead', Notification::unreadCount(2) === 0);
-}, static function () use (&$restoredNotifications): void {
-    foreach ($restoredNotifications as $id) {
-        DB::table('notifications')->where('id', $id)->update(['read_at' => null]);
+}, static function () use (&$restoredNotifications, &$notificationSnapshot): void {
+    $snapshotIds = array_map('intval', array_keys($notificationSnapshot));
+
+    // Remove rows created by the probe, then restore the original read state.
+    DB::table('notifications')
+        ->where('user_id', 2)
+        ->whereNotIn('id', $snapshotIds === [] ? [0] : $snapshotIds)
+        ->delete();
+
+    foreach ($notificationSnapshot as $id => $readAt) {
+        DB::table('notifications')->where('id', (int) $id)->update(['read_at' => $readAt]);
     }
 
-    DB::table('notifications')->where('user_id', 2)->whereNotNull('read_at')->update(['read_at' => null]);
+    $restoredNotifications = [];
 });
 
 // ---------------------------------------------------------------------------
