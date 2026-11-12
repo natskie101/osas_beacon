@@ -20,12 +20,12 @@ final class Announcement extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('announcements')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Published") AS published,
-                    SUM(status = "Draft") AS draft,
-                    SUM(status = "Scheduled") AS scheduled,
-                    SUM(status = "Archived") AS archived,
-                    COALESCE(SUM(views), 0) AS views')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Published' THEN 1 ELSE 0 END) AS published,
+                    SUM(CASE WHEN status = 'Draft' THEN 1 ELSE 0 END) AS draft,
+                    SUM(CASE WHEN status = 'Scheduled' THEN 1 ELSE 0 END) AS scheduled,
+                    SUM(CASE WHEN status = 'Archived' THEN 1 ELSE 0 END) AS archived,
+                    COALESCE(SUM(views), 0) AS views")
             ->first();
 
         return array_map('intval', $row === null ? [] : (array) $row);

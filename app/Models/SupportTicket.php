@@ -20,12 +20,12 @@ final class SupportTicket extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('support_tickets')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(status = "Open") AS open,
-                    SUM(status = "In Progress") AS in_progress,
-                    SUM(status = "Resolved") AS resolved,
-                    SUM(status = "Closed") AS closed,
-                    COALESCE(AVG(rating), 0) AS avg_rating')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) AS open,
+                    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS in_progress,
+                    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved,
+                    SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) AS closed,
+                    COALESCE(AVG(rating), 0) AS avg_rating")
             ->first();
         $row = $row === null ? [] : (array) $row;
 

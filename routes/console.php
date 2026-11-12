@@ -9,8 +9,8 @@ Artisan::command('inspire', function () {
 
 Artisan::command('portal:migrate', function () {
     $this->info('Running BEACON OSAS database migrations...');
-    require base_path('database/migrate.php');
-})->purpose('Run OSAS portal SQL migrations');
+    $this->call('migrate');
+})->purpose('Run OSAS portal database migrations');
 
 Artisan::command('portal:seed {--fresh : Wipe and re-seed database} {--minimal : Seed only essential admin accounts}', function () {
     $this->info('Seeding BEACON OSAS database...');

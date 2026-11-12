@@ -80,7 +80,7 @@ final class ReportService
                     ['key' => 'created_at', 'label' => 'Created'],
                 ],
                 'users',
-                ['public_id', DB::raw('CONCAT(first_name, " ", last_name) AS full_name'), 'email', 'role', 'student_id', 'program', 'year_level', 'status', 'created_at'],
+                ['public_id', DB::raw("CONCAT(first_name, ' ', last_name) AS full_name"), 'email', 'role', 'student_id', 'program', 'year_level', 'status', 'created_at'],
                 'created_at',
             ],
             'announcements' => [

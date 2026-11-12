@@ -17,8 +17,8 @@ final class AuditLog
             ->leftJoin('users as u', 'u.id', '=', 'a.actor_user_id')
             ->leftJoin('users as t', 't.id', '=', 'a.target_user_id')
             ->select('a.*')
-            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
-                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display')
+            ->selectRaw("COALESCE(CONCAT(u.first_name, ' ', u.last_name), a.actor_name) AS actor_display,
+                    COALESCE(CONCAT(t.first_name, ' ', t.last_name), '') AS target_display")
             ->orderBy('a.created_at', 'desc')
             ->orderBy('a.id', 'desc')
             ->limit($limit)
@@ -39,7 +39,7 @@ final class AuditLog
                     ->orWhere('a.target_user_id', $userId);
             })
             ->select('a.*')
-            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display')
+            ->selectRaw("COALESCE(CONCAT(u.first_name, ' ', u.last_name), a.actor_name) AS actor_display")
             ->orderBy('a.created_at', 'desc')
             ->orderBy('a.id', 'desc')
             ->limit($limit)
@@ -92,8 +92,8 @@ final class AuditLog
 
         $rows = $query
             ->select('a.*')
-            ->selectRaw('COALESCE(CONCAT(u.first_name, " ", u.last_name), a.actor_name) AS actor_display,
-                    COALESCE(CONCAT(t.first_name, " ", t.last_name), "") AS target_display')
+            ->selectRaw("COALESCE(CONCAT(u.first_name, ' ', u.last_name), a.actor_name) AS actor_display,
+                    COALESCE(CONCAT(t.first_name, ' ', t.last_name), '') AS target_display")
             ->orderBy('a.created_at', 'desc')
             ->orderBy('a.id', 'desc')
             ->limit($perPage)

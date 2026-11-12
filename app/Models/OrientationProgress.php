@@ -110,8 +110,8 @@ final class OrientationProgress
     {
         $row = DB::table('orientation_progress')
             ->where('user_id', $userId)
-            ->selectRaw('SUM(status = "Completed") AS completed,
-                    SUM(status = "In Progress") AS in_progress')
+            ->selectRaw("SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
+                    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS in_progress")
             ->first();
         $row = $row === null ? [] : (array) $row;
         $completed = (int) ($row['completed'] ?? 0);

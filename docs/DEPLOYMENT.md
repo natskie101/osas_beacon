@@ -1,13 +1,13 @@
 # BEACON OSAS Portal — Deployment Guide
 
-The application is a server-rendered PHP 8.3+ / MySQL application. The web
+The application is a server-rendered PHP 8.3+ / PostgreSQL application. The web
 document root must be the `public/` directory, never the repository root.
 
 ## Requirements
 
 - PHP 8.3 or newer (PHP 8.4 recommended)
-- PHP extensions: `pdo_mysql`, `mbstring`, `fileinfo`, `json`, `openssl`
-- MySQL 8.x or MariaDB 10.6+
+- PHP extensions: `pdo_pgsql`, `mbstring`, `fileinfo`, `json`, `openssl`
+- PostgreSQL 14 or newer
 - Apache with `mod_rewrite` (or Nginx with an equivalent front-controller rule)
 - Write access for the web-server user to:
   - `storage/logs/`
@@ -16,20 +16,16 @@ document root must be the `public/` directory, never the repository root.
 
 ## 1. Create the database
 
-Using MySQL CLI:
+Using PostgreSQL CLI:
 
 ```sql
-CREATE DATABASE osas_beacon
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-CREATE USER 'beacon_app'@'localhost' IDENTIFIED BY 'change-this-password';
-GRANT ALL PRIVILEGES ON osas_beacon.* TO 'beacon_app'@'localhost';
-FLUSH PRIVILEGES;
+CREATE ROLE beacon_app LOGIN PASSWORD 'change-this-password';
+CREATE DATABASE osas_beacon OWNER beacon_app;
 ```
 
-You can also let `database/migrate.php` create the database when the configured
-MySQL user has permission to do so.
+The database owner has all privileges on `osas_beacon` and cannot touch any
+other database — no extra `GRANT`s are needed. You can run
+`scripts/create-db-user.sql` (edit the password first) to create both at once.
 
 ## 2. Configure the environment
 
@@ -43,9 +39,9 @@ APP_DEBUG=false
 APP_TIMEZONE=Asia/Manila
 APP_DEMO_MODE=false
 
-DB_CONNECTION=mysql
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=5432
 DB_DATABASE=osas_beacon
 DB_USERNAME=beacon_app
 DB_PASSWORD=change-this-password
@@ -72,7 +68,7 @@ Notes:
 From the project root:
 
 ```bash
-php database/migrate.php
+php artisan migrate
 php database/seed.php
 ```
 
@@ -89,7 +85,7 @@ Demo accounts after reseeding (password `Beacon@2026`):
 
 ## 4. Laragon virtual host
 
-1. Start Apache and MySQL in Laragon.
+1. Start Apache and PostgreSQL in Laragon.
 2. Create the site with **Menu → Apache → sites-enabled → Add site**.
 3. Set the document root to:
 
@@ -181,11 +177,11 @@ server {
 
 ## 9. Common problems
 
-**`Unknown database 'osas_beacon'`**
+**`database "osas_beacon" does not exist`**
 
-Run `php database/migrate.php` against the same MySQL instance configured in
-`.env`. If Laragon was upgraded, check that its data directory and port match
-`DB_PORT`.
+Create the database first (see §1), then run `php artisan migrate` against the
+same PostgreSQL instance configured in `.env`. If Laragon was upgraded, check
+that its data directory and port match `DB_PORT`.
 
 **404 for every route**
 

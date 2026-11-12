@@ -21,14 +21,14 @@ final class LostFoundItem extends BaseModel
     public static function counts(): array
     {
         $row = DB::table('lost_found_items')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(type = "Lost") AS lost,
-                    SUM(type = "Found") AS found,
-                    SUM(status IN ("Open", "Unclaimed")) AS open,
-                    SUM(status = "Claim Pending") AS claim_pending,
-                    SUM(status = "Returned") AS returned,
-                    SUM(status = "Unclaimed") AS unclaimed,
-                    SUM(status = "Archived") AS archived')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN type = 'Lost' THEN 1 ELSE 0 END) AS lost,
+                    SUM(CASE WHEN type = 'Found' THEN 1 ELSE 0 END) AS found,
+                    SUM(CASE WHEN status IN ('Open', 'Unclaimed') THEN 1 ELSE 0 END) AS open,
+                    SUM(CASE WHEN status = 'Claim Pending' THEN 1 ELSE 0 END) AS claim_pending,
+                    SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) AS returned,
+                    SUM(CASE WHEN status = 'Unclaimed' THEN 1 ELSE 0 END) AS unclaimed,
+                    SUM(CASE WHEN status = 'Archived' THEN 1 ELSE 0 END) AS archived")
             ->first();
 
         return array_map('intval', $row === null ? [] : (array) $row);
@@ -58,8 +58,8 @@ final class LostFoundItem extends BaseModel
     {
         return DB::table('lost_found_items')
             ->where('status', '<>', 'Archived')
-            ->orderByRaw('CASE WHEN status = "Claim Pending" THEN 0 WHEN status IN ("Open", "Unclaimed") THEN 1 ELSE 2 END,
-                      posted_at DESC, id DESC')
+            ->orderByRaw("CASE WHEN status = 'Claim Pending' THEN 0 WHEN status IN ('Open', 'Unclaimed') THEN 1 ELSE 2 END,
+                      posted_at DESC, id DESC")
             ->get()
             ->map(static fn (object $row): array => (array) $row)
             ->all();

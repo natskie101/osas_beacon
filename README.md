@@ -1,16 +1,16 @@
 # BEACON OSAS Portal
 
-Server-rendered PHP + MySQL portal for the Office of Student Affairs and
+Server-rendered PHP + PostgreSQL portal for the Office of Student Affairs and
 Services. The application combines the Coordinator/Administrator workspace and
 the student portal with authentication, policy-based access, audit logging,
 notifications, CSV reports and printable HTML reports.
 
 ## Stack
 
-- PHP 8.3+ (8.4 recommended), vanilla PHP with PDO
-- MySQL 8 / MariaDB
-- No framework or Composer dependencies
-- Laravel-style layout to make a later framework port straightforward
+- PHP 8.3+ (8.4 recommended), Laravel 11
+- PostgreSQL 14+
+- Composer dependencies (Laravel framework)
+- Laravel-style layout preserved from the original portal
 - Original portal visual design and CSS preserved
 
 ## Technical Admin chart assets
@@ -33,7 +33,7 @@ System Overview page.
 2. Create/migrate the database and import the demo dataset:
 
    ```bash
-   php database/migrate.php
+   php artisan migrate
    php database/seed.php --fresh
    ```
 
@@ -60,7 +60,7 @@ characters for `SEED_COORDINATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and
 `SEED_ADMIN_PASSWORD`, then run:
 
 ```bash
-php database/migrate.php
+php artisan migrate
 php database/seed.php --fresh --minimal
 ```
 

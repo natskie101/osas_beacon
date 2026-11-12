@@ -77,7 +77,7 @@ final class TechnicalAdminOverview
         }
 
         $missingExtensions = array_values(array_filter(
-            ['pdo_mysql', 'mbstring', 'fileinfo', 'json', 'openssl'],
+            ['pdo_pgsql', 'mbstring', 'fileinfo', 'json', 'openssl'],
             static fn (string $extension): bool => !extension_loaded($extension),
         ));
         $storagePaths = [
@@ -120,14 +120,14 @@ final class TechnicalAdminOverview
             'account_statuses' => DB::table('users')
                 ->selectRaw('status, COUNT(*) AS count')
                 ->groupBy('status')
-                ->orderByRaw('CASE status WHEN "Active" THEN 1 WHEN "Pending" THEN 2 WHEN "Inactive" THEN 3 ELSE 4 END')
+                ->orderByRaw("CASE status WHEN 'Active' THEN 1 WHEN 'Pending' THEN 2 WHEN 'Inactive' THEN 3 ELSE 4 END")
                 ->get()
                 ->map(static fn (object $row): array => (array) $row)
                 ->all(),
             'student_programs' => DB::table('users')
-                ->selectRaw('COALESCE(NULLIF(TRIM(program), ""), "Unassigned") AS program, COUNT(*) AS count')
+                ->selectRaw("COALESCE(NULLIF(TRIM(program), ''), 'Unassigned') AS program, COUNT(*) AS count")
                 ->where('role', 'Student')
-                ->groupByRaw('COALESCE(NULLIF(TRIM(program), ""), "Unassigned")')
+                ->groupByRaw("COALESCE(NULLIF(TRIM(program), ''), 'Unassigned')")
                 ->orderByRaw('count DESC, program ASC')
                 ->get()
                 ->map(static fn (object $row): array => (array) $row)

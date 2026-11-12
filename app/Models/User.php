@@ -159,17 +159,17 @@ final class User
     public static function counts(): array
     {
         $row = DB::table('users')
-            ->selectRaw('COUNT(*) AS total,
-                    SUM(role = "Student") AS students,
-                    SUM(status = "Active") AS active,
-                    SUM(role = "Student" AND status = "Active") AS active_students,
-                    SUM(role = "Student" AND last_login_at IS NOT NULL) AS signed_in_students,
-                    SUM(status = "Pending") AS pending,
-                    SUM(status = "Inactive") AS inactive,
-                    SUM(role <> "Student") AS staff,
-                    SUM(role = "Coordinator") AS coordinators,
-                    SUM(role = "Administrator") AS administrators,
-                    MAX(created_at) AS latest_created_at')
+            ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN role = 'Student' THEN 1 ELSE 0 END) AS students,
+                    SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS active,
+                    SUM(CASE WHEN role = 'Student' AND status = 'Active' THEN 1 ELSE 0 END) AS active_students,
+                    SUM(CASE WHEN role = 'Student' AND last_login_at IS NOT NULL THEN 1 ELSE 0 END) AS signed_in_students,
+                    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN status = 'Inactive' THEN 1 ELSE 0 END) AS inactive,
+                    SUM(CASE WHEN role <> 'Student' THEN 1 ELSE 0 END) AS staff,
+                    SUM(CASE WHEN role = 'Coordinator' THEN 1 ELSE 0 END) AS coordinators,
+                    SUM(CASE WHEN role = 'Administrator' THEN 1 ELSE 0 END) AS administrators,
+                    MAX(created_at) AS latest_created_at")
             ->first();
         $row = $row === null ? [] : (array) $row;
 
