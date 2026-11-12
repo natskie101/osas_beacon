@@ -33,7 +33,7 @@ System Overview page.
 2. Create/migrate the database and import the demo dataset:
 
    ```bash
-   php database/migrate.php
+   php artisan migrate
    php database/seed.php --fresh
    ```
 
@@ -60,7 +60,7 @@ characters for `SEED_COORDINATOR_PASSWORD`, `SEED_STUDENT_PASSWORD`, and
 `SEED_ADMIN_PASSWORD`, then run:
 
 ```bash
-php database/migrate.php
+php artisan migrate
 php database/seed.php --fresh --minimal
 ```
 

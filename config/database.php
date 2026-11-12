@@ -10,14 +10,7 @@ $username = env('DB_USERNAME', 'osas_beacon');
 $password = env('DB_PASSWORD', '');
 
 return [
-    /* Top-level convenience keys consumed via config('database.driver') etc. */
     'default' => $driver,
-    'driver' => $driver,
-    'host' => $host,
-    'port' => $port,
-    'database' => $database,
-    'username' => $username,
-    'password' => $password,
 
     /* Laravel standard connection configurations */
     'connections' => [

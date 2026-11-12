@@ -68,7 +68,7 @@ Notes:
 From the project root:
 
 ```bash
-php database/migrate.php
+php artisan migrate
 php database/seed.php
 ```
 
@@ -177,11 +177,11 @@ server {
 
 ## 9. Common problems
 
-**`Unknown database 'osas_beacon'`**
+**`database "osas_beacon" does not exist`**
 
-Run `php database/migrate.php` against the same MySQL instance configured in
-`.env`. If Laragon was upgraded, check that its data directory and port match
-`DB_PORT`.
+Create the database first (see §1), then run `php artisan migrate` against the
+same PostgreSQL instance configured in `.env`. If Laragon was upgraded, check
+that its data directory and port match `DB_PORT`.
 
 **404 for every route**
 
