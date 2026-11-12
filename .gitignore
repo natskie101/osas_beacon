@@ -27,5 +27,8 @@ public/uploads/*
 Thumbs.db
 *.log
 
+# VS Code workspace settings (may hold local DB credentials)
+.vscode/
+
 # Verification artifacts (machine-specific DB snapshots, regenerable)
 scripts/*.json
