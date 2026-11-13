@@ -1538,6 +1538,15 @@ body[data-role="Coordinator"] {
 body[data-role="Coordinator"] * {
   font-family: var(--sans);
 }
+/* The Technical Console renders with the same sans stack as the
+   Coordinator and Student portals — no serif headings. */
+body[data-role="Administrator"] {
+  --serif: var(--sans);
+  font-family: var(--sans);
+}
+body[data-role="Administrator"] * {
+  font-family: var(--sans);
+}
 
 .avatar--sm {
   width: 30px;
