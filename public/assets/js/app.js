@@ -431,10 +431,12 @@
 
     var confirmCard = document.createElement("div");
     confirmCard.className = "app-confirm__card";
+    var confirmBody = document.createElement("div");
+    confirmBody.className = "app-confirm__body";
     var confirmIcon = document.createElement("span");
     confirmIcon.className = "app-confirm__icon";
     confirmIcon.setAttribute("aria-hidden", "true");
-    confirmIcon.textContent = "!";
+    confirmIcon.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.8 20h18.4L12 4Z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>';
     var confirmTitle = document.createElement("h2");
     confirmTitle.className = "app-confirm__title";
     confirmTitle.id = "app-confirm-title";
@@ -454,9 +456,10 @@
 
     confirmActions.appendChild(confirmCancel);
     confirmActions.appendChild(confirmAccept);
-    confirmCard.appendChild(confirmIcon);
-    confirmCard.appendChild(confirmTitle);
-    confirmCard.appendChild(confirmMessage);
+    confirmBody.appendChild(confirmIcon);
+    confirmBody.appendChild(confirmTitle);
+    confirmBody.appendChild(confirmMessage);
+    confirmCard.appendChild(confirmBody);
     confirmCard.appendChild(confirmActions);
     confirmDialog.appendChild(confirmCard);
     document.body.appendChild(confirmDialog);
@@ -484,9 +487,11 @@
           ? submitter.getAttribute("data-confirm-title")
           : "Please confirm";
         var actionLabel = submitter ? submitter.textContent.trim() : "";
+        var isDangerous = /delete|remove|deactivate/i.test(message);
         confirmAccept.textContent = actionLabel && actionLabel.length <= 24 ? actionLabel : "Confirm";
-        confirmAccept.classList.toggle("btn--danger", /delete|remove|deactivate/i.test(message));
-        confirmAccept.classList.toggle("btn--primary", !/delete|remove|deactivate/i.test(message));
+        confirmDialog.classList.toggle("app-confirm--danger", isDangerous);
+        confirmAccept.classList.toggle("btn--danger", isDangerous);
+        confirmAccept.classList.toggle("btn--primary", !isDangerous);
 
         if (!confirmDialog.open) confirmDialog.showModal();
         confirmCancel.focus();

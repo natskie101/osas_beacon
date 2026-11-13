@@ -2454,7 +2454,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   }
 }
 
-/* Registration submitted popup */
+/* Portal confirmation dialog — built from the same tokens as .modal / .modal__foot */
 .app-confirm {
   position: fixed;
   inset: 0;
@@ -2465,56 +2465,71 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   padding: 0;
   overflow: visible;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--ink);
 }
 .app-confirm::backdrop {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(24, 28, 36, 0.46);
 }
 .app-confirm[open] {
   animation: modal-pop 0.16s ease-out;
 }
 .app-confirm__card {
-  padding: 30px 26px 24px;
+  overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: #fff;
-  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
+  box-shadow: var(--shadow-lg);
+}
+.app-confirm__body {
+  padding: 28px 26px 22px;
   text-align: center;
 }
 .app-confirm__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   margin-bottom: 14px;
+  border: 1px solid var(--brand-tint-2);
   border-radius: 50%;
   background: var(--brand-tint);
   color: var(--brand);
-  font-size: 24px;
-  font-weight: 800;
+}
+.app-confirm__icon svg {
+  display: block;
+}
+.app-confirm--danger .app-confirm__icon {
+  border-color: var(--red-line);
+  background: var(--red-bg);
+  color: var(--red);
 }
 .app-confirm__title {
   margin: 0 0 8px;
   color: var(--ink);
-  font-size: 19px;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
 }
 .app-confirm__message {
-  margin: 0 0 20px;
+  margin: 0;
   color: var(--muted);
   font-size: 12.5px;
-  line-height: 1.7;
+  line-height: 1.65;
   overflow-wrap: anywhere;
 }
 .app-confirm__actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  background: #fcfcfd;
 }
 .app-confirm__actions .btn {
-  min-width: 100px;
+  min-width: 104px;
 }
 .auth-pop {
   position: fixed;
@@ -2524,16 +2539,16 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(24, 28, 36, 0.46);
 }
 .auth-pop__card {
   width: 100%;
   max-width: 390px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 30px 26px 24px;
-  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
+  box-shadow: var(--shadow-lg);
   text-align: center;
 }
 .auth-pop__icon {
@@ -3287,12 +3302,12 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   max-width: 560px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--ink);
   box-shadow: var(--shadow-lg);
 }
 .orientation-notify::backdrop {
-  background: rgba(31, 41, 55, 0.56);
+  background: rgba(24, 28, 36, 0.46);
 }
 .orientation-notify__form {
   display: grid;
