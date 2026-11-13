@@ -158,7 +158,74 @@ server {
 }
 ```
 
-## 8. Post-deployment checks
+## 8. Render + Neon (cloud)
+
+The repository ships a `render.yaml` blueprint and a `Dockerfile`, so the cloud
+deployment is: **GitHub → Render (Docker) → Neon (PostgreSQL)**.
+
+### 8.1 Database: Neon
+
+1. Create a Neon project; the default branch is used for production.
+2. Take the connection details from the Neon console:
+   - **Host**: the **direct** endpoint — `ep-xxxxx.ap-southeast-1.aws.neon.tech`.
+     Do **not** use the `-pooler` host (see §8.3).
+   - **Database**: `neondb`
+   - **Role**: `neondb_owner` (or a dedicated role)
+3. SSL is mandatory: `DB_SSLMODE=require`.
+
+The schema and the three bootstrap accounts were already migrated/seeded
+against this database:
+
+```powershell
+$env:DB_HOST='ep-xxxxx.ap-southeast-1.aws.neon.tech'
+$env:DB_DATABASE='neondb'; $env:DB_USERNAME='neondb_owner'
+$env:DB_PASSWORD='...'; $env:DB_SSLMODE='require'
+php artisan migrate --force
+$env:SEED_COORDINATOR_PASSWORD='...'; $env:SEED_STUDENT_PASSWORD='...'; $env:SEED_ADMIN_PASSWORD='...'
+php database/seed.php --minimal
+```
+
+`--minimal` seeds only the three accounts (passwords ≥ 12 characters) and no
+demo content. `docker/start.sh` re-runs `migrate --force` on every boot, so
+migrations stay current automatically.
+
+### 8.2 Hosting: Render
+
+1. Push `main` to GitHub.
+2. In Render: **New → Blueprint**, connect the repository. Render reads
+   `render.yaml` and creates the `osas-beacon` web service (Docker, free,
+   singapore, health check `/up`, `autoDeploy: true`).
+3. Fill in the `sync: false` environment variables:
+
+   | Key | Value |
+   | --- | --- |
+   | `APP_URL` | `https://osas-beacon.onrender.com` (your service URL) |
+   | `APP_KEY` | `php artisan key:generate --show` |
+   | `DB_HOST` | Neon **direct** host (no `-pooler`) |
+   | `DB_DATABASE` | `neondb` |
+   | `DB_USERNAME` | `neondb_owner` |
+   | `DB_PASSWORD` | Neon password |
+   | `NVIDIA_API_KEY` | optional; AI features only |
+
+4. Deploy. On boot, `docker/start.sh` rewrites Apache's listen port to
+   `PORT`, runs migrations, caches config/routes/views, then starts Apache.
+
+Because `autoDeploy` is on, every push to `main` redeploys. The health check
+path is `/up`.
+
+### 8.3 Why the direct endpoint
+
+Neon's pooler (`-pooler` host) is a PgBouncer-style proxy intended for
+serverless clients with many short-lived connections. Under PDO **prepared
+statements** — which Laravel uses for every query — statements inside a
+transaction can be silently aborted server-side while still reporting success
+client-side; the next statement then fails with
+`SQLSTATE[25P02] In failed sql transaction`, masking the original error.
+
+Render runs a persistent Apache/PHP-FPM server with a small, steady set of
+connections, which is exactly what the **direct** endpoint is for. Use it.
+
+## 9. Post-deployment checks
 
 - Visit `/login` and sign in as each role.
 - Confirm the student portal only exposes that student's records.
@@ -175,13 +242,19 @@ server {
 - Check `storage/logs/mail.log` if `MAIL_MAILER=log`.
 - Confirm `APP_DEBUG=false`, `APP_DEMO_MODE=false`, and HTTPS redirects.
 
-## 9. Common problems
+## 10. Common problems
 
 **`database "osas_beacon" does not exist`**
 
 Create the database first (see §1), then run `php artisan migrate` against the
 same PostgreSQL instance configured in `.env`. If Laragon was upgraded, check
 that its data directory and port match `DB_PORT`.
+
+**`SQLSTATE[25P02] In failed sql transaction` during `migrate`**
+
+The reported statement is only a cascade — an earlier statement in the same
+transaction already failed. The usual cause on Neon is connecting through the
+`-pooler` host: switch `DB_HOST` to the **direct** endpoint (§8.3).
 
 **404 for every route**
 
