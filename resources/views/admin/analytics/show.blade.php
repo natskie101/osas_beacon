@@ -2,6 +2,7 @@
 @section('content')
 <?php
 /** @var array<string, mixed> $student */
+/** @var array<string, mixed>|null $studentPhotoFile */
 /** @var list<array<string, mixed>> $modules */
 /** @var list<array<string, mixed>> $attendance */
 /** @var list<array<string, mixed>> $quizAttempts */
@@ -39,7 +40,7 @@ $notifyMessage = sprintf(
 
 <section class="card panel-card tracking-profile">
     <div class="tracking-profile__identity">
-        <span class="avatar avatar--lg">{{ initials($student['first_name'], $student['last_name']) }}</span>
+        <span class="avatar avatar--lg"><?php if ($studentPhotoFile !== null): ?><img class="avatar__photo" src="{!! url('/admin/analytics/' . $student['public_id'] . '/photo') !!}" alt=""><?php else: ?>{{ initials($student['first_name'], $student['last_name']) }}<?php endif; ?></span>
         <div>
             <div class="tracking-profile__name">{{ $fullName }}</div>
             <div class="tracking-profile__meta">{{ $student['email'] }} &middot; {{ $student['program'] ?: 'No program' }} &middot; Year Level: {{ $student['year_level'] ?: 'Not set' }}</div>

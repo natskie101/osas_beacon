@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\File;
 use App\Models\Participation;
 use App\Services\AuditLogger;
+use App\Services\FileStorage;
 use App\Services\NotificationService;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
@@ -110,6 +112,8 @@ final class AnalyticsController extends Controller
             default => 'At Risk',
         };
 
+        $photoFile = self::resolveStudentPhoto((int) $student['id']);
+
         return view('admin/analytics/show', [
             'title' => 'Student Tracking Logs',
             'pageTitle' => 'View Student Profile & Tracking Logs',
@@ -118,6 +122,7 @@ final class AnalyticsController extends Controller
             'user' => $actor,
             'role' => $actor['role'],
             'student' => $student,
+            'studentPhotoFile' => $photoFile,
             'modules' => $modules,
             'attendance' => $attendance,
             'quizAttempts' => $quizAttempts,
@@ -126,6 +131,54 @@ final class AnalyticsController extends Controller
             'hours' => $hours,
             'trackingStatus' => $trackingStatus,
         ]);
+    }
+
+    /**
+     * Streams the tracked student's profile photo. Unlike /profile/photo,
+     * which is bound to the signed-in account, this is scoped to the student
+     * being inspected and to staff roles only (route middleware).
+     */
+    public function studentPhoto(Request $_request, string $publicId)
+    {
+        $student = Participation::findStudent($publicId);
+
+        if ($student === null) {
+            throw new NotFoundHttpException('The requested student record could not be found.');
+        }
+
+        $file = self::resolveStudentPhoto((int) $student['id']);
+
+        if ($file === null) {
+            throw new NotFoundHttpException('The profile photo could not be found.');
+        }
+
+        $path = FileStorage::path($file);
+        $content = is_file($path) ? file_get_contents($path) : false;
+
+        if ($content === false) {
+            throw new NotFoundHttpException('The profile photo could not be found.');
+        }
+
+        return response($content, 200, [
+            'Content-Type' => (string) $file['mime_type'],
+            'Content-Length' => (string) strlen($content),
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    private static function resolveStudentPhoto(int $userId): ?array
+    {
+        $file = File::latestForEntity('user_profile_photo', (string) $userId);
+
+        if ($file === null || !in_array($file['mime_type'] ?? '', ['image/jpeg', 'image/png'], true)) {
+            return null;
+        }
+
+        // A row without its stored bytes must not render as a broken image.
+        return is_file(FileStorage::path($file)) ? $file : null;
     }
 
     public function notifyStudent(Request $request, string $publicId)

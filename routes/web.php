@@ -179,6 +179,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/analytics', [AnalyticsController::class, 'index']);
         Route::post('/admin/analytics/notify', [AnalyticsController::class, 'notifyAllNonCompliant']);
+        Route::get('/admin/analytics/{publicId}/photo', [AnalyticsController::class, 'studentPhoto']);
         Route::post('/admin/analytics/{publicId}/notify', [AnalyticsController::class, 'notifyStudent']);
         Route::get('/admin/analytics/{publicId}', [AnalyticsController::class, 'showStudent']);
         
