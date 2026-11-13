@@ -30,9 +30,15 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
+        # Use Neon's DIRECT endpoint (host WITHOUT "-pooler").
+        # The pooler + PDO prepared statements silently abort transactions
+        # (SQLSTATE 25P02) during migrations. Render is a persistent server,
+        # which is exactly what the direct endpoint is for.
         sync: false
       - key: DB_PORT
         value: "5432"
+      - key: DB_SSLMODE
+        value: require
       - key: DB_DATABASE
         sync: false
       - key: DB_USERNAME
