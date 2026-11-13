@@ -32,3 +32,4 @@ Thumbs.db
 
 # Verification artifacts (machine-specific DB snapshots, regenerable)
 scripts/*.json
+.neon

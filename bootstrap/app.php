@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->validateCsrfTokens();
+
+        // Render terminates TLS at its proxy; trust it so Laravel sees HTTPS
+        // (secure cookies, correct https:// URL generation).
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // The portal's legacy exceptions predate the native kernel (they were

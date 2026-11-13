@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: osas-beacon
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_DEMO_MODE
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE
+        value: "true"
+      - key: CACHE_STORE
+        value: file
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MAIL_MAILER
+        value: log
+      - key: MAIL_FROM_ADDRESS
+        value: osas.support@uc.edu.ph
+      - key: MAIL_FROM_NAME
+        value: BEACON OSAS Portal
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_DEFAULT_MODEL
+        value: meta/llama-3.3-70b-instruct
+      - key: NVIDIA_REQUEST_TIMEOUT
+        value: "60"
