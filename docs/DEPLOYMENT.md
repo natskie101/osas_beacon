@@ -225,6 +225,25 @@ client-side; the next statement then fails with
 Render runs a persistent Apache/PHP-FPM server with a small, steady set of
 connections, which is exactly what the **direct** endpoint is for. Use it.
 
+### 8.4 `DB_HOST` is managed by the blueprint
+
+`render.yaml` sets `DB_HOST` with an explicit `value:` rather than
+`sync: false`, and this is deliberate. A hand-typed value in Render's
+Environment tab once carried a stray copy-paste annotation
+(`ep-...neon.tech <- no -pooler`), so libpq could not parse the DSN:
+`SQLSTATE[08006] missing "=" after "<-" in connection info string`.
+Every query then failed — including the session read — so **all pages
+returned 500** while `/up` (no DB, no session) stayed 200.
+
+Blueprint-managed values are reviewable in git and reproducible;
+dashboard-only values are not. If you must override something in the
+dashboard, mirror it back into `render.yaml`.
+
+`docker/start.sh` also runs `php artisan db:monitor` before migrating
+and aborts the boot (non-zero exit) when the database is unreachable,
+because `artisan` historically returned failure statuses without
+calling `exit()`, which let `set -e` pass a broken deploy.
+
 ## 9. Post-deployment checks
 
 - Visit `/login` and sign in as each role.
@@ -255,6 +274,14 @@ that its data directory and port match `DB_PORT`.
 The reported statement is only a cascade — an earlier statement in the same
 transaction already failed. The usual cause on Neon is connecting through the
 `-pooler` host: switch `DB_HOST` to the **direct** endpoint (§8.3).
+
+**`SQLSTATE[08006] ... missing "=" after ... in connection info string`**
+
+`DB_HOST` is not a bare hostname — something extra is glued onto it (a
+copy-paste note, an arrow, trailing text). Fix it in `render.yaml`, not only
+in the Render dashboard (§8.4). Note the boot symptom: `/up` stays 200 while
+every other page 500s, because the health check touches neither the database
+nor the session store.
 
 **404 for every route**
 
