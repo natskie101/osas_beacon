@@ -73,9 +73,9 @@ php database/seed.php
 ```
 
 Use `php database/seed.php --fresh` only for demo environments; it clears the
-existing portal data before importing the seeded dataset.
+existing portal data before re-importing the seeded accounts.
 
-Demo accounts after reseeding (password `Beacon@2026`):
+Accounts after reseeding (password `Beacon@2026`):
 
 | Role          | Email                       |
 | ------------- | --------------------------- |
@@ -300,6 +300,6 @@ Check `SESSION_NAME`, cookie permissions, `APP_URL`, and set
 
 ## 10. Legacy URLs
 
-The original static pages are archived in `legacy/` for reference. Requests for
-old `.html` URLs are redirected by `LegacyRedirectController` after login. Do
-not set the document root to `legacy/`.
+Requests for old `.html` URLs are redirected by `LegacyRedirectController`
+after login. The original static pages were removed from the repository;
+they existed only as a reference archive.

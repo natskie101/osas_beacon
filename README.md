@@ -95,7 +95,6 @@ bootstrap/           application and console bootstrapping
 config/              environment-backed configuration
 database/            numbered migrations, seeders and seed data
 docs/                deployment documentation
-legacy/              archived static portal, assets and QA harness
 public/              web document root and front controller
 resources/views/     server-rendered PHP views
 routes/web.php       declarative application routes
