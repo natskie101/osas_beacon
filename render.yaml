@@ -30,11 +30,15 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
-        # Use Neon's DIRECT endpoint (host WITHOUT "-pooler").
-        # The pooler + PDO prepared statements silently abort transactions
-        # (SQLSTATE 25P02) during migrations. Render is a persistent server,
-        # which is exactly what the direct endpoint is for.
-        sync: false
+        # Neon's DIRECT endpoint (host WITHOUT "-pooler"). The pooler +
+        # PDO prepared statements silently abort transactions (SQLSTATE
+        # 25P02) during migrations. Render is a persistent server, which
+        # is exactly what the direct endpoint is for.
+        # NOTE: this value is managed by the blueprint on purpose — an
+        # earlier hand-typed value in the Render dashboard contained a
+        # stray " <- no -pooler" annotation, which made libpq fail to
+        # parse the DSN (SQLSTATE 08006) and 500'd every page.
+        value: ep-weathered-hat-a1ets3w2.ap-southeast-1.aws.neon.tech
       - key: DB_PORT
         value: "5432"
       - key: DB_SSLMODE
