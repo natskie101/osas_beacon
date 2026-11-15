@@ -239,7 +239,7 @@ body[data-role="Administrator"][data-page="support"] {
 body[data-role="Administrator"][data-page="users"] .profile-hero__name {
   font-family: var(--sans);
 }
-@media (max-width: 620px) {
+@media (max-width: 768px) {
   .profile-form {
     padding: 11px;
     gap: 11px;

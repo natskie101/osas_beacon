@@ -18,6 +18,7 @@ php artisan db:monitor --databases=pgsql >/dev/null 2>&1 \
 php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
+php artisan view:clear
 php artisan view:cache
 
 exec apache2-foreground
