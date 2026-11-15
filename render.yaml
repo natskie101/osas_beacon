@@ -20,7 +20,7 @@ services:
       - key: APP_KEY
         sync: false
       - key: SESSION_DRIVER
-        value: database
+        value: file
       - key: SESSION_SECURE
         value: "true"
       - key: CACHE_STORE
