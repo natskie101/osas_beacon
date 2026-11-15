@@ -93,6 +93,8 @@ final class FileStorage
             throw new RuntimeException('The file could not be saved. Please try again.');
         }
 
+        $binary = file_get_contents($absolutePath);
+
         $id = DB::table('files')->insertGetId([
             'owner_user_id' => $ownerId,
             'entity_type' => $entityType,
@@ -102,6 +104,7 @@ final class FileStorage
             'mime_type' => $mime,
             'size_bytes' => $size,
             'checksum' => hash_file('sha256', $absolutePath) ?: null,
+            'file_data' => $binary !== false ? base64_encode($binary) : null,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -118,8 +121,22 @@ final class FileStorage
     public static function path(array $file): string
     {
         $relative = str_replace(['\\', '..'], ['/', ''], (string) ($file['stored_name'] ?? ''));
+        $path = BASE_PATH . '/storage/uploads/' . ltrim($relative, '/');
 
-        return BASE_PATH . '/storage/uploads/' . ltrim($relative, '/');
+        // Self-healing: if ephemeral disk storage was wiped (e.g. Render sleep/restart),
+        // automatically restore the file from database backup (file_data) back to disk.
+        if (!is_file($path) && !empty($file['file_data'])) {
+            $directory = dirname($path);
+            if (!is_dir($directory)) {
+                @mkdir($directory, 0775, true);
+            }
+            $decoded = base64_decode((string) $file['file_data'], true);
+            if ($decoded !== false) {
+                @file_put_contents($path, $decoded);
+            }
+        }
+
+        return $path;
     }
 
     /** @param array<string, mixed> $file */
