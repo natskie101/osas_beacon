@@ -34,15 +34,22 @@ portal on Render + Neon · Plan approved as "Fixes 1–5 + tests".
 php scripts/policy-probe.php            # 32 authorization checks (no DB)
 php scripts/password-policy-probe.php   # 12 password-rule checks (no writes)
 php scripts/service-write-probe.php     # full write-path probe; needs a SEEDED DB
+php scripts/login-flow-probe.php        # 14 sign-in / lockout / throttle checks; SEEDED scratch DB
 ```
 
 `service-write-probe` must run against a scratch database
 (`$env:DB_DATABASE='osas_beacon'` in the same shell), never the live `neondb`.
+`login-flow-probe` has the same requirement and refuses to start without the
+guard (it records failed logins and exhausts one throttle key by design).
 
-Post-deploy live checks: `curl -I https://osas-beacon.onrender.com/login`
-(headers present, no `x-powered-by`), a sign-in per role, and — last, because
-it locks the caller's IP on `POST /login` for 10 minutes — an 11-POST throttle
-probe expecting 5× "Incorrect" 302, 2× "Too many failed" 302, then 429.
+Post-deploy live checks: `curl -I https://osas-beacon.onrender.com/login` —
+verified 2026-11-15: CSP, Referrer-Policy, HSTS, nosniff and X-Frame-Options
+all present, and no `x-powered-by` once `expose_php=Off` (`ea91145`) was
+deployed — plus a sign-in per role. The sign-in, lockout and throttle flows
+are covered in-kernel by `login-flow-probe`; an optional live 11-POST
+throttle probe remains (run it last: it locks the caller's IP on
+`POST /login` for 10 minutes — expect 5× "Incorrect" 302,
+2× "Too many failed" 302, then 429).
 
 ## 3. Accepted risks & deferred items
 
