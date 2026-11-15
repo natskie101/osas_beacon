@@ -45,7 +45,17 @@ final class UserPolicy
             // Administrator account is outside their authority: they may view
             // it (directory, profile, activity) and never change it — no edit,
             // status change, role change, verification or password reset.
-            return $targetRole !== Role::Administrator || $ability === 'view';
+            if ($targetRole === Role::Administrator) {
+                return $ability === 'view';
+            }
+
+            // Role changes are limited to Student accounts: a Coordinator can
+            // neither grant nor revoke a staff role (see assignableRoles()).
+            if ($ability === 'change_role' && $targetRole !== Role::Student) {
+                return false;
+            }
+
+            return true;
         }
 
         if ($actorRole !== Role::Administrator) {
@@ -80,17 +90,26 @@ final class UserPolicy
         return $role !== null && $role->isStaff();
     }
 
-    /** @return list<string> */
+    /**
+     * Roles the actor may set when changing an account's role.
+     *
+     * Only an Administrator may grant the Administrator role; a Coordinator's
+     * authority stops at Student. This closes the Coordinator → Administrator
+     * privilege escalation (a Coordinator could previously promote any
+     * Student to a full admin account through PUT /admin/users/{publicId}).
+     *
+     * @return list<string>
+     */
     public static function assignableRoles(?array $actor): array
     {
         $role = Role::tryFrom((string) ($actor['role'] ?? ''));
 
         if ($role === Role::Coordinator) {
-            return ['Student', 'Administrator', 'Coordinator'];
+            return ['Student'];
         }
 
         if ($role === Role::Administrator) {
-            return ['Student', 'Coordinator'];
+            return ['Student', 'Coordinator', 'Administrator'];
         }
 
         return [];

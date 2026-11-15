@@ -88,9 +88,15 @@ $action = $isEdit ? url('/admin/users/' . $target['public_id']) : url('/admin/us
             <div class="field">
                 <label for="role">Role <span class="req">*</span></label>
                 <?php if ($roleLocked): ?>
-                    <input type="hidden" name="role" value="{{ $roles[0] ?? 'Student' }}">
-                    <input class="input" id="role" value="{{ $roles[0] ?? 'Student' }}" disabled>
-                    <div class="help-text">Your role can only create accounts at this access level.</div>
+                    <?php
+                    // Locked role fields must round-trip the target's CURRENT
+                    // role on edit — using $roles[0] here would silently
+                    // rewrite the account's role on every save.
+                    $lockedRole = $isEdit ? (string) $target['role'] : ($roles[0] ?? 'Student');
+                    ?>
+                    <input type="hidden" name="role" value="{{ $lockedRole }}">
+                    <input class="input" id="role" value="{{ $lockedRole }}" disabled>
+                    <div class="help-text">{{ $isEdit ? 'Your access level cannot change the role on this account.' : 'Your access level can only create accounts at this level.' }}</div>
                 <?php else: ?>
                     <select class="input{!! $invalid('role') !!}" id="role" name="role" data-role-select>
                         <?php foreach ($roles as $roleOption): ?>

@@ -146,12 +146,17 @@ final class UserController extends Controller
 
         $data = (new UpdateUserRequest((int) $target['id']))->validate($request);
 
+        // The assignability check only applies when the role actually
+        // changes: an unchanged round-trip (e.g. a Coordinator editing a
+        // fellow Coordinator's profile fields) must not be rejected, while
+        // any real role change is gated by both the policy and the
+        // actor's assignable-role list.
         if ((string) $data['role'] !== (string) $target['role']) {
             UserPolicy::authorize('change_role', $actor, $target);
-        }
 
-        if (!UserPolicy::canAssignRole($actor, (string) $data['role'])) {
-            throw new ForbiddenHttpException();
+            if (!UserPolicy::canAssignRole($actor, (string) $data['role'])) {
+                throw new ForbiddenHttpException();
+            }
         }
 
         $this->preventSelfPrivilegeChange($actor, $target, $data);
