@@ -178,7 +178,7 @@ $action = $isEdit ? url('/admin/users/' . $target['public_id']) : url('/admin/us
         <div class="form-grid form-grid--2">
             <div class="field">
                 <label for="password">{!! $isEdit ? 'New password (optional)' : 'Password' !!} {!! $isEdit ? '' : '<span class="req">*</span>' !!}</label>
-                <input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" autocomplete="new-password" {!! $isEdit ? '' : 'required' !!} placeholder="{!! $isEdit ? 'Leave blank to keep the current password' : 'At least 8 characters' !!}">
+                <input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" minlength="12" autocomplete="new-password" {!! $isEdit ? '' : 'required' !!} placeholder="{!! $isEdit ? 'Leave blank to keep the current password' : 'At least 12 characters' !!}">
                 <?php if ($errorFor('password')): ?><div class="form-error">{{ $errorFor('password') }}</div><?php endif; ?>
             </div>
             <div class="field">

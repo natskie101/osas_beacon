@@ -7,7 +7,7 @@
 ?>
 <div class="auth__header">
     <h1 class="auth__title">Choose a New Password</h1>
-    <p class="auth__subtitle">Set a password of at least 8 characters for {{ $email }}.</p>
+    <p class="auth__subtitle">Set a password of at least 12 characters for {{ $email }}.</p>
 </div>
 
 <?php if (!empty($errors)): ?>
@@ -33,7 +33,7 @@
         <label for="password">New Password</label>
         <span class="input-group">
             <span class="input-group__ico" aria-hidden="true">{!! App\Support\Icons::render('lock', 16) !!}</span>
-            <input class="input" id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required>
+            <input class="input" id="password" name="password" type="password" placeholder="At least 12 characters" autocomplete="new-password" required>
             <button type="button" class="input-group__toggle" data-password-toggle="password" aria-label="Show password">
                 {!! App\Support\Icons::render('eye', 16) !!}
             </button>

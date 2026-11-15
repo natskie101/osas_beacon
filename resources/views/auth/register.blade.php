@@ -98,14 +98,14 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
 
         <div class="field">
             <label for="password">Password <span class="req">*</span></label>
-            <input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" minlength="8" autocomplete="new-password" required>
-            <div class="help-text">At least 8 characters.</div>
+            <input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" minlength="12" autocomplete="new-password" required>
+            <div class="help-text">At least 12 characters.</div>
             <?php if ($errorFor('password')): ?><div class="form-error">{{ $errorFor('password') }}</div><?php endif; ?>
         </div>
 
         <div class="field">
             <label for="password_confirmation">Confirm password <span class="req">*</span></label>
-            <input class="input" id="password_confirmation" name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required>
+            <input class="input" id="password_confirmation" name="password_confirmation" type="password" minlength="12" autocomplete="new-password" required>
         </div>
 
         <div class="field">
