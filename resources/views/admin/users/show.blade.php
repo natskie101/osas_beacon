@@ -90,15 +90,17 @@ if ($schoolFile !== null) {
             </div>
 
             <dl class="detail-list">
-                <div><dt>Email address</dt><dd>{{ $target['email'] }}</dd></div>
-                <div><dt>Username</dt><dd class="mono">{{ $target['username'] }}</dd></div>
+                <div><dt>First name</dt><dd>{{ $target['first_name'] ?: 'Not provided' }}</dd></div>
                 <div><dt>Middle name</dt><dd>{{ $target['middle_name'] ?: 'Not provided' }}</dd></div>
-                <div><dt>Student ID</dt><dd>{{ $target['student_id'] ?: 'Not assigned' }}</dd></div>
+                <div><dt>Last name / Surname</dt><dd>{{ $target['last_name'] ?: 'Not provided' }}</dd></div>
+                <div><dt>Student ID</dt><dd><strong>{{ $target['student_id'] ?: 'Not assigned' }}</strong></dd></div>
                 <div><dt>Age</dt><dd>{{ $target['age'] ? (string) $target['age'] : 'Not provided' }}</dd></div>
-                <div><dt>Department</dt><dd>{{ $target['department'] ?: 'Not set' }}</dd></div>
-                <div><dt>Program</dt><dd>{{ $target['program'] ?: 'Not applicable' }}</dd></div>
+                <div><dt>Email address</dt><dd>{{ $target['email'] }}</dd></div>
+                <div><dt>Program / Course</dt><dd>{{ $target['program'] ?: 'Not applicable' }}</dd></div>
                 <div><dt>Year level</dt><dd>{{ $target['year_level'] ?: 'Not applicable' }}</dd></div>
-                <div><dt>Phone</dt><dd>{{ $target['phone'] ?: 'Not provided' }}</dd></div>
+                <div><dt>Department</dt><dd>{{ $target['department'] ?: 'Not set' }}</dd></div>
+                <div><dt>Mobile number</dt><dd>{{ $target['phone'] ?: 'Not provided' }}</dd></div>
+                <div><dt>Username</dt><dd class="mono">{{ $target['username'] }}</dd></div>
                 <div><dt>Requested at</dt><dd>{{ fmt_datetime($target['requested_at']) }}</dd></div>
                 <div><dt>Last update</dt><dd>{{ fmt_datetime($target['updated_at']) }}</dd></div>
                 <div><dt>Notifications</dt><dd>{!! count($notifications) !!} recent</dd></div>
