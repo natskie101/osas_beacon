@@ -30,7 +30,7 @@ final class UpdateUserRequest extends FormRequest
             'access_level' => 'nullable|string|max:150',
             'status' => 'required|in:Active,Pending,Inactive',
             'phone' => 'nullable|string|max:30',
-            'password' => 'nullable|string|min:12|max:255|confirmed',
+            'password' => 'nullable|string|min:8|max:255|confirmed',
         ];
     }
 }

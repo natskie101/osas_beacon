@@ -63,25 +63,23 @@ $years = config('people.year_levels', []);
 
 $registerPayload = static fn (string $password): array => [
     'first_name' => 'Probe', 'middle_name' => 'Validation', 'last_name' => 'Probe',
-    'student_id' => 'PROBE-VAL-001', 'age' => '20',
+    'student_id' => '112233', 'age' => '20',
     'email' => 'probe-validation@example.com',
-    'program' => $programs[0] ?? '', 'phone' => '+639000000000',
+    'program' => $programs[0] ?? '', 'phone' => '09123456789',
     'year_level' => $years[0] ?? '',
     'password' => $password, 'password_confirmation' => $password,
 ];
 
-$rejects(new RegisterStudentRequest(), $registerPayload('short123'), 'register rejects 8-char password');
-$rejects(new RegisterStudentRequest(), $registerPayload('short123456'), 'register rejects 11-char password');
-$accepts(new RegisterStudentRequest(), $registerPayload('long-enough-12'), 'register accepts 12-char password');
+$rejects(new RegisterStudentRequest(), $registerPayload('short-7'), 'register rejects 7-char password');
+$accepts(new RegisterStudentRequest(), $registerPayload('valid-8c'), 'register accepts 8-char password');
 
 $resetPayload = static fn (string $password): array => [
     'token' => 'a-token-value', 'email' => 'probe-validation@example.com',
     'password' => $password, 'password_confirmation' => $password,
 ];
 
-$rejects(new ResetPasswordRequest(), $resetPayload('short123'), 'reset rejects 8-char password');
-$rejects(new ResetPasswordRequest(), $resetPayload('short123456'), 'reset rejects 11-char password');
-$accepts(new ResetPasswordRequest(), $resetPayload('long-enough-12'), 'reset accepts 12-char password');
+$rejects(new ResetPasswordRequest(), $resetPayload('short-7'), 'reset rejects 7-char password');
+$accepts(new ResetPasswordRequest(), $resetPayload('valid-8c'), 'reset accepts 8-char password');
 
 $storePayload = static fn (string $password): array => [
     'first_name' => 'Probe', 'last_name' => 'Probe',
@@ -89,9 +87,8 @@ $storePayload = static fn (string $password): array => [
     'password' => $password, 'password_confirmation' => $password,
 ];
 
-$rejects(new StoreUserRequest(), $storePayload('short123'), 'admin create rejects 8-char password');
-$rejects(new StoreUserRequest(), $storePayload('short123456'), 'admin create rejects 11-char password');
-$accepts(new StoreUserRequest(), $storePayload('long-enough-12'), 'admin create accepts 12-char password');
+$rejects(new StoreUserRequest(), $storePayload('short-7'), 'admin create rejects 7-char password');
+$accepts(new StoreUserRequest(), $storePayload('valid-8c'), 'admin create accepts 8-char password');
 
 $updatePayload = static fn (string $password): array => [
     'first_name' => 'Probe', 'last_name' => 'Probe',
@@ -99,9 +96,8 @@ $updatePayload = static fn (string $password): array => [
     'password' => $password, 'password_confirmation' => $password,
 ];
 
-$rejects(new UpdateUserRequest(1), $updatePayload('short123'), 'admin edit rejects 8-char password');
-$rejects(new UpdateUserRequest(1), $updatePayload('short123456'), 'admin edit rejects 11-char password');
-$accepts(new UpdateUserRequest(1), $updatePayload('long-enough-12'), 'admin edit accepts 12-char password');
+$rejects(new UpdateUserRequest(1), $updatePayload('short-7'), 'admin edit rejects 7-char password');
+$accepts(new UpdateUserRequest(1), $updatePayload('valid-8c'), 'admin edit accepts 8-char password');
 
 if ($failures === []) {
     echo PHP_EOL, 'All password policy checks passed.', PHP_EOL;

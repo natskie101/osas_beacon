@@ -21,7 +21,7 @@ final class RegisterStudentRequest extends FormRequest
             'program' => ['required', 'in:' . implode(',', config('people.programs', []))],
             'phone' => ['required', 'string', 'digits:11'],
             'year_level' => ['required', 'in:' . implode(',', config('people.year_levels', []))],
-            'password' => ['required', 'string', 'min:12', 'max:255', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
         ];
     }
 }

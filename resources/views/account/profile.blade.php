@@ -121,7 +121,7 @@ $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input
         <div class="section-title">{!! App\Support\Icons::render('shield', 14) !!} Change Password</div>
         <div class="form-grid form-grid--2">
             <div class="field"><label for="current_password">Current password</label><input class="input{!! $invalid('current_password') !!}" id="current_password" name="current_password" type="password" autocomplete="current-password"><?php if ($errorFor('current_password')): ?><div class="form-error">{{ $errorFor('current_password') }}</div><?php endif; ?><div class="help-text">Required when changing your email or password.</div></div>
-            <div class="field"><label for="password">New password</label><input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" minlength="12" autocomplete="new-password" placeholder="Leave blank to keep your current password"><?php if ($errorFor('password')): ?><div class="form-error">{{ $errorFor('password') }}</div><?php endif; ?></div>
+            <div class="field"><label for="password">New password</label><input class="input{!! $invalid('password') !!}" id="password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep your current password"><?php if ($errorFor('password')): ?><div class="form-error">{{ $errorFor('password') }}</div><?php endif; ?></div>
             <div class="field"><label for="password_confirmation">Confirm new password</label><input class="input" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"></div>
         </div>
     </section>

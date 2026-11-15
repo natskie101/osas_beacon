@@ -91,7 +91,7 @@ final class ProfileController extends Controller
             $rules = [
                 'email' => 'required|email|max:190|unique:users,email,' . $userId,
                 'current_password' => 'nullable|string|max:255',
-                'password' => 'nullable|string|min:12|max:255|confirmed',
+                'password' => 'nullable|string|min:8|max:255|confirmed',
             ];
         } else {
             $rules = [
@@ -102,7 +102,7 @@ final class ProfileController extends Controller
                 'username' => 'required|string|max:100|unique:users,username,' . $userId,
                 'phone' => ['nullable', 'digits:11'],
                 'current_password' => 'nullable|string|max:255',
-                'password' => 'nullable|string|min:12|max:255|confirmed',
+                'password' => 'nullable|string|min:8|max:255|confirmed',
             ];
 
             if ($user['role'] === 'Student') {
