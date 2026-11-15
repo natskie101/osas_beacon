@@ -45,19 +45,23 @@ $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input
 
     <?php if (!$isAdmin): ?>
     <section class="form-section">
-        <div class="section-title">{!! App\Support\Icons::render('camera', 14) !!} Profile Photo</div>
-        <div class="profile-photo-row">
-            <div class="profile-photo-avatar">
+        <div class="section-title">{!! App\Support\Icons::render('user', 14) !!} Profile Photo</div>
+        <div class="profile-photo">
+            <div class="profile-photo__preview" data-profile-photo-preview>
                 <?php if ($profilePhoto !== null): ?>
-                    <img src="{!! url('/profile/photo') !!}" alt="Profile photo">
+                    <img src="{!! url('/profile/photo') !!}" alt="Current profile photo" data-profile-photo-image>
                 <?php else: ?>
-                    <span class="avatar avatar--blue avatar--lg">{{ initials($values['first_name'] ?? '', $values['last_name'] ?? '') }}</span>
+                    <span data-profile-photo-initials>{{ initials($values['first_name'] ?? '', $values['last_name'] ?? '') }}</span>
+                    <img alt="" data-profile-photo-image hidden>
                 <?php endif; ?>
             </div>
-            <div class="profile-photo-controls">
-                <input class="input" id="profile_photo" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
-                <div class="help-text">Upload a clear square photo (JPG or PNG, up to 5 MB).</div>
-                <?php if ($errorFor('profile_photo')): ?><div class="form-error">{{ $errorFor('profile_photo') }}</div><?php endif; ?>
+            <div class="profile-photo__controls">
+                <div class="field">
+                    <label for="profile_photo">Add or change your photo</label>
+                    <input class="input{!! $invalid('profile_photo') !!}" id="profile_photo" name="profile_photo" type="file" accept="image/jpeg,image/png" data-profile-photo-input>
+                    <?php if ($errorFor('profile_photo')): ?><div class="form-error">{{ $errorFor('profile_photo') }}</div><?php endif; ?>
+                    <div class="help-text">JPG or PNG, up to 5 MB.</div>
+                </div>
                 <?php if ($profilePhoto !== null): ?>
                     <label class="profile-photo__remove"><input type="checkbox" name="remove_profile_photo" value="1"> Remove current photo</label>
                 <?php endif; ?>
