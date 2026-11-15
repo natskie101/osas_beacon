@@ -38,6 +38,8 @@ final class ProfileController extends Controller
             'pageKey' => 'profile',
             'user' => $user,
             'role' => $user['role'],
+            'isAdmin' => $user['role'] === 'Administrator',
+            'isStudent' => $user['role'] === 'Student',
             'values' => $values,
             // Administrators have no photo controls on their minimal profile;
             // null makes the layout fall back to its role-based computation.
