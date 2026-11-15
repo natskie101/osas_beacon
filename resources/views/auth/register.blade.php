@@ -36,25 +36,25 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
     <div class="form-grid form-grid--2">
         <div class="field">
             <label for="first_name">First name <span class="req">*</span></label>
-            <input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $old['first_name'] ?? '' }}" maxlength="80" required placeholder="Letters only">
+            <input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $old['first_name'] ?? '' }}" maxlength="80" required placeholder="e.g. Juan">
             <div class="form-error" id="error_first_name"><?php if ($errorFor('first_name')): ?>{{ $errorFor('first_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
-            <label for="middle_name">Middle name <span class="req">*</span></label>
-            <input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $old['middle_name'] ?? '' }}" maxlength="100" required placeholder="Letters only">
+            <label for="middle_name">Middle name</label>
+            <input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $old['middle_name'] ?? '' }}" maxlength="100" placeholder="e.g. Santos (Optional)">
             <div class="form-error" id="error_middle_name"><?php if ($errorFor('middle_name')): ?>{{ $errorFor('middle_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="last_name">Surname <span class="req">*</span></label>
-            <input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $old['last_name'] ?? '' }}" maxlength="80" required placeholder="Letters only">
+            <input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $old['last_name'] ?? '' }}" maxlength="80" required placeholder="e.g. Dela Cruz">
             <div class="form-error" id="error_last_name"><?php if ($errorFor('last_name')): ?>{{ $errorFor('last_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="student_id">Student ID <span class="req">*</span></label>
-            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="30" placeholder="Numbers only (e.g. 202600104)" required>
+            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="30" placeholder="112233" required>
             <div class="form-error" id="error_student_id"><?php if ($errorFor('student_id')): ?>{{ $errorFor('student_id') }}<?php endif; ?></div>
         </div>
 
@@ -134,7 +134,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var form = document.getElementById("register-form");
     if (!form) return;
 
-    // Real-time input filtering according to specific input rules
     var firstName = document.getElementById("first_name");
     var middleName = document.getElementById("middle_name");
     var lastName = document.getElementById("last_name");
@@ -158,11 +157,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // First, Middle, Surname: letters, spaces, hyphens, periods, ñ/Ñ only
+    // First Name, Surname: letters only
     var letterRegex = /^[a-zA-ZñÑ\s\-\.]$/;
     restrictInput(firstName, letterRegex);
-    restrictInput(middleName, letterRegex);
     restrictInput(lastName, letterRegex);
+
+    // Middle Name: letters only (optional, can be empty)
+    restrictInput(middleName, letterRegex);
 
     // Student ID: numbers only
     var digitRegex = /^\d$/;
@@ -182,7 +183,6 @@ document.addEventListener("DOMContentLoaded", function () {
         var submitBtn = document.getElementById("submit-btn");
         var alertContainer = document.getElementById("register-alert-container");
         
-        // Clear previous error states
         alertContainer.innerHTML = "";
         var inputs = form.querySelectorAll(".input");
         for (var i = 0; i < inputs.length; i++) {
