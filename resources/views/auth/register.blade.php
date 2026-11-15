@@ -220,7 +220,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 var firstErrorMsg = "";
                 for (var field in res.data.errors) {
                     if (res.data.errors.hasOwnProperty(field)) {
-                        var msg = res.data.errors[field][0];
+                        var errVal = res.data.errors[field];
+                        var msg = Array.isArray(errVal) ? errVal[0] : String(errVal);
                         if (!firstErrorMsg) firstErrorMsg = msg;
                         var inputEl = document.getElementById(field);
                         var errEl = document.getElementById("error_" + field);
