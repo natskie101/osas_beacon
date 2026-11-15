@@ -39,7 +39,7 @@ $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input
     </div>
 <?php endif; ?>
 
-<form class="card profile-form" method="POST" action="{!! url('/account/profile') !!}" enctype="multipart/form-data" novalidate>
+<form class="card profile-form" method="POST" action="{!! url('/profile') !!}" enctype="multipart/form-data" novalidate>
     {!! csrf_field() !!}
     {!! method_field('PUT') !!}
 
@@ -49,7 +49,7 @@ $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input
         <div class="profile-photo-row">
             <div class="profile-photo-avatar">
                 <?php if ($profilePhoto !== null): ?>
-                    <img src="{!! url('/account/profile/photo/' . (int) $profilePhoto['id']) !!}" alt="Profile photo">
+                    <img src="{!! url('/profile/photo') !!}" alt="Profile photo">
                 <?php else: ?>
                     <span class="avatar avatar--blue avatar--lg">{{ initials($values['first_name'] ?? '', $values['last_name'] ?? '') }}</span>
                 <?php endif; ?>
