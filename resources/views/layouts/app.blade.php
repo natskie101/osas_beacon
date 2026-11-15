@@ -26,6 +26,13 @@ $profilePhotoFile = $profilePhotoFile ?? (
         ? App\Models\File::latestForEntity('user_profile_photo', (string) ($user['id'] ?? ''))
         : null
 );
+if ($profilePhotoFile !== null) {
+    $photoPath = App\Services\FileStorage::path($profilePhotoFile);
+    if (!is_file($photoPath) && empty($profilePhotoFile['file_data'])) {
+        @DB::table('files')->where('id', (int) $profilePhotoFile['id'])->delete();
+        $profilePhotoFile = null;
+    }
+}
 ?><!doctype html>
 <html lang="en">
 <head>
