@@ -244,6 +244,21 @@ and aborts the boot (non-zero exit) when the database is unreachable,
 because `artisan` historically returned failure statuses without
 calling `exit()`, which let `set -e` pass a broken deploy.
 
+### 8.5 Keep-alive (free plan)
+
+The free plan sleeps after ~15 minutes without HTTP traffic, so the first
+visitor after an idle period waits for a cold start (roughly 30–60 seconds).
+`.github/workflows/keep-awake.yml` pings `https://osas-beacon.onrender.com/up`
+every 10 minutes via a scheduled GitHub Actions run — the repository is
+public, so those runs are free. It retries transient failures, allows 90
+seconds for a wake-up, and can be fired manually from the Actions tab
+(`workflow_dispatch`). GitHub disables scheduled workflows after 60 days
+without repository activity, so re-enable it if the repo goes quiet.
+
+Prefer an external monitor? Point any free uptime service (UptimeRobot,
+cron-job.org, an Uptime Kuma probe) at `/up` on a 10-minute interval and
+delete the workflow.
+
 ## 9. Post-deployment checks
 
 Security assessment findings, applied fixes and re-runnable probes are

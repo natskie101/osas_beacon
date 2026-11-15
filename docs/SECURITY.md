@@ -70,8 +70,10 @@ throttle probe remains (run it last: it locks the caller's IP on
   keep logging in (the rule applies only when *setting* a password); the seed
   was deliberately left unchanged. Rotate to a 12+ character seed password
   when the demo accounts are next reset.
-- **Render free-plan cold starts** — a keep-alive ping was offered and is
-  still undecided; ~15 min idle sleeps the service.
+- **Render free-plan cold starts** — resolved: `.github/workflows/keep-awake.yml`
+  pings `/up` every 10 minutes (public repo, free Actions cron), keeping the
+  service under its ~15-minute idle sleep; see `DEPLOYMENT.md` §8.5 for the
+  external-monitor alternative.
 - Cosmetic, known: mojibake ` Â · ` in some page subtitles; `SESSION_SECURE`
   in `render.yaml` is a no-op (Render terminates TLS at the proxy and
   `trustProxies('*')` makes `isSecure()` true anyway).

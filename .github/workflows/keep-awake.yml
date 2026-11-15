@@ -1,0 +1,27 @@
+# Keeps the Render free-plan instance awake: it sleeps after ~15 minutes
+# without HTTP traffic, and the first visitor after that pays a cold start.
+# Pinging /up every 10 minutes stays comfortably under that threshold.
+#
+# The repository is public, so scheduled Actions runs are free. You can also
+# fire it manually from the Actions tab (workflow_dispatch) after a long
+# idle period to confirm the service wakes up.
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping /up
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request health endpoint
+        # --retry covers a service still booting; a cold start can take up to
+        # ~60s, so the 90s budget lets the first wake-up request finish.
+        run: curl -fsS --retry 3 --retry-delay 10 --max-time 90 https://osas-beacon.onrender.com/up
