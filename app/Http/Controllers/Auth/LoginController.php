@@ -35,7 +35,7 @@ final class LoginController extends Controller
         $data = (new LoginRequest())->validate($request);
         $ip = $request->ip();
 
-        if (LoginThrottle::tooManyAttempts($data['email'], $ip)) {
+        if (LoginThrottle::tooManyAttempts($data['email'])) {
             session()->flash('errors', ['email' => 'Too many failed attempts. Please wait 10 minutes before trying again.']);
             session()->flashInput(['email' => $data['email']]);
 
@@ -52,7 +52,7 @@ final class LoginController extends Controller
             return redirect(url('/login'));
         }
 
-        LoginThrottle::clear($data['email'], $ip);
+        LoginThrottle::clear($data['email']);
         AuditLogger::login($result['user'], $ip, $request->header('user-agent'));
 
         $role = auth_role();

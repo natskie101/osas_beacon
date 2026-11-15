@@ -11,13 +11,18 @@ final class LoginThrottle
     private const MAX_ATTEMPTS = 5;
     private const DECAY_MINUTES = 10;
 
-    public static function tooManyAttempts(string $email, string $ip): bool
+    /**
+     * Failed attempts are counted per ACCOUNT, never per email+IP pair:
+     * an attacker rotating source IPs (or spoofing X-Forwarded-For, which
+     * trustProxies('*') would otherwise let through) still shares the one
+     * counter for the account they are guessing.
+     */
+    public static function tooManyAttempts(string $email): bool
     {
         $since = date('Y-m-d H:i:s', time() - (self::DECAY_MINUTES * 60));
 
         $count = DB::table('login_attempts')
             ->where('email', mb_strtolower(trim($email)))
-            ->where('ip_address', $ip)
             ->where('successful', 0)
             ->where('attempted_at', '>=', $since)
             ->count();
@@ -39,11 +44,11 @@ final class LoginThrottle
             ->delete();
     }
 
-    public static function clear(string $email, string $ip): void
+    /** A successful sign-in clears every recorded failure for the account. */
+    public static function clear(string $email): void
     {
         DB::table('login_attempts')
             ->where('email', mb_strtolower(trim($email)))
-            ->where('ip_address', $ip)
             ->delete();
     }
 }

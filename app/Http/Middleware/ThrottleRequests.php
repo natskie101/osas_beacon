@@ -17,7 +17,9 @@ class ThrottleRequests
      */
     public function handle(Request $request, Closure $next, int $maxAttempts = 60, int $decaySeconds = 60): Response
     {
-        $key = $request->ip() . '|' . $request->path();
+        // Method is part of the key so a GET page view never consumes the
+        // budget of the POST route that shares the same path.
+        $key = $request->ip() . '|' . $request->method() . '|' . $request->path();
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts, $decaySeconds)) {
             $retryAfter = RateLimiter::availableIn($key);

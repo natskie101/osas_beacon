@@ -50,7 +50,7 @@ Route::get('/', [HomeController::class, 'index']);
 /* Guest routes */
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'show']);
-    Route::post('/login', [LoginController::class, 'store']);
+    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:20,600');
     Route::get('/create-account', [RegisterController::class, 'show']);
     Route::post('/create-account', [RegisterController::class, 'store'])->middleware('throttle:30,3600');
     Route::get('/register', [RegisterController::class, 'show']);
