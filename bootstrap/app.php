@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens();
 
+        // Baseline security headers on every response (HSTS, nosniff,
+        // referrer policy, clickjacking protection, no X-Powered-By).
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         // Render terminates TLS at its proxy; trust it so Laravel sees HTTPS
         // (secure cookies, correct https:// URL generation).
         $middleware->trustProxies(at: '*');
