@@ -42,6 +42,12 @@ final class RegisterController extends Controller
         $file = $this->uploadedFile($request, 'school_id');
 
         if ($file === null || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => ['school_id' => ['Upload a clear photo or PDF of your school ID.']],
+                ], 422);
+            }
             throw new ValidationException(
                 ['school_id' => 'Upload a clear photo or PDF of your school ID.'],
                 $request->input(),
@@ -51,7 +57,21 @@ final class RegisterController extends Controller
         try {
             UserService::registerStudent($data, $file);
         } catch (RuntimeException $exception) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => ['school_id' => [$exception->getMessage()]],
+                ], 422);
+            }
             throw new ValidationException(['school_id' => $exception->getMessage()], $request->input());
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your account was submitted for verification. OSAS will review your school ID before you can sign in.',
+                'redirect' => url('/login'),
+            ]);
         }
 
         session()->flash('registration_success', 'Your account was submitted for verification. OSAS will review your school ID before you can sign in.');
