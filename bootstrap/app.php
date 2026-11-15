@@ -7,6 +7,7 @@ use App\Support\Exceptions\ValidationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
