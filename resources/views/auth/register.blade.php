@@ -54,7 +54,7 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
 
         <div class="field">
             <label for="student_id">Student ID <span class="req">*</span></label>
-            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="30" placeholder="112233" required>
+            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="7" placeholder="112233" required>
             <div class="form-error" id="error_student_id"><?php if ($errorFor('student_id')): ?>{{ $errorFor('student_id') }}<?php endif; ?></div>
         </div>
 
