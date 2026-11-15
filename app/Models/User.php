@@ -95,7 +95,18 @@ final class User
             'requested_at' => $data['requested_at'] ?? $now,
         ]);
 
-        $publicId = 'USR-' . str_pad((string) (1000 + $id), 4, '0', STR_PAD_LEFT);
+        // Seeded accounts keep pinned public ids from the legacy system (the
+        // demo-era administrator holds USR-1009), so the id-derived candidate
+        // can already be taken — walk upward until a free one is found. The
+        // unique constraint backstops the (negligible) race window.
+        $numeric = 1000 + $id;
+        $publicId = 'USR-' . str_pad((string) $numeric, 4, '0', STR_PAD_LEFT);
+
+        while (DB::table('users')->where('public_id', $publicId)->exists()) {
+            $numeric++;
+            $publicId = 'USR-' . str_pad((string) $numeric, 4, '0', STR_PAD_LEFT);
+        }
+
         self::update($id, ['public_id' => $publicId], false);
 
         return $id;
