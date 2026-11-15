@@ -41,7 +41,7 @@ final class ProfileController extends Controller
             'values' => $values,
             // Administrators have no photo controls on their minimal profile;
             // null makes the layout fall back to its role-based computation.
-            'profilePhotoFile' => $user['role'] === 'Administrator'
+            'profilePhoto' => $user['role'] === 'Administrator'
                 ? null
                 : File::latestForEntity('user_profile_photo', (string) $user['id']),
             'errors' => session('errors', []),
