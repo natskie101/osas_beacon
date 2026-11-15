@@ -112,6 +112,27 @@ final class UserService
                 ],
             );
 
+            NotificationService::send(
+                $id,
+                'Registration Submitted',
+                'Your account has been submitted for OSAS verification. You will be notified once reviewed.',
+                'info',
+                'user',
+                (string) $target['public_id'],
+            );
+
+            $staffMembers = DB::table('users')->whereIn('role', ['Coordinator', 'Administrator'])->where('status', 'Active')->get();
+            foreach ($staffMembers as $staff) {
+                NotificationService::send(
+                    (int) $staff->id,
+                    'New Student Registration',
+                    User::fullName($target) . ' (' . ($target['student_id'] ?: $target['public_id']) . ') submitted an account for verification.',
+                    'info',
+                    'user',
+                    (string) $target['public_id'],
+                );
+            }
+
             return $target;
         });
     }

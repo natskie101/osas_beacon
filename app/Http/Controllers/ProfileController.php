@@ -10,6 +10,7 @@ use App\Models\RememberToken;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
@@ -185,6 +186,15 @@ final class ProfileController extends Controller
                         'tone' => 'blue',
                         'icon' => 'edit',
                     ],
+                );
+
+                NotificationService::send(
+                    $userId,
+                    'Profile Information Updated',
+                    'Your account profile details and sign-in credentials have been successfully updated.',
+                    'success',
+                    'user',
+                    (string) $user['public_id'],
                 );
             });
         } catch (Throwable $exception) {
