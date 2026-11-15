@@ -14,6 +14,8 @@ declare(strict_types=1);
  * from the source file and asserting it against the live table schema.
  *
  * Usage: php scripts/service-write-probe.php
+ *        Requires a seeded database (one Coordinator, one Student and one
+ *        Administrator); fixture accounts are resolved by role, not id.
  * Exit codes: 0 = all checks passed, 1 = at least one failure.
  */
 
@@ -153,13 +155,13 @@ $check(
 $email = 'probe-throttle@example.com';
 $ip = '192.0.2.55';
 
-$check('throttle.fresh', LoginThrottle::tooManyAttempts($email, $ip) === false);
+$check('throttle.fresh', LoginThrottle::tooManyAttempts($email) === false);
 
 LoginThrottle::recordFailure($email, $ip);
 $firstCount = DB::table('login_attempts')->where('email', $email)->where('ip_address', $ip)->count();
 $check('throttle.record', $firstCount === 1, 'count=' . $firstCount);
-$check('throttle.input-normalisation', LoginThrottle::tooManyAttempts('  PROBE-THROTTLE@Example.com  ', $ip) === false);
-$check('throttle.below-limit', LoginThrottle::tooManyAttempts($email, $ip) === false);
+$check('throttle.input-normalisation', LoginThrottle::tooManyAttempts('  PROBE-THROTTLE@Example.com  ') === false);
+$check('throttle.below-limit', LoginThrottle::tooManyAttempts($email) === false);
 
 for ($attempt = 0; $attempt < 4; $attempt++) {
     LoginThrottle::recordFailure($email, $ip);
@@ -167,12 +169,15 @@ for ($attempt = 0; $attempt < 4; $attempt++) {
 
 $finalCount = DB::table('login_attempts')->where('email', $email)->where('ip_address', $ip)->count();
 $check('throttle.accumulated', $finalCount === 5, 'count=' . $finalCount);
-$check('throttle.blocked', LoginThrottle::tooManyAttempts($email, $ip) === true);
+// Counting is per ACCOUNT: no IP argument exists, so rotating the source
+// address can never reset the counter for the account being guessed.
+$check('throttle.blocked', LoginThrottle::tooManyAttempts($email) === true);
+$check('throttle.other-account-unaffected', LoginThrottle::tooManyAttempts('other-probe@example.com') === false);
 
-LoginThrottle::clear($email, $ip);
+LoginThrottle::clear($email);
 $clearedCount = DB::table('login_attempts')->where('email', $email)->where('ip_address', $ip)->count();
 $check('throttle.clear', $clearedCount === 0, 'count=' . $clearedCount);
-$check('throttle.clear-unblocks', LoginThrottle::tooManyAttempts($email, $ip) === false);
+$check('throttle.clear-unblocks', LoginThrottle::tooManyAttempts($email) === false);
 
 $check(
     'throttle.net-zero',
@@ -240,11 +245,25 @@ $check('filestorage.storeUpload-fetch', str_contains($source, "DB::table('files'
 // UserService — transaction commit + rollback, FOR UPDATE archive/restore.
 // ---------------------------------------------------------------------------
 
-$probeActor = User::find(1);
-$probeAdmin = User::find(9);
-$ryanStatusBefore = (string) User::find(2)['status'];
-$ryanUpdatedAtBefore = (string) User::find(2)['updated_at'];
-$ryanVerifiedBefore = User::find(2)['email_verified_at'];
+// Resolve the fixture accounts by ROLE: the demo-era seed that pinned these
+// row ids (coordinator=1, student=2, admin=9) is gone — the portal now ships
+// three accounts, and a hardcoded id silently resolved to null and crashed
+// the archive section.
+$probeCoordinatorId = (int) (DB::table('users')->where('role', 'Coordinator')->orderBy('id')->value('id') ?? 0);
+$probeStudentId = (int) (DB::table('users')->where('role', 'Student')->orderBy('id')->value('id') ?? 0);
+$probeAdminId = (int) (DB::table('users')->where('role', 'Administrator')->orderBy('id')->value('id') ?? 0);
+
+if ($probeCoordinatorId === 0 || $probeStudentId === 0 || $probeAdminId === 0) {
+    fwrite(STDERR, "service-write-probe: seed the database first (one Coordinator, one Student and one Administrator are required).\n");
+    exit(1);
+}
+
+$probeActor = User::find($probeCoordinatorId);
+$probeAdmin = User::find($probeAdminId);
+$studentPublicId = (string) (DB::table('users')->where('id', $probeStudentId)->value('public_id') ?? '');
+$ryanStatusBefore = (string) User::find($probeStudentId)['status'];
+$ryanUpdatedAtBefore = (string) User::find($probeStudentId)['updated_at'];
+$ryanVerifiedBefore = User::find($probeStudentId)['email_verified_at'];
 
 // Defensive re-run safety: drop leftovers from a previously failed probe.
 DB::table('users')->where('email', 'probe-rollback@example.com')->delete();
@@ -310,11 +329,11 @@ $guarded(static function () use ($check, &$createdId, &$createdPublicId, $probeA
 });
 
 // FOR UPDATE archive / restore cycle on the student account (net-zero).
-$guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBefore): void {
-    $archived = UserService::archiveAccount(User::find(2), $probeActor);
+$guarded(static function () use ($check, $probeActor, $probeAdmin, $probeStudentId, $probeCoordinatorId, $studentPublicId, $ryanStatusBefore): void {
+    $archived = UserService::archiveAccount(User::find($probeStudentId), $probeActor);
     $check('userservice.archive', $archived === true);
 
-    $row = User::find(2);
+    $row = User::find($probeStudentId);
     $check(
         'userservice.archive-status',
         $row !== null && $row['status'] === 'Archived' && ($row['archived_status'] ?? null) === $ryanStatusBefore,
@@ -336,12 +355,12 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
     }
 
     // The coordinator is the only active coordinator: archiving must refuse.
-    $lastCoordinator = UserService::archiveAccount(User::find(1), $probeAdmin);
+    $lastCoordinator = UserService::archiveAccount(User::find($probeCoordinatorId), $probeAdmin);
     $check('userservice.archive-last-coordinator', $lastCoordinator === false);
-    $check('userservice.archive-last-coordinator-untouched', (string) User::find(1)['status'] === 'Active');
+    $check('userservice.archive-last-coordinator-untouched', (string) User::find($probeCoordinatorId)['status'] === 'Active');
 
-    UserService::restoreAccount(User::find(2), $probeActor);
-    $restored = User::find(2);
+    UserService::restoreAccount(User::find($probeStudentId), $probeActor);
+    $restored = User::find($probeStudentId);
     $check(
         'userservice.restore',
         $restored !== null && $restored['status'] === $ryanStatusBefore && ($restored['archived_status'] ?? null) === null,
@@ -351,7 +370,7 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
     $notArchived = false;
 
     try {
-        UserService::restoreAccount(User::find(2), $probeActor);
+        UserService::restoreAccount(User::find($probeStudentId), $probeActor);
     } catch (ForbiddenHttpException) {
         $notArchived = true;
     }
@@ -361,7 +380,7 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
     // setStatus runs inside a transaction; the status is already Active, so
     // only the audit + notification side rows change (cleaned up below).
     UserService::setStatus(
-        User::find(2),
+        User::find($probeStudentId),
         'Active',
         $probeActor,
         'probe.setStatus',
@@ -376,33 +395,33 @@ $guarded(static function () use ($check, $probeActor, $probeAdmin, $ryanStatusBe
         'userservice.setStatus-notification',
         DB::table('notifications')
             ->where('entity_type', 'user')
-            ->where('entity_id', 'USR-1002')
+            ->where('entity_id', $studentPublicId)
             ->where('title', 'Probe Status')
             ->count() === 1,
     );
-}, static function () use ($ryanUpdatedAtBefore, $ryanVerifiedBefore): void {
+}, static function () use ($probeStudentId, $studentPublicId, $ryanUpdatedAtBefore, $ryanVerifiedBefore): void {
     // Net-zero: restore the student account (including updated_at and
     // email_verified_at, which the restore/setStatus writes re-stamp when an
     // account becomes Active) and remove probe side rows.
-    DB::table('users')->where('id', 2)->update([
+    DB::table('users')->where('id', $probeStudentId)->update([
         'status' => 'Active',
         'archived_status' => null,
         'updated_at' => $ryanUpdatedAtBefore,
         'email_verified_at' => $ryanVerifiedBefore,
     ]);
     DB::table('audit_log')->where('action', 'probe.setStatus')->delete();
-    DB::table('audit_log')->where('action', 'user.archived')->where('target_user_id', 2)->delete();
-    DB::table('audit_log')->where('action', 'user.restored')->where('target_user_id', 2)->delete();
+    DB::table('audit_log')->where('action', 'user.archived')->where('target_user_id', $probeStudentId)->delete();
+    DB::table('audit_log')->where('action', 'user.restored')->where('target_user_id', $probeStudentId)->delete();
     DB::table('notifications')
         ->where('entity_type', 'user')
-        ->where('entity_id', 'USR-1002')
+        ->where('entity_id', $studentPublicId)
         ->where('title', 'Probe Status')
         ->delete();
 });
 
-$check('userservice.net-zero-status', (string) User::find(2)['status'] === $ryanStatusBefore);
-$check('userservice.net-zero-updated-at', (string) User::find(2)['updated_at'] === $ryanUpdatedAtBefore);
-$check('userservice.net-zero-email-verified', User::find(2)['email_verified_at'] === $ryanVerifiedBefore);
+$check('userservice.net-zero-status', (string) User::find($probeStudentId)['status'] === $ryanStatusBefore);
+$check('userservice.net-zero-updated-at', (string) User::find($probeStudentId)['updated_at'] === $ryanUpdatedAtBefore);
+$check('userservice.net-zero-email-verified', User::find($probeStudentId)['email_verified_at'] === $ryanVerifiedBefore);
 
 // ---------------------------------------------------------------------------
 // OrientationQuizService — full lifecycle against real rows (net-zero).
@@ -421,6 +440,26 @@ $probeModuleRow = DB::table('orientation_modules as m')
 
 $probeModuleId = $probeModuleRow === null ? 0 : (int) $probeModuleRow->id;
 $probeModuleCode = $probeModuleRow === null ? '' : (string) $probeModuleRow->public_id;
+
+// The demo seed no longer ships orientation modules, so create a disposable
+// fixture when none exists (deleted again right after the quiz lifecycle).
+$probeFixtureModuleId = 0;
+
+if ($probeModuleId === 0) {
+    $probeFixtureModuleId = (int) DB::table('orientation_modules')->insertGetId([
+        'public_id' => 'PROBE-MOD-' . strtoupper(bin2hex(random_bytes(3))),
+        'title' => 'Probe Module (service-write-probe)',
+        'status' => 'Draft',
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    $probeModuleRow = DB::table('orientation_modules')->where('id', $probeFixtureModuleId)->first(['id', 'public_id']);
+    $probeModuleId = $probeFixtureModuleId;
+    $probeModuleCode = $probeModuleRow === null ? '' : (string) $probeModuleRow->public_id;
+    $check('quiz.fixture-module-created', $probeModuleId > 0 && $probeModuleCode !== '');
+}
+
 $check(
     'quiz.precondition-module-exists',
     $probeModuleId > 0,
@@ -440,7 +479,7 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
     $q2Id = 0;
     $attemptIds = [];
 
-    $guarded(static function () use ($check, $probeModuleId, $probeModuleCode, &$quizId, &$q1Id, &$q2Id, &$attemptIds): void {
+    $guarded(static function () use ($check, $probeModuleId, $probeModuleCode, $probeStudentId, $probeCoordinatorId, &$quizId, &$q1Id, &$q2Id, &$attemptIds): void {
         $moduleId = $probeModuleId;
 
         $quizId = OrientationQuizService::saveSettings($moduleId, [
@@ -448,7 +487,7 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
             'instructions' => 'Probe instructions',
             'time_limit_minutes' => 10,
             'status' => 'Draft',
-        ], 1);
+        ], $probeCoordinatorId);
         $check('quiz.saveSettings-insert', is_int($quizId) && $quizId > 0, 'id=' . var_export($quizId, true));
 
         $quiz = OrientationQuizService::findForModule($moduleId);
@@ -540,28 +579,28 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
         );
 
         // Attempts: start -> read -> submit -> read -> second attempt -> expire.
-        $attempt1 = OrientationQuizService::startAttempt(['id' => $quizId, 'time_limit_minutes' => 15], 2);
+        $attempt1 = OrientationQuizService::startAttempt(['id' => $quizId, 'time_limit_minutes' => 15], $probeStudentId);
         $attemptIds[] = $attempt1;
         $check('quiz.startAttempt', is_int($attempt1) && $attempt1 > 0, 'id=' . var_export($attempt1, true));
 
-        $active = OrientationQuizService::activeAttempt($quizId, 2);
+        $active = OrientationQuizService::activeAttempt($quizId, $probeStudentId);
         $check(
             'quiz.activeAttempt',
             $active !== null && (int) $active['id'] === $attempt1 && $active['status'] === 'In Progress',
         );
-        $latest = OrientationQuizService::latestAttempt($quizId, 2);
+        $latest = OrientationQuizService::latestAttempt($quizId, $probeStudentId);
         $check('quiz.latestAttempt', $latest !== null && (int) $latest['id'] === $attempt1);
-        $check('quiz.attempts', count(OrientationQuizService::attempts($quizId, 2)) === 1);
+        $check('quiz.attempts', count(OrientationQuizService::attempts($quizId, $probeStudentId)) === 1);
         $check('quiz.attempts-other-user', OrientationQuizService::attempts($quizId, 987654) === []);
-        $check('quiz.attempt', OrientationQuizService::attempt($attempt1, 2) !== null);
-        $check('quiz.attempt-wrong-user', OrientationQuizService::attempt($attempt1, 1) === null);
+        $check('quiz.attempt', OrientationQuizService::attempt($attempt1, $probeStudentId) !== null);
+        $check('quiz.attempt-wrong-user', OrientationQuizService::attempt($attempt1, 987654) === null);
 
         // Score: Q1 correct (5 pts), Q2 wrong (3 pts) -> 5/8 = 62.5%.
         $q1Options = OrientationQuizService::options($q1Id);
         $q2Options = OrientationQuizService::options($q2Id);
         $answers = [$q1Id => (int) $q1Options[1]['id'], $q2Id => (int) $q2Options[0]['id']];
         $quizForSubmit = OrientationQuizService::findByModulePublicId($probeModuleCode);
-        $attemptRow = OrientationQuizService::attempt($attempt1, 2);
+        $attemptRow = OrientationQuizService::attempt($attempt1, $probeStudentId);
         $result = OrientationQuizService::submitAttempt($quizForSubmit, $attemptRow, $answers);
         $check(
             'quiz.submitAttempt',
@@ -582,7 +621,7 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
                 && (float) $submitted['percent'] === 62.5
                 && (int) $submitted['passed'] === ($expectedPassed ? 1 : 0),
         );
-        $check('quiz.activeAttempt-after-submit', OrientationQuizService::activeAttempt($quizId, 2) === null);
+        $check('quiz.activeAttempt-after-submit', OrientationQuizService::activeAttempt($quizId, $probeStudentId) === null);
 
         $answerRows = OrientationQuizService::attemptAnswers($attempt1);
         $check(
@@ -595,17 +634,17 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
             'count=' . count($answerRows),
         );
 
-        $attempt2 = OrientationQuizService::startAttempt(['id' => $quizId, 'time_limit_minutes' => 15], 2);
+        $attempt2 = OrientationQuizService::startAttempt(['id' => $quizId, 'time_limit_minutes' => 15], $probeStudentId);
         $attemptIds[] = $attempt2;
         $check('quiz.startAttempt-second', is_int($attempt2) && $attempt2 > 0);
 
         OrientationQuizService::markExpired($attempt2);
-        $expired = OrientationQuizService::latestAttempt($quizId, 2);
+        $expired = OrientationQuizService::latestAttempt($quizId, $probeStudentId);
         $check(
             'quiz.markExpired',
             $expired !== null && (int) $expired['id'] === $attempt2 && $expired['status'] === 'Expired',
         );
-        $check('quiz.activeAttempt-after-expire', OrientationQuizService::activeAttempt($quizId, 2) === null);
+        $check('quiz.activeAttempt-after-expire', OrientationQuizService::activeAttempt($quizId, $probeStudentId) === null);
 
         OrientationQuizService::deleteQuestion($q1Id, $quizId);
         $afterDelete = OrientationQuizService::questions($quizId);
@@ -637,6 +676,10 @@ if ($preexistingQuiz === null && $probeModuleId > 0) {
         DB::table('orientation_quiz_questions')->where('quiz_id', $quizId)->delete();
         DB::table('orientation_quizzes')->where('id', $quizId)->delete();
     });
+}
+
+if ($probeFixtureModuleId > 0) {
+    DB::table('orientation_modules')->where('id', $probeFixtureModuleId)->delete();
 }
 
 // ---------------------------------------------------------------------------
