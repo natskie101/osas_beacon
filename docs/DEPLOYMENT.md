@@ -246,6 +246,9 @@ calling `exit()`, which let `set -e` pass a broken deploy.
 
 ## 9. Post-deployment checks
 
+Security assessment findings, applied fixes and re-runnable probes are
+recorded in [`docs/SECURITY.md`](SECURITY.md).
+
 - Visit `/login` and sign in as each role.
 - Confirm the student portal only exposes that student's records.
 - Confirm an Administrator can manage Student and Coordinator accounts but
@@ -260,6 +263,9 @@ calling `exit()`, which let `set -e` pass a broken deploy.
   authorised route.
 - Check `storage/logs/mail.log` if `MAIL_MAILER=log`.
 - Confirm `APP_DEBUG=false`, `APP_DEMO_MODE=false`, and HTTPS redirects.
+- `curl -I /login` and confirm `x-content-type-options`, `referrer-policy`,
+  `x-frame-options`, `content-security-policy: frame-ancestors 'self'`,
+  `strict-transport-security` (HTTPS only) and **no** `x-powered-by`.
 
 ## 10. Common problems
 
