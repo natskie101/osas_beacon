@@ -1,52 +1,64 @@
 @extends('layouts.app')
 @section('content')
 <?php
-/** @var array<string, mixed> $values */
 /** @var array<string, string> $errors */
+/** @var array<string, mixed> $values */
+/** @var bool $isAdmin */
+/** @var bool $isStudent */
 /** @var list<string> $departments */
 /** @var list<string> $programs */
 /** @var list<string> $yearLevels */
-/** @var array<string, mixed>|null $profilePhotoFile */
+/** @var array<string, mixed>|null $profilePhoto */
 $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
 $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input--error' : '';
-$isStudent = $user['role'] === 'Student';
-$isAdmin = $user['role'] === 'Administrator';
-?>
-<div class="page-head">
+?><div class="page-head">
     <div>
+        <div class="page-head__eyebrow">Account</div>
         <h2 class="page-head__title">My Profile</h2>
-        <p class="page-head__sub"><?php if ($isAdmin): ?>Update your sign-in email and password. Your name, role and username are managed by OSAS.<?php else: ?>Update your account information. Your role and account status are managed by OSAS.<?php endif; ?></p>
+        <p class="page-head__sub">Update your personal information, sign-in credentials, and profile photo.</p>
     </div>
 </div>
+
 <?php if ($errors !== []): ?>
     <div class="alert alert--danger" role="alert">
         <span class="alert__ico">{!! App\Support\Icons::render('alert', 18) !!}</span>
-        <div><div class="alert__title">Please review your information</div><div class="alert__text">{{ reset($errors) }}</div></div>
+        <div>
+            <div class="alert__title">Please correct the highlighted fields</div>
+            <div class="alert__text">{{ reset($errors) }}</div>
+        </div>
     </div>
 <?php endif; ?>
-<form class="card form-card profile-form" method="POST" action="{!! url('/profile') !!}" enctype="multipart/form-data">
+
+<?php if (session('profile_success')): ?>
+    <div class="alert alert--success" role="status">
+        <span class="alert__ico">{!! App\Support\Icons::render('checkCircle', 18) !!}</span>
+        <div>
+            <div class="alert__title">Success</div>
+            <div class="alert__text">{{ session('profile_success') }}</div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<form class="card profile-form" method="POST" action="{!! url('/account/profile') !!}" enctype="multipart/form-data" novalidate>
     {!! csrf_field() !!}
-    <input type="hidden" name="_method" value="PUT">
+    {!! method_field('PUT') !!}
+
     <?php if (!$isAdmin): ?>
     <section class="form-section">
-        <div class="section-title">{!! App\Support\Icons::render('user', 14) !!} Profile Photo</div>
-        <div class="profile-photo">
-            <div class="profile-photo__preview" data-profile-photo-preview>
-                <?php if ($profilePhotoFile !== null): ?>
-                    <img src="{!! url('/profile/photo') !!}" alt="Current profile photo" data-profile-photo-image>
+        <div class="section-title">{!! App\Support\Icons::render('camera', 14) !!} Profile Photo</div>
+        <div class="profile-photo-row">
+            <div class="profile-photo-avatar">
+                <?php if ($profilePhoto !== null): ?>
+                    <img src="{!! url('/account/profile/photo/' . (int) $profilePhoto['id']) !!}" alt="Profile photo">
                 <?php else: ?>
-                    <span data-profile-photo-initials>{{ initials($values['first_name'] ?? '', $values['last_name'] ?? '') }}</span>
-                    <img alt="" data-profile-photo-image hidden>
+                    <span class="avatar avatar--blue avatar--lg">{{ initials($values['first_name'] ?? '', $values['last_name'] ?? '') }}</span>
                 <?php endif; ?>
             </div>
-            <div class="profile-photo__controls">
-                <div class="field">
-                    <label for="profile_photo">Add or change your photo</label>
-                    <input class="input{!! $invalid('profile_photo') !!}" id="profile_photo" name="profile_photo" type="file" accept="image/jpeg,image/png" data-profile-photo-input>
-                    <?php if ($errorFor('profile_photo')): ?><div class="form-error">{{ $errorFor('profile_photo') }}</div><?php endif; ?>
-                    <div class="help-text">JPG or PNG, up to 5 MB.</div>
-                </div>
-                <?php if ($profilePhotoFile !== null): ?>
+            <div class="profile-photo-controls">
+                <input class="input" id="profile_photo" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                <div class="help-text">Upload a clear square photo (JPG or PNG, up to 5 MB).</div>
+                <?php if ($errorFor('profile_photo')): ?><div class="form-error">{{ $errorFor('profile_photo') }}</div><?php endif; ?>
+                <?php if ($profilePhoto !== null): ?>
                     <label class="profile-photo__remove"><input type="checkbox" name="remove_profile_photo" value="1"> Remove current photo</label>
                 <?php endif; ?>
             </div>
@@ -67,10 +79,10 @@ $isAdmin = $user['role'] === 'Administrator';
     <section class="form-section">
         <div class="section-title">{!! App\Support\Icons::render('user', 14) !!} Personal Information</div>
         <div class="form-grid form-grid--2">
-            <div class="field"><label for="first_name">First name <span class="req">*</span></label><input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $values['first_name'] ?? '' }}" required><?php if ($errorFor('first_name')): ?><div class="form-error">{{ $errorFor('first_name') }}</div><?php endif; ?></div>
-            <div class="field"><label for="middle_name">Middle name</label><input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $values['middle_name'] ?? '' }}"><?php if ($errorFor('middle_name')): ?><div class="form-error">{{ $errorFor('middle_name') }}</div><?php endif; ?></div>
-            <div class="field"><label for="last_name">Last name <span class="req">*</span></label><input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $values['last_name'] ?? '' }}" required><?php if ($errorFor('last_name')): ?><div class="form-error">{{ $errorFor('last_name') }}</div><?php endif; ?></div>
-            <div class="field"><label for="phone">Phone number</label><input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $values['phone'] ?? '' }}"><?php if ($errorFor('phone')): ?><div class="form-error">{{ $errorFor('phone') }}</div><?php endif; ?></div>
+            <div class="field"><label for="first_name">First name <span class="req">*</span></label><input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $values['first_name'] ?? '' }}" maxlength="80" required placeholder="e.g. Juan"><?php if ($errorFor('first_name')): ?><div class="form-error">{{ $errorFor('first_name') }}</div><?php endif; ?></div>
+            <div class="field"><label for="middle_name">Middle name</label><input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $values['middle_name'] ?? '' }}" maxlength="100" placeholder="e.g. Santos (Optional)"><?php if ($errorFor('middle_name')): ?><div class="form-error">{{ $errorFor('middle_name') }}</div><?php endif; ?></div>
+            <div class="field"><label for="last_name">Last name <span class="req">*</span></label><input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $values['last_name'] ?? '' }}" maxlength="80" required placeholder="e.g. Dela Cruz"><?php if ($errorFor('last_name')): ?><div class="form-error">{{ $errorFor('last_name') }}</div><?php endif; ?></div>
+            <div class="field"><label for="phone">Phone number</label><input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $values['phone'] ?? '' }}" maxlength="11" placeholder="09XXXXXXXXX"><?php if ($errorFor('phone')): ?><div class="form-error">{{ $errorFor('phone') }}</div><?php endif; ?></div>
         </div>
     </section>
     <?php endif; ?>
@@ -117,5 +129,40 @@ $isAdmin = $user['role'] === 'Administrator';
     <?php endif; ?>
     <div class="form-actions"><a class="btn btn--ghost" href="{!! url($isAdmin ? '/admin/system-overview' : ($isStudent ? '/student/dashboard' : '/admin/dashboard')) !!}">Cancel</a><button class="btn btn--primary" type="submit" data-confirm="Save changes to your profile?">Save Profile</button></div>
 </form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var firstName = document.getElementById("first_name");
+    var middleName = document.getElementById("middle_name");
+    var lastName = document.getElementById("last_name");
+    var phone = document.getElementById("phone");
+    var age = document.getElementById("age");
+
+    function restrictInput(element, regex) {
+        if (!element) return;
+        element.addEventListener("input", function (e) {
+            var val = element.value;
+            var filtered = "";
+            for (var i = 0; i < val.length; i++) {
+                if (regex.test(val[i])) {
+                    filtered += val[i];
+                }
+            }
+            if (val !== filtered) {
+                element.value = filtered;
+            }
+        });
+    }
+
+    var letterRegex = /^[a-zA-ZñÑ\s\-\.]$/;
+    if (firstName) restrictInput(firstName, letterRegex);
+    if (middleName) restrictInput(middleName, letterRegex);
+    if (lastName) restrictInput(lastName, letterRegex);
+
+    var digitRegex = /^\d$/;
+    if (phone) restrictInput(phone, digitRegex);
+    if (age) restrictInput(age, digitRegex);
+});
+</script>
 
 @endsection

@@ -93,12 +93,12 @@ final class ProfileController extends Controller
             ];
         } else {
             $rules = [
-                'first_name' => 'required|string|max:80',
-                'middle_name' => 'nullable|string|max:100',
-                'last_name' => 'required|string|max:80',
+                'first_name' => ['required', 'string', 'max:80', 'regex:/^[a-zA-ZñÑ\s\-\.]+$/'],
+                'middle_name' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-ZñÑ\s\-\.]+$/'],
+                'last_name' => ['required', 'string', 'max:80', 'regex:/^[a-zA-ZñÑ\s\-\.]+$/'],
                 'email' => 'required|email|max:190|unique:users,email,' . $userId,
                 'username' => 'required|string|max:100|unique:users,username,' . $userId,
-                'phone' => 'nullable|string|max:30',
+                'phone' => ['nullable', 'string', 'regex:/^\d{11}$/'],
                 'current_password' => 'nullable|string|max:255',
                 'password' => 'nullable|string|min:12|max:255|confirmed',
             ];
