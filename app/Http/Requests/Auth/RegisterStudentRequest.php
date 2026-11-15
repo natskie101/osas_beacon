@@ -19,7 +19,7 @@ final class RegisterStudentRequest extends FormRequest
             'age' => ['required', 'integer', 'min:10', 'max:100'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'program' => ['required', 'in:' . implode(',', config('people.programs', []))],
-            'phone' => ['required', 'string', 'max:30', 'regex:/^[\+\d\s\-\(\)]+$/'],
+            'phone' => ['required', 'string', 'regex:/^\d{11}$/'],
             'year_level' => ['required', 'in:' . implode(',', config('people.year_levels', []))],
             'password' => ['required', 'string', 'min:12', 'max:255', 'confirmed'],
         ];

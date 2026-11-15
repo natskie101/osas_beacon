@@ -83,7 +83,7 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
 
         <div class="field">
             <label for="phone">Mobile number <span class="req">*</span></label>
-            <input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $old['phone'] ?? '' }}" maxlength="30" placeholder="+63 9XX XXX XXXX" required>
+            <input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $old['phone'] ?? '' }}" maxlength="11" placeholder="09XXXXXXXXX" required>
             <div class="form-error" id="error_phone"><?php if ($errorFor('phone')): ?>{{ $errorFor('phone') }}<?php endif; ?></div>
         </div>
 
@@ -172,9 +172,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Age: numbers only
     restrictInput(age, digitRegex);
 
-    // Phone: digits, +, spaces, -, (, )
-    var phoneRegex = /^[\+\d\s\-\(\)]$/;
-    restrictInput(phone, phoneRegex);
+    // Phone: numbers only
+    restrictInput(phone, digitRegex);
 
     // AJAX Form submission to prevent full page reload (preserving previously inputted info)
     form.addEventListener("submit", function (e) {
