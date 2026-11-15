@@ -70,7 +70,7 @@ $isAdmin = $user['role'] === 'Administrator';
             <div class="field"><label for="first_name">First name <span class="req">*</span></label><input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $values['first_name'] ?? '' }}" required><?php if ($errorFor('first_name')): ?><div class="form-error">{{ $errorFor('first_name') }}</div><?php endif; ?></div>
             <div class="field"><label for="middle_name">Middle name</label><input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $values['middle_name'] ?? '' }}"><?php if ($errorFor('middle_name')): ?><div class="form-error">{{ $errorFor('middle_name') }}</div><?php endif; ?></div>
             <div class="field"><label for="last_name">Last name <span class="req">*</span></label><input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $values['last_name'] ?? '' }}" required><?php if ($errorFor('last_name')): ?><div class="form-error">{{ $errorFor('last_name') }}</div><?php endif; ?></div>
-            <div class="field"><label for="phone">Phone number</label><input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $values['phone'] ?? '' ?>"><?php if ($errorFor('phone')): ?><div class="form-error">{{ $errorFor('phone') }}</div><?php endif; ?></div>
+            <div class="field"><label for="phone">Phone number</label><input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $values['phone'] ?? '' }}"><?php if ($errorFor('phone')): ?><div class="form-error">{{ $errorFor('phone') }}</div><?php endif; ?></div>
         </div>
     </section>
     <?php endif; ?>
