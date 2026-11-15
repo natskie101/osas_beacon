@@ -36,31 +36,31 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
     <div class="form-grid form-grid--2">
         <div class="field">
             <label for="first_name">First name <span class="req">*</span></label>
-            <input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $old['first_name'] ?? '' }}" maxlength="80" required data-rule="letters">
+            <input class="input{!! $invalid('first_name') !!}" id="first_name" name="first_name" value="{{ $old['first_name'] ?? '' }}" maxlength="80" required placeholder="Letters only">
             <div class="form-error" id="error_first_name"><?php if ($errorFor('first_name')): ?>{{ $errorFor('first_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="middle_name">Middle name <span class="req">*</span></label>
-            <input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $old['middle_name'] ?? '' }}" maxlength="100" required data-rule="letters">
+            <input class="input{!! $invalid('middle_name') !!}" id="middle_name" name="middle_name" value="{{ $old['middle_name'] ?? '' }}" maxlength="100" required placeholder="Letters only">
             <div class="form-error" id="error_middle_name"><?php if ($errorFor('middle_name')): ?>{{ $errorFor('middle_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="last_name">Surname <span class="req">*</span></label>
-            <input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $old['last_name'] ?? '' }}" maxlength="80" required data-rule="letters">
+            <input class="input{!! $invalid('last_name') !!}" id="last_name" name="last_name" value="{{ $old['last_name'] ?? '' }}" maxlength="80" required placeholder="Letters only">
             <div class="form-error" id="error_last_name"><?php if ($errorFor('last_name')): ?>{{ $errorFor('last_name') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="student_id">Student ID <span class="req">*</span></label>
-            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="30" placeholder="22-00104" required data-rule="studentid">
+            <input class="input{!! $invalid('student_id') !!}" id="student_id" name="student_id" value="{{ $old['student_id'] ?? '' }}" maxlength="30" placeholder="Numbers only (e.g. 202600104)" required>
             <div class="form-error" id="error_student_id"><?php if ($errorFor('student_id')): ?>{{ $errorFor('student_id') }}<?php endif; ?></div>
         </div>
 
         <div class="field">
             <label for="age">Age <span class="req">*</span></label>
-            <input class="input{!! $invalid('age') !!}" id="age" name="age" type="number" min="10" max="100" value="{{ $old['age'] ?? '' }}" required data-rule="number">
+            <input class="input{!! $invalid('age') !!}" id="age" name="age" type="number" min="10" max="100" value="{{ $old['age'] ?? '' }}" required>
             <div class="form-error" id="error_age"><?php if ($errorFor('age')): ?>{{ $errorFor('age') }}<?php endif; ?></div>
         </div>
 
@@ -83,7 +83,7 @@ $selected = static fn (string $value, ?string $current): string => (string) $val
 
         <div class="field">
             <label for="phone">Mobile number <span class="req">*</span></label>
-            <input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $old['phone'] ?? '' }}" maxlength="30" placeholder="+63 9XX XXX XXXX" required data-rule="phone">
+            <input class="input{!! $invalid('phone') !!}" id="phone" name="phone" value="{{ $old['phone'] ?? '' }}" maxlength="30" placeholder="+63 9XX XXX XXXX" required>
             <div class="form-error" id="error_phone"><?php if ($errorFor('phone')): ?>{{ $errorFor('phone') }}<?php endif; ?></div>
         </div>
 
@@ -142,11 +142,10 @@ document.addEventListener("DOMContentLoaded", function () {
     var age = document.getElementById("age");
     var phone = document.getElementById("phone");
 
-    function restrictInput(element, regex, allowEmpty) {
+    function restrictInput(element, regex) {
         if (!element) return;
         element.addEventListener("input", function (e) {
             var val = element.value;
-            // Filter out characters that don't match the allowed pattern
             var filtered = "";
             for (var i = 0; i < val.length; i++) {
                 if (regex.test(val[i])) {
@@ -159,23 +158,22 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Name fields: letters, spaces, hyphens, periods, ñ/Ñ only
+    // First, Middle, Surname: letters, spaces, hyphens, periods, ñ/Ñ only
     var letterRegex = /^[a-zA-ZñÑ\s\-\.]$/;
-    restrictInput(firstName, letterRegex, true);
-    restrictInput(middleName, letterRegex, true);
-    restrictInput(lastName, letterRegex, true);
+    restrictInput(firstName, letterRegex);
+    restrictInput(middleName, letterRegex);
+    restrictInput(lastName, letterRegex);
 
-    // Student ID: letters, numbers, hyphens only
-    var studentIdRegex = /^[A-Za-z0-9\-]$/;
-    restrictInput(studentId, studentIdRegex, true);
+    // Student ID: numbers only
+    var digitRegex = /^\d$/;
+    restrictInput(studentId, digitRegex);
 
     // Age: numbers only
-    var digitRegex = /^\d$/;
-    restrictInput(age, digitRegex, true);
+    restrictInput(age, digitRegex);
 
     // Phone: digits, +, spaces, -, (, )
     var phoneRegex = /^[\+\d\s\-\(\)]$/;
-    restrictInput(phone, phoneRegex, true);
+    restrictInput(phone, phoneRegex);
 
     // AJAX Form submission to prevent full page reload (preserving previously inputted info)
     form.addEventListener("submit", function (e) {
@@ -218,10 +216,8 @@ document.addEventListener("DOMContentLoaded", function () {
             submitBtn.textContent = "Submit for Verification";
 
             if (res.status === 200 && res.data.success) {
-                // Success: redirect to login or show success message
                 window.location.href = res.data.redirect || "{{ url('/login') }}";
             } else if (res.status === 422 && res.data.errors) {
-                // Validation errors: display inline without refreshing page (inputs preserved!)
                 var firstErrorMsg = "";
                 for (var field in res.data.errors) {
                     if (res.data.errors.hasOwnProperty(field)) {
@@ -243,7 +239,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     '</div>' +
                     '</div>';
 
-                // Scroll to top of form to see error
                 window.scrollTo({ top: 0, behavior: "smooth" });
             } else {
                 alertContainer.innerHTML = 
