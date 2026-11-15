@@ -13,7 +13,7 @@ RUN a2enmod rewrite \
     && printf '<Directory /var/www/html/public>\n    AllowOverride All\n    Require all granted\n</Directory>\n' \
         >> /etc/apache2/conf-available/laravel.conf \
     && a2enconf laravel \
-    && printf 'upload_max_filesize=256M\npost_max_size=260M\nmemory_limit=256M\nmax_execution_time=120\nopcache.enable=1\n' \
+    && printf 'upload_max_filesize=256M\npost_max_size=260M\nmemory_limit=256M\nmax_execution_time=120\nopcache.enable=1\nexpose_php=Off\n' \
         > /usr/local/etc/php/conf.d/beacon.ini
 
 WORKDIR /var/www/html
