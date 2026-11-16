@@ -464,7 +464,7 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
 .technical-attention-grid {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .technical-attention-tile {
@@ -557,19 +557,6 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
 }
 .technical-compliance-bucket--risk strong {
   color: var(--red);
-}
-.technical-compliance-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 13px;
-  color: var(--brand);
-  font-size: 11px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.technical-compliance-link:hover {
-  text-decoration: underline;
 }
 .technical-chart-legend {
   display: flex;
@@ -852,9 +839,6 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
   }
   .technical-dashboard .technical-queue-card {
     grid-column: span 6;
-  }
-  .technical-attention-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .technical-program-content {
     grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1fr);

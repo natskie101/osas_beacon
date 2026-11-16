@@ -140,7 +140,6 @@ $attentionTotal = array_sum(array_column($overview['attention'], 'count'));
                 <strong>{!! number_format((int) $compliance['at_risk']) !!}</strong>
             </div>
         </div>
-        <a class="technical-compliance-link" href="{!! url('/admin/analytics') !!}">Open the participation report {!! App\Support\Icons::render('arrowRight', 12) !!}</a>
     </section>
 
     <div class="dash-grid technical-overview tw-gap-5">

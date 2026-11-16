@@ -229,6 +229,10 @@ final class TechnicalAdminOverview
     /**
      * Queues where work is waiting for OSAS, each carrying the age of its oldest item.
      *
+     * Only queues whose admin index the Administrator role may open are listed:
+     * document requests and lost & found sit behind role:Coordinator, so linking
+     * them from an Administrator-only page would bounce the user to /login.
+     *
      * Counts and ages come from the same filtered query, so the number shown and the
      * waiting time always describe the same set of rows.
      *
@@ -248,20 +252,6 @@ final class TechnicalAdminOverview
                 'Open support tickets',
                 DB::table('support_tickets')->where('status', 'Open'),
                 '/admin/support?status=Open',
-            ),
-            // Both intake states still wait on an OSAS decision, but the index
-            // filter matches a single status, so this opens the unfiltered list.
-            self::queueEntry(
-                'documents_waiting',
-                'Documents awaiting review',
-                DB::table('document_requests')->whereIn('status', ['Submitted', 'Under Review']),
-                '/admin/document-requests',
-            ),
-            self::queueEntry(
-                'lost_found_open',
-                'Open lost & found reports',
-                DB::table('lost_found_items')->where('status', 'Open'),
-                '/admin/lost-found?status=Open',
             ),
         ];
     }
