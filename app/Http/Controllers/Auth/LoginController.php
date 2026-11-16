@@ -8,11 +8,13 @@ use App\Auth\ArrayUser;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\RememberToken;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\LoginThrottle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 final class LoginController extends Controller
 {
@@ -102,6 +104,12 @@ final class LoginController extends Controller
         }
 
         User::recordLogin((int) $user['id']);
+
+        // Invalidate all existing sessions and remember tokens for this user
+        // to enforce a single active session across devices.
+        DB::table('sessions')->where('user_id', $user['id'])->delete();
+        RememberToken::clearForUser((int) $user['id']);
+
         $user['last_login_at'] = date('Y-m-d H:i:s');
         Auth::login(new ArrayUser($user), $remember);
 
