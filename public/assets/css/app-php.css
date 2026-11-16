@@ -448,6 +448,129 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
   grid-column: 1 / -1;
   order: 6;
 }
+.technical-dashboard .technical-attention-card,
+.technical-dashboard .technical-compliance-card {
+  min-width: 0;
+  margin: 0;
+}
+.technical-dashboard .technical-attention-card {
+  display: flex;
+  flex-direction: column;
+  grid-column: span 8;
+}
+.technical-dashboard .technical-compliance-card {
+  grid-column: span 4;
+}
+.technical-attention-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.technical-attention-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bg);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.technical-attention-tile:hover {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+.technical-attention-tile:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.technical-attention-tile__label {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.technical-attention-tile__value {
+  color: var(--amber);
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.technical-attention-tile--clear .technical-attention-tile__value {
+  color: var(--green);
+}
+.technical-attention-tile__age {
+  color: var(--muted);
+  font-size: 10px;
+}
+.technical-compliance-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.technical-compliance-rate strong {
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.technical-compliance-rate span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.technical-compliance-buckets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.technical-compliance-bucket {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.technical-compliance-bucket span {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.technical-compliance-bucket strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 800;
+}
+.technical-compliance-bucket--risk strong {
+  color: var(--red);
+}
+.technical-compliance-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 13px;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.technical-compliance-link:hover {
+  text-decoration: underline;
+}
 .technical-chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -730,6 +853,9 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
   .technical-dashboard .technical-queue-card {
     grid-column: span 6;
   }
+  .technical-attention-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .technical-program-content {
     grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1fr);
   }
@@ -749,6 +875,8 @@ body[data-role="Administrator"][data-page="users"] .profile-hero__name {
   .technical-dashboard__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .technical-dashboard .technical-attention-card,
+  .technical-dashboard .technical-compliance-card,
   .technical-dashboard .technical-activity-card,
   .technical-dashboard .technical-status-card,
   .technical-dashboard .technical-queue-card,

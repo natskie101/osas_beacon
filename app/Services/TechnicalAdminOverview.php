@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Participation;
 use App\Models\SupportTicket;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class TechnicalAdminOverview
@@ -22,7 +24,9 @@ final class TechnicalAdminOverview
      *     },
      *     health_checks:list<array{label:string,ok:bool,detail:string}>,
      *     top_announcements:list<array{public_id:string,title:string,views:int}>,
-     *     top_orientations:list<array{public_id:string,title:string,learners:int,completions:int}>
+     *     top_orientations:list<array{public_id:string,title:string,learners:int,completions:int}>,
+     *     orientation_compliance:array{total:int,compliant:int,in_progress:int,at_risk:int,rate:float,hours:int,events:int,mandatory_modules:int},
+     *     attention:list<array{key:string,label:string,count:int,oldest_days:int,url:string}>
      * }
      */
     public static function data(): array
@@ -103,6 +107,10 @@ final class TechnicalAdminOverview
             'announcements',
             ['Draft', 'Scheduled', 'Published', 'Archived'],
         );
+        // Same numbers the Analytics page reports, so the two pages cannot disagree.
+        $orientationCompliance = Participation::summary(Participation::students());
+        $orientationCompliance['mandatory_modules'] = Participation::mandatoryModuleCount();
+        $attention = self::attentionQueue();
 
         return [
             'active_today' => DB::table('audit_log')
@@ -189,6 +197,8 @@ final class TechnicalAdminOverview
                 ->get()
                 ->map(static fn (object $row): array => (array) $row)
                 ->all(),
+            'orientation_compliance' => $orientationCompliance,
+            'attention' => $attention,
         ];
     }
 
@@ -214,5 +224,75 @@ final class TechnicalAdminOverview
         }
 
         return $counts;
+    }
+
+    /**
+     * Queues where work is waiting for OSAS, each carrying the age of its oldest item.
+     *
+     * Counts and ages come from the same filtered query, so the number shown and the
+     * waiting time always describe the same set of rows.
+     *
+     * @return list<array{key:string,label:string,count:int,oldest_days:int,url:string}>
+     */
+    private static function attentionQueue(): array
+    {
+        return [
+            self::queueEntry(
+                'pending_accounts',
+                'Pending accounts',
+                DB::table('users')->where('status', 'Pending'),
+                '/admin/users?tab=queue',
+            ),
+            self::queueEntry(
+                'support_open',
+                'Open support tickets',
+                DB::table('support_tickets')->where('status', 'Open'),
+                '/admin/support?status=Open',
+            ),
+            // Both intake states still wait on an OSAS decision, but the index
+            // filter matches a single status, so this opens the unfiltered list.
+            self::queueEntry(
+                'documents_waiting',
+                'Documents awaiting review',
+                DB::table('document_requests')->whereIn('status', ['Submitted', 'Under Review']),
+                '/admin/document-requests',
+            ),
+            self::queueEntry(
+                'lost_found_open',
+                'Open lost & found reports',
+                DB::table('lost_found_items')->where('status', 'Open'),
+                '/admin/lost-found?status=Open',
+            ),
+        ];
+    }
+
+    /**
+     * Count one queue and work out how long its oldest row has been waiting.
+     *
+     * @param Builder $query The queue's filters; aggregates run on clones, so it stays reusable.
+     * @param string  $url   The admin index that shows these rows.
+     * @return array{key:string,label:string,count:int,oldest_days:int,url:string}
+     */
+    private static function queueEntry(string $key, string $label, Builder $query, string $url): array
+    {
+        $count = (int) $query->count();
+        $oldestDays = 0;
+
+        if ($count > 0) {
+            $oldest = $query->min('created_at');
+            $timestamp = is_string($oldest) ? strtotime($oldest) : false;
+
+            if ($timestamp !== false) {
+                $oldestDays = max(0, (int) floor((time() - $timestamp) / 86400));
+            }
+        }
+
+        return [
+            'key' => $key,
+            'label' => $label,
+            'count' => $count,
+            'oldest_days' => $oldestDays,
+            'url' => $url,
+        ];
     }
 }

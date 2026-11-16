@@ -47,6 +47,8 @@ $healthIssueCount = count(array_filter(
     $overview['health_checks'],
     static fn (array $check): bool => !$check['ok'],
 ));
+$compliance = $overview['orientation_compliance'];
+$attentionTotal = array_sum(array_column($overview['attention'], 'count'));
 ?>
 <div class="technical-dashboard">
     <header class="technical-dashboard__head">
@@ -84,6 +86,62 @@ $healthIssueCount = count(array_filter(
             <div class="stat__sub">Recorded failed attempts</div>
         </div>
     </div>
+
+    <section class="card panel-card technical-attention-card tw-rounded-2xl tw-bg-white tw-p-5 tw-shadow-sm">
+        <div class="panel-card__head">
+            <div>
+                <div class="panel-title">Needs Attention</div>
+                <p class="panel-card__sub">Open work waiting for OSAS, with the age of the oldest item in each queue.</p>
+            </div>
+            <span class="badge {!! $attentionTotal > 0 ? 'badge--pending' : 'badge--verified' !!}">{!! $attentionTotal > 0 ? number_format($attentionTotal) . ' waiting' : 'All clear' !!}</span>
+        </div>
+        <div class="technical-attention-grid">
+            <?php foreach ($overview['attention'] as $item): ?>
+                <?php
+                $isClear = (int) $item['count'] === 0;
+                $days = (int) $item['oldest_days'];
+                ?>
+                <a class="technical-attention-tile{!! $isClear ? ' technical-attention-tile--clear' : '' !!}" href="{!! url($item['url']) !!}">
+                    <span class="technical-attention-tile__label">{{ $item['label'] }}</span>
+                    <strong class="technical-attention-tile__value">{!! number_format((int) $item['count']) !!}</strong>
+                    <span class="technical-attention-tile__age">{!! $isClear ? 'Nothing waiting' : 'Oldest: ' . ($days === 0 ? 'under 1 day' : number_format($days) . ' day' . ($days === 1 ? '' : 's')) !!}</span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <section class="card panel-card technical-compliance-card tw-rounded-2xl tw-bg-white tw-p-5 tw-shadow-sm">
+        <div class="panel-card__head">
+            <div>
+                <div class="panel-title">Orientation Compliance</div>
+                <?php if ((int) $compliance['mandatory_modules'] > 0): ?>
+                    <p class="panel-card__sub">{!! number_format((int) $compliance['mandatory_modules']) !!} mandatory modules &times; {!! number_format((int) $compliance['total']) !!} students</p>
+                <?php else: ?>
+                    <p class="panel-card__sub">No mandatory modules are published yet, so no student can reach compliance.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="technical-compliance-rate">
+            <strong>{!! number_format((float) $compliance['rate'], 0) !!}%</strong>
+            <span>Cohort orientation rate</span>
+        </div>
+        <div class="technical-ranking-track"><span style="width: {!! min(100.0, max(0.0, (float) $compliance['rate'])) !!}%"></span></div>
+        <div class="technical-compliance-buckets">
+            <div class="technical-compliance-bucket">
+                <span>Fully compliant</span>
+                <strong>{!! number_format((int) $compliance['compliant']) !!}</strong>
+            </div>
+            <div class="technical-compliance-bucket">
+                <span>In progress</span>
+                <strong>{!! number_format((int) $compliance['in_progress']) !!}</strong>
+            </div>
+            <div class="technical-compliance-bucket technical-compliance-bucket--risk">
+                <span>At risk</span>
+                <strong>{!! number_format((int) $compliance['at_risk']) !!}</strong>
+            </div>
+        </div>
+        <a class="technical-compliance-link" href="{!! url('/admin/analytics') !!}">Open the participation report {!! App\Support\Icons::render('arrowRight', 12) !!}</a>
+    </section>
 
     <div class="dash-grid technical-overview tw-gap-5">
     <section class="card panel-card technical-activity-card tw-rounded-2xl tw-bg-white tw-p-5 tw-shadow-sm">
