@@ -124,9 +124,12 @@ final class TechnicalAdminOverview
                 ->get()
                 ->map(static fn (object $row): array => (array) $row)
                 ->all(),
+            // Verified students only: Pending accounts are still awaiting OSAS
+            // verification and must not appear in the program breakdown.
             'student_programs' => DB::table('users')
                 ->selectRaw("COALESCE(NULLIF(TRIM(program), ''), 'Unassigned') AS program, COUNT(*) AS count")
                 ->where('role', 'Student')
+                ->where('status', 'Active')
                 ->groupByRaw("COALESCE(NULLIF(TRIM(program), ''), 'Unassigned')")
                 ->orderByRaw('count DESC, program ASC')
                 ->get()

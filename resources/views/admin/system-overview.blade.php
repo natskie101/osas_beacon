@@ -189,7 +189,7 @@ $healthIssueCount = count(array_filter(
         <div class="panel-card__head">
             <div>
                 <div class="panel-title">Students by Program</div>
-                <p class="panel-card__sub">Percentage of {!! number_format($studentProgramTotal) !!} student accounts in each program.</p>
+                <p class="panel-card__sub">Percentage of {!! number_format($studentProgramTotal) !!} verified student accounts in each program.</p>
             </div>
         </div>
         <?php if ($studentProgramTotal > 0): ?>
@@ -224,7 +224,7 @@ $healthIssueCount = count(array_filter(
                 </div>
             </div>
         <?php else: ?>
-            <p class="technical-empty">No student accounts are recorded yet.</p>
+            <p class="technical-empty">No verified student accounts are recorded yet.</p>
         <?php endif; ?>
     </section>
 </div>
