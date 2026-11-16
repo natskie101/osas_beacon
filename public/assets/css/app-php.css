@@ -4175,7 +4175,6 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 320px;
   border: 0;
   background: #000;
 }
