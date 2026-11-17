@@ -8,12 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\File;
 use App\Models\OrientationModule;
+use App\Services\AudienceService;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
 use App\Services\OrientationQuizService;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
+use App\Support\Html;
 use Illuminate\Http\Request;
 use RuntimeException;
 
@@ -104,6 +106,10 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'blue', 'icon' => 'graduation'],
         );
 
+        if ($module['status'] === 'Published') {
+            $this->announce($module);
+        }
+
         session()->flash('status', 'Orientation module created.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
@@ -183,6 +189,10 @@ final class OrientationController extends Controller
             ['entity_type' => 'orientation', 'entity_id' => (string) $updated['public_id'], 'tone' => 'blue', 'icon' => 'edit'],
         );
 
+        if ($updated['status'] === 'Published' && $module['status'] !== 'Published') {
+            $this->announce($updated);
+        }
+
         session()->flash('status', 'Orientation module saved.');
 
         return redirect(url('/admin/orientation/' . $updated['public_id']));
@@ -193,6 +203,7 @@ final class OrientationController extends Controller
         $module = $this->find($publicId);
         OrientationModule::update((int) $module['id'], ['status' => 'Published']);
         AuditLogger::log('orientation.published', 'Orientation Module Published', $module['title'] . ' is now available to students.', ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'green', 'icon' => 'graduation']);
+        $this->announce($module);
         session()->flash('status', 'Orientation module published.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
@@ -370,6 +381,26 @@ final class OrientationController extends Controller
             'name' => (string) $stored['original_name'],
             'size' => format_bytes((int) $stored['size_bytes']),
         ];
+    }
+
+    /**
+     * Tell the module's audience that a new orientation module went live.
+     * Mirrors AnnouncementController::announce() — only ever called once per
+     * transition into Published, so saving an already-live module does not
+     * re-notify everyone.
+     *
+     * @param array<string, mixed> $module
+     */
+    private function announce(array $module): void
+    {
+        AudienceService::notify(
+            (string) $module['audience'],
+            'New orientation module: ' . $module['title'],
+            Html::summary((string) ($module['description'] ?? ''), 180),
+            'info',
+            'orientation',
+            (string) $module['public_id'],
+        );
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $module */
