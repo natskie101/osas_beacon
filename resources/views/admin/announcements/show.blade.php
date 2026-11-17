@@ -50,19 +50,6 @@
                 </div>
             <?php endif; ?>
         </section>
-
-        <section class="card panel-card">
-            <div class="panel-card__head"><div><div class="panel-title">Recent Portal Activity</div><p class="panel-card__sub">Audit entries recorded by the server.</p></div><a class="link" href="{!! url('/admin/activity') !!}">Full activity log</a></div>
-            <div class="mini-list">
-                <?php foreach (array_slice($audit ?? [], 0, 6) as $entry): ?>
-                    <div class="mini-item">
-                        <span class="log-item__ico">{!! App\Support\Icons::render($entry['icon'] ?? 'info', 13) !!}</span>
-                        <div><strong>{{ $entry['title'] }}</strong><span>{{ $entry['text'] }}</span></div>
-                        <em>{{ time_ago($entry['created_at']) }}</em>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
     </div>
 
     <aside class="detail-grid__side">
