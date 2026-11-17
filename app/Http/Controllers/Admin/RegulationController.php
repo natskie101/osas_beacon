@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Regulation;
 use App\Services\AuditLogger;
+use App\Services\NotificationService;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Html;
 use Illuminate\Http\Request;
@@ -162,6 +163,28 @@ final class RegulationController extends Controller
         session()->flash('status', 'Regulation archived.');
 
         return redirect(url('/admin/regulations/' . $regulation['public_id']));
+    }
+
+    /**
+     * Permanently remove a policy. It stores no files, so this is just the row -
+     * plus the notifications already sent for it.
+     */
+    public function destroy(Request $request, string $publicId)
+    {
+        $regulation = $this->find($publicId);
+
+        Regulation::delete((int) $regulation['id']);
+        NotificationService::forget('regulation', (string) $regulation['public_id']);
+
+        AuditLogger::log(
+            'regulation.deleted',
+            'Regulation Deleted',
+            $regulation['title'] . ' (' . $regulation['public_id'] . ') was deleted.',
+            ['entity_type' => 'regulation', 'entity_id' => (string) $regulation['public_id'], 'tone' => 'red', 'icon' => 'trash'],
+        );
+        session()->flash('status', 'Policy deleted.');
+
+        return redirect(url('/admin/regulations'));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $regulation */

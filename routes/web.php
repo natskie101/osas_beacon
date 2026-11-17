@@ -123,6 +123,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'update']);
         Route::post('/admin/announcements/{publicId}/publish', [AdminAnnouncementController::class, 'publish']);
         Route::post('/admin/announcements/{publicId}/archive', [AdminAnnouncementController::class, 'archive']);
+        Route::post('/admin/announcements/{publicId}/delete', [AdminAnnouncementController::class, 'destroy']);
         Route::post('/admin/announcements/{publicId}/attachment/{index}/remove', [AdminAnnouncementController::class, 'removeAttachment']);
         Route::get('/admin/announcements/{publicId}/attachment/{fileId}', [AdminAnnouncementController::class, 'downloadAttachment']);
         Route::get('/admin/announcements/{publicId}', [AdminAnnouncementController::class, 'show']);
@@ -134,6 +135,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/regulations/{publicId}', [AdminRegulationController::class, 'update']);
         Route::post('/admin/regulations/{publicId}/publish', [AdminRegulationController::class, 'publish']);
         Route::post('/admin/regulations/{publicId}/archive', [AdminRegulationController::class, 'archive']);
+        Route::post('/admin/regulations/{publicId}/delete', [AdminRegulationController::class, 'destroy']);
         Route::get('/admin/regulations/{publicId}', [AdminRegulationController::class, 'show']);
 
         Route::get('/admin/orientation', [AdminOrientationController::class, 'index']);
@@ -143,6 +145,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/orientation/{publicId}', [AdminOrientationController::class, 'update']);
         Route::post('/admin/orientation/{publicId}/publish', [AdminOrientationController::class, 'publish']);
         Route::post('/admin/orientation/{publicId}/archive', [AdminOrientationController::class, 'archive']);
+        Route::post('/admin/orientation/{publicId}/delete', [AdminOrientationController::class, 'destroy']);
         Route::get('/admin/orientation/{publicId}/media', [AdminOrientationController::class, 'downloadMedia']);
         Route::get('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'show']);
         Route::post('/admin/orientation/{publicId}/quiz', [AdminOrientationQuizController::class, 'saveSettings']);
@@ -158,6 +161,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/events/{publicId}/attachment/{fileId}', [AdminEventController::class, 'downloadAttachment']);
         Route::put('/admin/events/{publicId}', [AdminEventController::class, 'update']);
         Route::post('/admin/events/{publicId}/cancel', [AdminEventController::class, 'cancel']);
+        Route::post('/admin/events/{publicId}/delete', [AdminEventController::class, 'destroy']);
         Route::get('/admin/events/{publicId}', [AdminEventController::class, 'show']);
 
         Route::get('/admin/lost-found', [AdminLostFoundController::class, 'index']);

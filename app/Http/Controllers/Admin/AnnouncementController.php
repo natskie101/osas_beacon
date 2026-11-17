@@ -11,6 +11,7 @@ use App\Models\File;
 use App\Services\AudienceService;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
+use App\Services\NotificationService;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
 use App\Support\Html;
@@ -198,6 +199,41 @@ final class AnnouncementController extends Controller
         session()->flash('status', 'Announcement archived.');
 
         return redirect(url('/admin/announcements/' . $announcement['public_id']));
+    }
+
+    /**
+     * Permanently remove an announcement: its attachments go with it and every
+     * notification already sent for it is dropped.
+     */
+    public function destroy(Request $request, string $publicId)
+    {
+        $announcement = $this->find($publicId);
+
+        // Files first, so a storage failure can never leave a half-deleted record.
+        foreach (BaseAnnouncementAttachments::from($announcement) as $attachment) {
+            if (empty($attachment['file_id'])) {
+                continue;
+            }
+
+            $file = File::find((int) $attachment['file_id']);
+
+            if ($file !== null) {
+                FileStorage::delete($file);
+            }
+        }
+
+        Announcement::delete((int) $announcement['id']);
+        NotificationService::forget('announcement', (string) $announcement['public_id']);
+
+        AuditLogger::log(
+            'announcement.deleted',
+            'Announcement Deleted',
+            $announcement['title'] . ' (' . $announcement['public_id'] . ') was deleted.',
+            ['entity_type' => 'announcement', 'entity_id' => (string) $announcement['public_id'], 'tone' => 'red', 'icon' => 'trash'],
+        );
+        session()->flash('status', 'Announcement deleted.');
+
+        return redirect(url('/admin/announcements'));
     }
 
     public function removeAttachment(Request $request, string $publicId, string $index)

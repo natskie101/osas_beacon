@@ -30,7 +30,7 @@
                 <td><div class="cell-title">{{ $event['venue'] }}</div><div class="cell-sub">{{ $event['mode'] }}</div></td>
                 <td><span class="badge {{ status_class($event['status']) }}">{{ $event['status'] }}</span></td>
                 <td>{!! number_format((int) $event['registered']) !!} / {!! number_format((int) $event['capacity']) !!}</td>
-                <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="{!! url('/admin/events/' . $event['public_id']) !!}">Open</a><a class="btn btn--outline btn--sm" href="{!! url('/admin/events/' . $event['public_id'] . '/edit') !!}">Edit</a></div></td>
+                <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="{!! url('/admin/events/' . $event['public_id']) !!}">Open</a><a class="btn btn--outline btn--sm" href="{!! url('/admin/events/' . $event['public_id'] . '/edit') !!}">Edit</a><form method="POST" action="{!! url('/admin/events/' . $event['public_id'] . '/delete') !!}" data-confirm="Delete this event permanently? Attachments will be removed; attendance history is kept.">{!! csrf_field() !!}<button class="btn btn--outline btn--sm" type="submit">{!! App\Support\Icons::render('trash', 13) !!} Delete</button></form></div></td>
             </tr>
         <?php endforeach; ?></tbody></table></div>
     <?php endif; ?>

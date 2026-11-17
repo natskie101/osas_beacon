@@ -33,4 +33,20 @@ final class NotificationService
     {
         return Notification::unreadCount($userId);
     }
+
+    /**
+     * Drop every notification that points at a record being deleted, so the
+     * student bell never hands out a link to something that no longer exists.
+     */
+    public static function forget(string $entityType, string $entityId): int
+    {
+        if ($entityType === '' || $entityId === '') {
+            return 0;
+        }
+
+        return DB::table('notifications')
+            ->where('entity_type', $entityType)
+            ->where('entity_id', $entityId)
+            ->delete();
+    }
 }

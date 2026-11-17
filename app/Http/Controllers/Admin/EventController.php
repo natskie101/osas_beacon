@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\File;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Exceptions\ValidationException;
@@ -145,6 +146,42 @@ final class EventController extends Controller
         session()->flash('status', 'Event cancelled.');
 
         return redirect(url('/admin/events/' . $event['public_id']));
+    }
+
+    /**
+     * Permanently remove an event: its attachments go with it. The participation
+     * ledger (event_attendance) is keyed by event_code on purpose, so attendance
+     * history survives the delete.
+     */
+    public function destroy(Request $request, string $publicId)
+    {
+        $event = $this->find($publicId);
+
+        // Files first, so a storage failure can never leave a half-deleted record.
+        foreach (json_items($event['attachments'] ?? null) as $attachment) {
+            if (empty($attachment['file_id'])) {
+                continue;
+            }
+
+            $file = File::find((int) $attachment['file_id']);
+
+            if ($file !== null) {
+                FileStorage::delete($file);
+            }
+        }
+
+        Event::delete((int) $event['id']);
+        NotificationService::forget('event', (string) $event['public_id']);
+
+        AuditLogger::log(
+            'event.deleted',
+            'Event Deleted',
+            $event['title'] . ' (' . $event['public_id'] . ') was deleted.',
+            ['entity_type' => 'event', 'entity_id' => (string) $event['public_id'], 'tone' => 'red', 'icon' => 'trash'],
+        );
+        session()->flash('status', 'Event deleted.');
+
+        return redirect(url('/admin/events'));
     }
 
     /** @param array<string, mixed> $actor @param array<string, mixed>|null $event */

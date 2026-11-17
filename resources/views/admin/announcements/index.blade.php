@@ -91,6 +91,7 @@ $queryFor = static function (array $overrides = []) use ($filters): string {
                             <div class="cell-actions">
                                 <a class="btn btn--ghost btn--sm" href="{!! url('/admin/announcements/' . $announcement['public_id']) !!}">Open</a>
                                 <a class="btn btn--outline btn--sm" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/edit') !!}">Edit</a>
+                                <form method="POST" action="{!! url('/admin/announcements/' . $announcement['public_id'] . '/delete') !!}" data-confirm="Delete this announcement permanently? Attachments and the notifications already sent will be removed.">{!! csrf_field() !!}<button class="btn btn--outline btn--sm" type="submit">{!! App\Support\Icons::render('trash', 13) !!} Delete</button></form>
                             </div>
                         </td>
                     </tr>

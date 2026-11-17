@@ -17,6 +17,7 @@
         <?php if ($announcement['status'] !== 'Archived'): ?>
             <form method="POST" action="{!! url('/admin/announcements/' . $announcement['public_id'] . '/archive') !!}">{!! csrf_field() !!}<button class="btn btn--ghost" type="submit">Archive</button></form>
         <?php endif; ?>
+        <form method="POST" action="{!! url('/admin/announcements/' . $announcement['public_id'] . '/delete') !!}" data-confirm="Delete this announcement permanently? Attachments and the notifications already sent will be removed.">{!! csrf_field() !!}<button class="btn btn--outline" type="submit">{!! App\Support\Icons::render('trash', 14) !!} Delete</button></form>
     </div>
 </div>
 

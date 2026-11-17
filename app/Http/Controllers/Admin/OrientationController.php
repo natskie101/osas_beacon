@@ -11,6 +11,7 @@ use App\Models\OrientationModule;
 use App\Services\AudienceService;
 use App\Services\AuditLogger;
 use App\Services\FileStorage;
+use App\Services\NotificationService;
 use App\Services\OrientationQuizService;
 use Illuminate\Support\Facades\DB;
 use App\Support\Exceptions\NotFoundHttpException;
@@ -217,6 +218,38 @@ final class OrientationController extends Controller
         session()->flash('status', 'Orientation module archived.');
 
         return redirect(url('/admin/orientation/' . $module['public_id']));
+    }
+
+    /**
+     * Permanently remove a module: its media file goes with it, and the student
+     * progress, quiz, questions, options, attempts and answers all cascade off
+     * the row. Notifications that point at it are dropped too.
+     */
+    public function destroy(Request $request, string $publicId)
+    {
+        $module = $this->find($publicId);
+
+        // Files first, so a storage failure can never leave a half-deleted record.
+        if (!empty($module['media_file_id'])) {
+            $file = File::find((int) $module['media_file_id']);
+
+            if ($file !== null) {
+                FileStorage::delete($file);
+            }
+        }
+
+        OrientationModule::delete((int) $module['id']);
+        NotificationService::forget('orientation', (string) $module['public_id']);
+
+        AuditLogger::log(
+            'orientation.deleted',
+            'Orientation Module Deleted',
+            $module['title'] . ' (' . $module['public_id'] . ') was deleted, together with its student progress and quiz attempts.',
+            ['entity_type' => 'orientation', 'entity_id' => (string) $module['public_id'], 'tone' => 'red', 'icon' => 'trash'],
+        );
+        session()->flash('status', 'Orientation module deleted.');
+
+        return redirect(url('/admin/orientation'));
     }
 
     public function downloadMedia(Request $request, string $publicId)

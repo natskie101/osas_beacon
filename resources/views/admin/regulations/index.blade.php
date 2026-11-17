@@ -38,7 +38,7 @@
                 <td><span class="badge {{ status_class($regulation['status']) }}">{{ $regulation['status'] }}</span></td>
                 <td><div class="cell-title">{{ $regulation['effective_date'] }}</div><div class="cell-sub">{{ $regulation['audience'] }}</div></td>
                 <td>{!! number_format((int) $regulation['views']) !!}</td>
-                <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="{!! url('/admin/regulations/' . $regulation['public_id']) !!}">Open</a><a class="btn btn--outline btn--sm" href="{!! url('/admin/regulations/' . $regulation['public_id'] . '/edit') !!}">Edit</a></div></td>
+                <td class="u-right"><div class="cell-actions"><a class="btn btn--ghost btn--sm" href="{!! url('/admin/regulations/' . $regulation['public_id']) !!}">Open</a><a class="btn btn--outline btn--sm" href="{!! url('/admin/regulations/' . $regulation['public_id'] . '/edit') !!}">Edit</a><form method="POST" action="{!! url('/admin/regulations/' . $regulation['public_id'] . '/delete') !!}" data-confirm="Delete this policy permanently? This cannot be undone.">{!! csrf_field() !!}<button class="btn btn--outline btn--sm" type="submit">{!! App\Support\Icons::render('trash', 13) !!} Delete</button></form></div></td>
             </tr>
         <?php endforeach; ?>
         </tbody></table></div>
