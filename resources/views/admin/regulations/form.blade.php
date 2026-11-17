@@ -115,18 +115,10 @@ if ($currentSeverity !== '' && !in_array($currentSeverity, $severities, true)) {
 
     <section class="form-section announcement-section">
         <div class="section-title">3. Publication &amp; governance</div>
-        <div class="form-grid form-grid--3">
+        <div class="form-grid form-grid--2">
             <div class="field">
                 <label for="audience">Audience</label>
                 <input class="input" id="audience" name="audience" value="{{ $values['audience'] ?? 'All Students' }}">
-            </div>
-            <div class="field">
-                <label for="status">Status</label>
-                <select class="input" id="status" name="status">
-                    <?php foreach (['Draft', 'Pending Review', 'Published', 'Archived'] as $status): ?>
-                        <option value="{{ $status }}"{!! ($values['status'] ?? '') === $status ? ' selected' : '' !!}>{{ $status }}</option>
-                    <?php endforeach; ?>
-                </select>
             </div>
             <div class="field">
                 <label for="effective_date">Effective date <span class="req">*</span></label>

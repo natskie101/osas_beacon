@@ -56,11 +56,8 @@ final class RegulationController extends Controller
         $actor = auth_user();
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        } elseif ((string) $request->string('save_action') === 'publish') {
-            $data['status'] = 'Published';
-        }
+        // The form carries no status field: Save Draft / Publish Policy decide.
+        $data['status'] = (string) $request->string('save_action') === 'publish' ? 'Published' : 'Draft';
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
@@ -110,11 +107,13 @@ final class RegulationController extends Controller
         $regulation = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        } elseif ((string) $request->string('save_action') === 'publish') {
-            $data['status'] = 'Published';
-        }
+        // Save Draft / Publish Policy decide; anything else leaves the current
+        // state (including Pending Review) untouched.
+        $data['status'] = match ((string) $request->string('save_action')) {
+            'publish' => 'Published',
+            'draft' => 'Draft',
+            default => (string) $regulation['status'],
+        };
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
@@ -213,7 +212,6 @@ final class RegulationController extends Controller
             'category' => 'required|string|max:100',
             'severity' => 'required|in:Minor Offense (Level 1),Major Offense (Level 2),Serious Offense (Level 3),Grave Offense (Level 4)',
             'audience' => 'required|string|max:100',
-            'status' => 'required|in:Draft,Pending Review,Published,Archived',
             'effective_date' => 'required|string|max:100',
             'review_schedule' => 'nullable|string|max:150',
             'approval_body' => 'nullable|string|max:200',

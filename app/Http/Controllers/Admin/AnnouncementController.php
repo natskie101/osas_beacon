@@ -62,9 +62,8 @@ final class AnnouncementController extends Controller
         $actor = auth_user();
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        }
+        // The form carries no status field: Add to Drafts / Save Changes decide.
+        $data['status'] = $this->deriveStatus($request, null);
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
@@ -131,9 +130,8 @@ final class AnnouncementController extends Controller
         $announcement = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        }
+        // The form carries no status field: Add to Drafts / Save Changes decide.
+        $data['status'] = $this->deriveStatus($request, $announcement);
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
@@ -279,13 +277,39 @@ final class AnnouncementController extends Controller
             'title' => 'required|string|max:200',
             'category' => 'required|string|max:100',
             'audience' => 'required|in:All Student Portals,Incoming Freshmen,Student Officers,Faculty & Staff,Graduating Students',
-            'status' => 'required|in:Draft,Scheduled,Published,Archived',
             'priority' => 'required|in:Standard Priority,High Priority,Urgent,Information',
             'summary' => 'nullable|string|max:1000',
             'body' => 'required|string',
             'author' => 'required|string|max:150',
             'scheduled_for' => 'nullable|date',
         ]);
+    }
+
+    /**
+     * Work out the status from the submit button now that the form carries no
+     * status dropdown.
+     *
+     *  - "Add to Drafts" always lands on Draft.
+     *  - "Save Changes" keeps the current state (Published and Archived stay put,
+     *    a new announcement starts as Draft) and only moves when the schedule
+     *    date says otherwise: a filled date makes it Scheduled, and clearing the
+     *    date on a Scheduled row drops it back to Draft.
+     *
+     * @param array<string, mixed>|null $existing
+     */
+    private function deriveStatus(Request $request, ?array $existing): string
+    {
+        if ((string) $request->string('save_action') === 'draft') {
+            return 'Draft';
+        }
+
+        if (!empty($request->input('scheduled_for'))) {
+            return 'Scheduled';
+        }
+
+        $current = trim((string) ($existing['status'] ?? ''));
+
+        return $current === '' || $current === 'Scheduled' ? 'Draft' : $current;
     }
 
     /** @param array<string, mixed> $data @param array<string, mixed>|null $existing */

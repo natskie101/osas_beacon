@@ -128,6 +128,7 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
                         <option value="{{ $audience }}"{!! ($values['audience'] ?? '') === $audience ? ' selected' : '' !!}>{{ $audience }}</option>
                     <?php endforeach; ?>
                 </select>
+                <div class="help-text">Publishing sends a notification to the selected student audience.</div>
                 <?php if ($errorFor('audience')): ?><div class="form-error">{{ $errorFor('audience') }}</div><?php endif; ?>
             </div>
             <div class="field">
@@ -139,16 +140,7 @@ $action = $isEdit ? url('/admin/announcements/' . $announcement['public_id']) : 
                 </select>
             </div>
         </div>
-        <div class="form-grid form-grid--3">
-            <div class="field">
-                <label for="status">Status</label>
-                <select class="input" id="status" name="status">
-                    <?php foreach (['Draft', 'Scheduled', 'Published', 'Archived'] as $status): ?>
-                        <option value="{{ $status }}"{!! ($values['status'] ?? '') === $status ? ' selected' : '' !!}>{{ $status }}</option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="help-text">Publishing sends a notification to the selected student audience.</div>
-            </div>
+        <div class="form-grid form-grid--2">
             <div class="field">
                 <label for="scheduled_for">Schedule date and time</label>
                 <input class="input{!! $invalid('scheduled_for') !!}" id="scheduled_for" name="scheduled_for" type="datetime-local" value="{{ datetime_input($values['scheduled_for'] ?? '') }}">
