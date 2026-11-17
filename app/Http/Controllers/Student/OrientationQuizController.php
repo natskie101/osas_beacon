@@ -36,6 +36,14 @@ final class OrientationQuizController extends Controller
             OrientationQuizService::markExpired((int) $active['id']);
         }
 
+        // The button is hidden until the video is finished, but a hand-crafted
+        // POST must not be able to skip that.
+        if (OrientationController::videoRequired($module) && !OrientationProgress::videoWatched($userId, (int) $module['id'])) {
+            session()->flash('error', 'Watch the video all the way to the end before starting the assessment.');
+
+            return redirect(url('/student/orientation/' . $module['public_id']));
+        }
+
         OrientationQuizService::startAttempt($quiz, $userId);
 
         return redirect(url('/student/orientation/' . $module['public_id'] . '/quiz'));

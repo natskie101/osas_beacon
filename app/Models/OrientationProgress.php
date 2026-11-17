@@ -67,6 +67,61 @@ final class OrientationProgress
         }
     }
 
+    /**
+     * Record that the student reached the end of the module video. That is what
+     * unlocks the assessment / acknowledge button, so it only ever moves forward.
+     */
+    public static function markVideoWatched(int $userId, int $moduleId): void
+    {
+        $now = date('Y-m-d H:i:s');
+        $existing = self::find($userId, $moduleId);
+
+        if ($existing === null) {
+            DB::table('orientation_progress')->insert([
+                'user_id' => $userId,
+                'module_id' => $moduleId,
+                'status' => 'In Progress',
+                'progress' => 60,
+                'video_watched_at' => $now,
+                'last_viewed_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            return;
+        }
+
+        $update = [
+            'video_watched_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        if (($existing['status'] ?? '') !== 'Completed') {
+            $update['status'] = 'In Progress';
+            $update['progress'] = DB::raw('GREATEST(progress, 60)');
+        }
+
+        DB::table('orientation_progress')
+            ->where('id', (int) $existing['id'])
+            ->update($update);
+    }
+
+    /** Has this student finished the module video (or already completed the module)? */
+    public static function videoWatched(int $userId, int $moduleId): bool
+    {
+        $row = self::find($userId, $moduleId);
+
+        if ($row === null) {
+            return false;
+        }
+
+        if (($row['status'] ?? '') === 'Completed') {
+            return true;
+        }
+
+        return !empty($row['video_watched_at']);
+    }
+
     public static function complete(int $userId, int $moduleId): bool
     {
         $now = date('Y-m-d H:i:s');

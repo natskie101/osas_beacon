@@ -61,6 +61,8 @@ final class OrientationController extends Controller
         OrientationModule::incrementViews((int) $module['id']);
         Tracking::record((string) $module['title'], 'Orientation', (string) $module['public_id']);
         $progress = OrientationProgress::find((int) $actor['id'], (int) $module['id']);
+        $mediaFile = !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null;
+        $videoRequired = self::videoRequired($module, $mediaFile);
         $quiz = \App\Services\OrientationQuizService::findForModule((int) $module['id']);
         $quizAttempts = $quiz !== null ? \App\Services\OrientationQuizService::attempts((int) $quiz['id'], (int) $actor['id']) : [];
         $latestAttempt = $quizAttempts[0] ?? null;
@@ -76,11 +78,65 @@ final class OrientationController extends Controller
             'module' => $module,
             'objectives' => json_items($module['objectives'] ?? null),
             'progress' => $progress,
-            'mediaFile' => !empty($module['media_file_id']) ? File::find((int) $module['media_file_id']) : null,
+            'mediaFile' => $mediaFile,
+            // Modules without a playable video of our own (PDFs, embedded links,
+            // no media at all) are never gated - there is nothing to verify.
+            'videoRequired' => $videoRequired,
+            'videoWatched' => !$videoRequired || OrientationProgress::videoWatched((int) $actor['id'], (int) $module['id']),
             'quiz' => $quizAvailable ? $quiz : null,
             'quizAttempts' => $quizAttempts,
             'latestAttempt' => $latestAttempt,
         ]);
+    }
+
+    /**
+     * Record the end of the video and unlock the assessment / acknowledge button.
+     */
+    public function videoWatched(Request $request, string $publicId)
+    {
+        $actor = auth_user();
+        $module = OrientationModule::findPublished($publicId);
+
+        if ($module === null) {
+            throw new NotFoundHttpException('The requested orientation module could not be found.');
+        }
+
+        if (self::videoRequired($module)) {
+            OrientationProgress::markVideoWatched((int) $actor['id'], (int) $module['id']);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * True only when this module plays a video file we serve ourselves, i.e. the
+     * one case where "watched it to the end" can actually be verified. Embedded
+     * iframes (YouTube/Drive) and non-video content always return false.
+     *
+     * @param array<string, mixed> $module
+     * @param array<string, mixed>|null $mediaFile
+     */
+    public static function videoRequired(array $module, ?array $mediaFile = null): bool
+    {
+        if ($mediaFile === null) {
+            $fileId = (int) ($module['media_file_id'] ?? 0);
+
+            if ($fileId <= 0) {
+                return false;
+            }
+
+            $mediaFile = File::find($fileId);
+        }
+
+        if ($mediaFile === null || !str_starts_with((string) ($mediaFile['mime_type'] ?? ''), 'video/')) {
+            return false;
+        }
+
+        // The view renders an <iframe> for link/embed content - not ours to police.
+        $embedUrl = video_embed_url((string) ($module['video_url'] ?? ''));
+        $isFileContent = in_array((string) ($module['content_type'] ?? ''), ['File', 'Document / PDF', 'Slide Deck'], true);
+
+        return $embedUrl === null || $isFileContent;
     }
 
     public function downloadMedia(Request $request, string $publicId)
@@ -107,6 +163,12 @@ final class OrientationController extends Controller
 
         if ($module === null) {
             throw new NotFoundHttpException('The requested orientation module could not be found.');
+        }
+
+        if (self::videoRequired($module) && !OrientationProgress::videoWatched((int) $actor['id'], (int) $module['id'])) {
+            session()->flash('error', 'Watch the video all the way to the end before acknowledging this module.');
+
+            return redirect(url('/student/orientation/' . $module['public_id']));
         }
 
         $newlyCompleted = OrientationProgress::complete((int) $actor['id'], (int) $module['id']);

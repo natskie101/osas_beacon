@@ -222,6 +222,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/student/orientation', [StudentOrientationController::class, 'index']);
         Route::get('/student/orientation/{publicId}/media', [StudentOrientationController::class, 'downloadMedia']);
         Route::get('/student/orientation/{publicId}/quiz', [StudentOrientationQuizController::class, 'show']);
+        Route::post('/student/orientation/{publicId}/video-watched', [StudentOrientationController::class, 'videoWatched']);
         Route::post('/student/orientation/{publicId}/quiz/start', [StudentOrientationQuizController::class, 'start']);
         Route::post('/student/orientation/{publicId}/quiz/submit', [StudentOrientationQuizController::class, 'submit']);
         Route::get('/student/orientation/{publicId}/quiz/result', [StudentOrientationQuizController::class, 'result']);
