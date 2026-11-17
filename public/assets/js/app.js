@@ -313,27 +313,6 @@
       setInterval(tick, 1000);
     });
 
-    /* Orientation content type: toggle between File and Link panels. */
-    document.querySelectorAll("[data-content-toggle]").forEach(function (group) {
-      var form = group.closest("form") || document;
-
-      function sync(value) {
-        group.querySelectorAll(".type-tab").forEach(function (label) {
-          label.classList.toggle("type-tab--on", label.getAttribute("data-content-value") === value);
-        });
-
-        form.querySelectorAll("[data-content-panel]").forEach(function (panel) {
-          panel.hidden = panel.getAttribute("data-content-panel") !== value;
-        });
-      }
-
-      group.querySelectorAll("input[type=radio]").forEach(function (input) {
-        input.addEventListener("change", function () {
-          sync(input.value);
-        });
-      });
-    });
-
     /* Inline quiz builder on Add Module. */
     document.querySelectorAll("[data-quiz-builder]").forEach(function (builder) {
       var form = builder.closest("form");

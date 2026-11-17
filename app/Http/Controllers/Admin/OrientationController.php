@@ -61,11 +61,9 @@ final class OrientationController extends Controller
         $actor = auth_user();
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        } elseif ((string) $request->string('save_action') === 'publish') {
-            $data['status'] = 'Published';
-        }
+        // The form carries no status field: the Save as Draft / Publish Module
+        // buttons decide the publication state.
+        $data['status'] = (string) $request->string('save_action') === 'publish' ? 'Published' : 'Draft';
 
         $data['passing_rate'] = 80;
         $this->normalizeMediaChoice($data, $request);
@@ -144,11 +142,14 @@ final class OrientationController extends Controller
         $module = $this->find($publicId);
         $data = $this->validated($request);
 
-        if ((string) $request->string('save_action') === 'draft') {
-            $data['status'] = 'Draft';
-        } elseif ((string) $request->string('save_action') === 'publish') {
-            $data['status'] = 'Published';
-        }
+        // The form carries no status field: the Save as Draft / Publish Module
+        // buttons decide the publication state, and any other submit leaves the
+        // current state untouched.
+        $data['status'] = match ((string) $request->string('save_action')) {
+            'publish' => 'Published',
+            'draft' => 'Draft',
+            default => (string) $module['status'],
+        };
 
         $this->normalizeMediaChoice($data, $request);
         $media = $this->storeMedia($request, auth_user());
@@ -423,7 +424,6 @@ final class OrientationController extends Controller
             'title' => 'required|string|max:200',
             'category' => 'required|string|max:120',
             'content_type' => 'required|in:File,Link,Video Presentation,Document / PDF,Slide Deck,Web URL / Embed',
-            'status' => 'required|in:Draft,Published,Archived',
             'audience' => 'required|string|max:100',
             'version' => 'required|string|max:20',
             'duration_minutes' => 'required|integer|min:1|max:600',

@@ -10,10 +10,6 @@ $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
 $invalid = static fn (string $field): string => isset($errors[$field]) ? ' input--error' : '';
 $action = $isEdit ? url('/admin/orientation/' . $module['public_id']) : url('/admin/orientation');
 $departments = config('people.departments', []);
-$contentTypes = ['File', 'Link'];
-$currentContentType = (string) ($values['content_type'] ?? 'File');
-$currentContentType = in_array($currentContentType, ['File', 'Link'], true) ? $currentContentType : 'File';
-$linkActive = $currentContentType === 'Link';
 $verificationMethods = [
     'Quiz Assessment' => 'Attach Quiz Assessment (Passing score required)',
     'Digital Acknowledgement' => 'Digital Acknowledgement / Sign-off only',
@@ -82,17 +78,10 @@ $moduleCode = $isEdit ? (string) ($module['public_id'] ?? '') : 'Auto-generated'
     </section>
 
     <section class="form-section announcement-section">
-        <div class="section-title">2. Content type &amp; media attachments</div>
-        <div class="type-tabs" role="radiogroup" aria-label="Content type" data-content-toggle>
-            <?php foreach ($contentTypes as $type): ?>
-                <label class="type-tab{!! $currentContentType === $type ? ' type-tab--on' : '' !!}" data-content-value="{{ $type }}">
-                    <input type="radio" name="content_type" value="{{ $type }}"{!! $currentContentType === $type ? ' checked' : '' !!}>
-                    {{ $type }}
-                </label>
-            <?php endforeach; ?>
-        </div>
+        <div class="section-title">2. Media attachment</div>
+        <input type="hidden" name="content_type" value="File">
 
-        <div data-content-panel="File"{!! $linkActive ? ' hidden' : '' !!}>
+        <div>
             <label class="upload-drop" for="media">
                 <span class="upload-drop__icon">{!! App\Support\Icons::render('upload', 24) !!}</span>
                 <span data-upload-prompt><strong>Click to upload document or local media</strong> or drag and drop</span>
@@ -114,15 +103,6 @@ $moduleCode = $isEdit ? (string) ($module['public_id'] ?? '') : 'Auto-generated'
                     </div>
                 </div>
             <?php endif; ?>
-        </div>
-
-        <div data-content-panel="Link"{!! $linkActive ? '' : ' hidden' !!}>
-            <div class="field">
-                <label for="video_url">Google Drive video link</label>
-                <input class="input{!! $invalid('video_url') !!}" id="video_url" name="video_url" value="{{ $values['video_url'] ?? '' }}" maxlength="500" placeholder="Paste a Google Drive video link">
-                <div class="help-text">Paste the full video link. For Google Drive, set sharing access so students can view the file. Students will watch it inside the portal.</div>
-                <?php if ($errorFor('video_url')): ?><div class="form-error">{{ $errorFor('video_url') }}</div><?php endif; ?>
-            </div>
         </div>
     </section>
 
@@ -229,19 +209,9 @@ $moduleCode = $isEdit ? (string) ($module['public_id'] ?? '') : 'Auto-generated'
                 <input class="input" id="version" name="version" value="{{ $values['version'] ?? 'v1.0' }}">
             </div>
         </div>
-        <div class="form-grid form-grid--3">
-            <div class="field">
-                <label for="duration_minutes">Duration (minutes)</label>
-                <input class="input" id="duration_minutes" name="duration_minutes" type="number" min="1" max="600" value="{{ $values['duration_minutes'] ?? 15 }}">
-            </div>
-            <div class="field">
-                <label for="status">Status</label>
-                <select class="input" id="status" name="status">
-                    <?php foreach (['Draft', 'Published', 'Archived'] as $status): ?>
-                        <option value="{{ $status }}"{!! ($values['status'] ?? '') === $status ? ' selected' : '' !!}>{{ $status }}</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+        <div class="field">
+            <label for="duration_minutes">Duration (minutes)</label>
+            <input class="input" id="duration_minutes" name="duration_minutes" type="number" min="1" max="600" value="{{ $values['duration_minutes'] ?? 15 }}">
         </div>
 
     </section>
