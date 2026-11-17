@@ -47,4 +47,16 @@ return [
         'timeout' => (int) env('NVIDIA_REQUEST_TIMEOUT', 60),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare R2 (S3-compatible object storage for module media)
+    |--------------------------------------------------------------------------
+    */
+    'r2' => [
+        'account_id' => env('R2_ACCOUNT_ID'),
+        'bucket' => env('R2_BUCKET'),
+        'access_key_id' => env('R2_ACCESS_KEY_ID'),
+        'secret_access_key' => env('R2_SECRET_ACCESS_KEY'),
+    ],
+
 ];

@@ -93,18 +93,41 @@ final class FileStorage
             throw new RuntimeException('The file could not be saved. Please try again.');
         }
 
-        $binary = file_get_contents($absolutePath);
+        $checksum = hash_file('sha256', $absolutePath) ?: null;
+        $storedName = $relativePath;
+        $fileData = null;
+        $storedOnR2 = false;
+
+        // When Cloudflare R2 is configured the object goes straight to the
+        // bucket and the row keeps only its key, so a video is never copied
+        // into a text column. Any failure falls back to the legacy local +
+        // file_data copy so an upload is never lost.
+        if (R2Storage::configured()) {
+            try {
+                R2Storage::put($relativePath, $absolutePath, $mime);
+                $storedOnR2 = true;
+                $storedName = R2Storage::PREFIX . $relativePath;
+                @unlink($absolutePath);
+            } catch (RuntimeException) {
+                // Keep the local copy below instead.
+            }
+        }
+
+        if (!$storedOnR2) {
+            $binary = file_get_contents($absolutePath);
+            $fileData = $binary !== false ? base64_encode($binary) : null;
+        }
 
         $id = DB::table('files')->insertGetId([
             'owner_user_id' => $ownerId,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
             'original_name' => $originalName,
-            'stored_name' => $relativePath,
+            'stored_name' => $storedName,
             'mime_type' => $mime,
             'size_bytes' => $size,
-            'checksum' => hash_file('sha256', $absolutePath) ?: null,
-            'file_data' => $binary !== false ? base64_encode($binary) : null,
+            'checksum' => $checksum,
+            'file_data' => $fileData,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -120,8 +143,21 @@ final class FileStorage
     /** @param array<string, mixed> $file */
     public static function path(array $file): string
     {
-        $relative = str_replace(['\\', '..'], ['/', ''], (string) ($file['stored_name'] ?? ''));
+        $stored = (string) ($file['stored_name'] ?? '');
+        $isRemote = str_starts_with($stored, R2Storage::PREFIX);
+
+        if ($isRemote) {
+            $stored = substr($stored, strlen(R2Storage::PREFIX));
+        }
+
+        $relative = str_replace(['\\', '..'], ['/', ''], $stored);
         $path = BASE_PATH . '/storage/uploads/' . ltrim($relative, '/');
+
+        // R2-backed rows keep no local copy: download() redirects to the
+        // bucket instead. Only legacy rows self-heal from file_data.
+        if ($isRemote) {
+            return $path;
+        }
 
         // Self-healing: if ephemeral disk storage was wiped (e.g. Render sleep/restart),
         // automatically restore the file from database backup (file_data) back to disk.
@@ -142,6 +178,17 @@ final class FileStorage
     /** @param array<string, mixed> $file */
     public static function delete(array $file): void
     {
+        $stored = (string) ($file['stored_name'] ?? '');
+
+        if (str_starts_with($stored, R2Storage::PREFIX)) {
+            try {
+                R2Storage::delete(substr($stored, strlen(R2Storage::PREFIX)));
+            } catch (RuntimeException) {
+                // The row must go even when the bucket is unreachable: a
+                // leftover object is cheap, an orphan row is a real bug.
+            }
+        }
+
         $path = self::path($file);
 
         if (is_file($path)) {
@@ -154,6 +201,21 @@ final class FileStorage
     /** @param array<string, mixed> $file */
     public static function download(array $file): Response
     {
+        $stored = (string) ($file['stored_name'] ?? '');
+
+        // Streamed from R2 by the browser: a signed redirect keeps Range
+        // requests (and therefore seeking) working and never buffers the
+        // video through PHP.
+        if (str_starts_with($stored, R2Storage::PREFIX)) {
+            if (!R2Storage::configured()) {
+                throw new NotFoundHttpException('The stored file could not be found.');
+            }
+
+            return Response::redirect(
+                R2Storage::presignedGet(substr($stored, strlen(R2Storage::PREFIX))),
+            );
+        }
+
         $path = self::path($file);
 
         if (!is_file($path)) {

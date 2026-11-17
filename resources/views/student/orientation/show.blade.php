@@ -15,7 +15,7 @@ $embedUrl = video_embed_url((string) ($module['video_url'] ?? ''));
 $contentType = (string) $module['content_type'];
 $isFileContent = in_array($contentType, ['File', 'Document / PDF', 'Slide Deck'], true);
 $contentLabel = match ($contentType) {
-    'File', 'Document / PDF', 'Slide Deck' => 'FILE',
+    'File', 'Document / PDF', 'Slide Deck' => $isVideo ? 'VIDEO' : 'FILE',
     'Link' => 'VIDEO',
     'Video Presentation' => 'VIDEO',
     'Web URL / Embed' => 'VIDEO',
@@ -44,7 +44,7 @@ $contentLabel = match ($contentType) {
     <?php endif; ?>
 
     <div class="or-section-label">Content Type: {{ $contentLabel }}</div>
-    <?php if ($isFileContent): ?>
+    <?php if ($isFileContent && !$isVideo): ?>
         <?php if ($mediaFile !== null): ?>
             <div class="or-file-card">
                 <span class="or-file-card__icon">{!! App\Support\Icons::render('fileText', 22) !!}</span>
@@ -59,7 +59,7 @@ $contentLabel = match ($contentType) {
         <?php endif; ?>
     <?php else: ?>
         <div class="or-player{!! $embedUrl !== null ? ' or-player--embed' : '' !!}">
-            <?php if ($embedUrl !== null): ?>
+            <?php if ($embedUrl !== null && !$isFileContent): ?>
                 <iframe src="{{ $embedUrl }}" title="{{ $module['title'] }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             <?php elseif ($isVideo): ?>
                 <video controls preload="metadata" src="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}"></video>

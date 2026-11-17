@@ -63,3 +63,14 @@ services:
         value: meta/llama-3.3-70b-instruct
       - key: NVIDIA_REQUEST_TIMEOUT
         value: "60"
+      # Cloudflare R2 (S3-compatible) object storage for module media.
+      # The bucket is private; reads go through a signed redirect issued by
+      # FileStorage::download(). Set the three secrets in the Render dashboard.
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET
+        value: osas-portal-media
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
