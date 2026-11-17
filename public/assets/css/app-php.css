@@ -4161,6 +4161,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   flex: 0 0 auto;
 }
 .or-player {
+  position: relative;
   background: #1c2230;
   border-radius: 10px;
   overflow: hidden;
@@ -4226,18 +4227,23 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   font-weight: 700;
 }
 /* Locked player: play/pause and a display-only timeline. No scrub bar, so
-   there is nothing to drag or click to skip ahead. */
+   there is nothing to drag or click to skip ahead. They float over the bottom
+   of the video so nothing is added below it. */
 .or-player__controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  background: #141926;
+  gap: 8px;
+  padding: 7px 10px;
+  background: linear-gradient(to top, rgba(8, 11, 17, 0.78) 0%, rgba(8, 11, 17, 0.45) 55%, rgba(8, 11, 17, 0) 100%);
 }
 .or-player__toggle {
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
+  width: 26px;
+  height: 26px;
   border: 0;
   border-radius: 50%;
   background: rgba(198, 40, 40, 0.92);
@@ -4254,23 +4260,23 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   display: block;
   width: 0;
   height: 0;
-  border-left: 12px solid #fff;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  margin-left: 3px;
+  border-left: 9px solid #fff;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  margin-left: 2px;
 }
 .or-player__toggle.is-playing .or-player__glyph {
-  width: 13px;
-  height: 15px;
+  width: 10px;
+  height: 12px;
   border: 0;
   margin-left: 0;
-  background: linear-gradient(to right, #fff 0 4px, transparent 4px 9px, #fff 9px 13px);
+  background: linear-gradient(to right, #fff 0 3px, transparent 3px 7px, #fff 7px 10px);
 }
 .or-player__track {
   flex: 1 1 auto;
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.3);
   overflow: hidden;
 }
 .or-player__track span {
@@ -4281,7 +4287,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
 }
 .or-player__clock {
   flex: 0 0 auto;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #fff;
   font-variant-numeric: tabular-nums;
