@@ -504,6 +504,10 @@ final class OrientationController extends Controller
             ? date('Y-m-d', strtotime((string) $data['compliance_deadline']))
             : null;
         $data['attachments_count'] = (int) ($data['attachments_count'] ?? 0);
+        // department is a NOT NULL column with a '' default: the blank
+        // "Select a department" option reaches here as null and would break
+        // the insert (SQLSTATE 23502 -> HTTP 500).
+        $data['department'] = trim((string) ($data['department'] ?? ''));
 
         return $data;
     }

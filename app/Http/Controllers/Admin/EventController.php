@@ -246,6 +246,10 @@ final class EventController extends Controller
         $data['end_at'] = !empty($data['end_at']) ? db_datetime((string) $data['end_at']) : null;
         $data['registered'] = (int) ($data['registered'] ?? 0);
         $data['capacity'] = (int) $data['capacity'];
+        // verification is a NOT NULL column with a '' default: clearing the
+        // form field reaches here as null and would break the insert
+        // (SQLSTATE 23502 -> HTTP 500).
+        $data['verification'] = trim((string) ($data['verification'] ?? ''));
 
         if ($data['end_at'] !== null && $data['end_at'] < $data['start_at']) {
             throw new ValidationException(['end_at' => 'The end time must be after the start time.'], $request->input());

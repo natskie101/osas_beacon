@@ -62,6 +62,11 @@ final class RegulationController extends Controller
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
+        // review_schedule and approval_body are NOT NULL columns with a ''
+        // default; the empty form field arrives as null and would break the
+        // insert. Same treatment as AnnouncementController::store().
+        $data['review_schedule'] = trim((string) ($data['review_schedule'] ?? ''));
+        $data['approval_body'] = trim((string) ($data['approval_body'] ?? ''));
         $sanctions = $this->sanctions((string) $request->string('sanctions'));
         $data['sanctions'] = $sanctions === null ? null : json_encode($sanctions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $data['created_by'] = (int) $actor['id'];
@@ -118,6 +123,8 @@ final class RegulationController extends Controller
 
         $data['body'] = Html::clean((string) $data['body']);
         $data['summary'] = trim((string) ($data['summary'] ?? ''));
+        $data['review_schedule'] = trim((string) ($data['review_schedule'] ?? ''));
+        $data['approval_body'] = trim((string) ($data['approval_body'] ?? ''));
         $sanctions = $this->sanctions((string) $request->string('sanctions'));
         $data['sanctions'] = $sanctions === null ? null : json_encode($sanctions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         Regulation::update((int) $regulation['id'], $data);

@@ -352,7 +352,7 @@ final class LostFoundController extends Controller
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
-        return $this->validate($request, [
+        $data = $this->validate($request, [
             'type' => 'required|in:Lost,Found',
             'title' => 'required|string|max:200',
             'category' => 'required|string|max:100',
@@ -367,6 +367,15 @@ final class LostFoundController extends Controller
             'custody' => 'nullable|string|max:150',
             'attachment' => 'nullable|string|max:255',
         ]);
+
+        // student_id, contact, custody and attachment are NOT NULL columns
+        // with a '' default: an emptied form field reaches here as null and
+        // would break the insert (SQLSTATE 23502 -> HTTP 500).
+        foreach (['student_id', 'contact', 'custody', 'attachment'] as $column) {
+            $data[$column] = trim((string) ($data[$column] ?? ''));
+        }
+
+        return $data;
     }
 
     /** @return list<string> */
