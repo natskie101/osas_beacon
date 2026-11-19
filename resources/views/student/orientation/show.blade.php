@@ -14,6 +14,10 @@ $isVideo = $mediaFile !== null && str_starts_with((string) ($mediaFile['mime_typ
 $embedUrl = video_embed_url((string) ($module['video_url'] ?? ''));
 $contentType = (string) $module['content_type'];
 $isFileContent = in_array($contentType, ['File', 'Document / PDF', 'Slide Deck'], true);
+// Which player branch renders, so the container's modifier class can never
+// disagree with the markup below (iframe vs <video> vs placeholder mock).
+$showsEmbed = $embedUrl !== null && !$isFileContent;
+$showsVideo = $isVideo && !$showsEmbed;
 $contentLabel = match ($contentType) {
     'File', 'Document / PDF', 'Slide Deck' => $isVideo ? 'VIDEO' : 'FILE',
     'Link' => 'VIDEO',
@@ -58,7 +62,7 @@ $contentLabel = match ($contentType) {
             <div class="tracking-empty">No file has been attached to this module yet.</div>
         <?php endif; ?>
     <?php else: ?>
-        <div class="or-player{!! $embedUrl !== null ? ' or-player--embed' : '' !!}">
+        <div class="or-player{!! $showsEmbed ? ' or-player--embed' : '' !!}{!! $showsVideo ? ' or-player--video' : '' !!}">
             <?php if ($embedUrl !== null && !$isFileContent): ?>
                 <iframe src="{{ $embedUrl }}" title="{{ $module['title'] }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             <?php elseif ($isVideo): ?>
@@ -66,7 +70,7 @@ $contentLabel = match ($contentType) {
                 <div class="or-player__controls">
                     <button type="button" class="or-player__toggle" id="moduleVideoToggle" aria-label="Play video"><span class="or-player__glyph" aria-hidden="true"></span></button>
                     <div class="or-player__track" aria-hidden="true"><span id="moduleVideoFill"></span></div>
-                    <span class="or-player__clock" id="moduleVideoTime">0:00 / 0:00</span>
+                    <span class="or-player__clock" id="moduleVideoTime">0:00 / {!! (int) $module['duration_minutes'] !!}:00</span>
                 </div>
             <?php else: ?>
                 <div class="or-player__mock">
@@ -145,6 +149,10 @@ $contentLabel = match ($contentType) {
     var csrf = @json(csrf_token());
     var last = 0;
     var sending = false;
+    // Until the metadata arrives (a signed R2 redirect can take a while) the
+    // element reports no duration, so the clock shows the module's stated
+    // length instead of 0:00 / 0:00. Real metadata replaces it on its own.
+    var seeded = {!! (int) $module['duration_minutes'] * 60 !!};
 
     function fmt(seconds) {
         if (!isFinite(seconds) || seconds < 0) seconds = 0;
@@ -154,7 +162,7 @@ $contentLabel = match ($contentType) {
     }
 
     function paint() {
-        var duration = video.duration || 0;
+        var duration = isFinite(video.duration) && video.duration > 0 ? video.duration : seeded;
         fill.style.width = (duration ? Math.min((video.currentTime / duration) * 100, 100) : 0) + '%';
         clock.textContent = fmt(video.currentTime) + ' / ' + fmt(duration);
     }
