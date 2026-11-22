@@ -84,7 +84,11 @@ final class RememberToken
     {
         setcookie((string) config('app.remember.cookie', 'beacon_remember'), $value, [
             'expires' => $expires,
-            'path' => base_path('/') ?: '/',
+            // The URL root, NOT base_path(): base_path() is the filesystem
+            // directory (/var/www/html/ in the Docker image), which no request
+            // path ever matches — browsers stored the cookie under that Path
+            // and never sent it back, so remember-me never fired in production.
+            'path' => '/',
             'secure' => (bool) config('app.session.secure', false),
             'httponly' => true,
             'samesite' => 'Lax',
