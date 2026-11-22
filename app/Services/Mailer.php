@@ -11,7 +11,7 @@ final class Mailer
 {
     public static function send(string $to, string $subject, string $body): bool
     {
-        $mailer = (string) config('mail.mailer', 'smtp');
+        $mailer = (string) config('mail.mailer', 'log');
 
         if ($mailer === 'log') {
             $line = sprintf(
@@ -30,9 +30,7 @@ final class Mailer
                 mkdir($directory, 0775, true);
             }
 
-            file_put_contents($path, $line, FILE_APPEND | LOCK_EX);
-
-            return true;
+            return (bool) file_put_contents($path, $line, FILE_APPEND | LOCK_EX);
         }
 
         try {
