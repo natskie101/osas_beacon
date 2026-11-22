@@ -12,6 +12,7 @@ use App\Models\RememberToken;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\LoginThrottle;
+use App\Support\LastEmailCookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,9 @@ final class LoginController extends Controller
             'error' => session('error'),
             'status' => session('status'),
             'registrationSuccess' => session('registration_success'),
-            'old' => ['email' => old('email', '')],
+            // Flash first (a failed login repopulates the typed address for
+            // this view), then the remembered address from the last sign-in.
+            'old' => ['email' => old('email', '') ?: LastEmailCookie::get()],
             'demoMode' => (bool) config('app.demo_mode', false),
         ]);
     }
@@ -56,6 +59,10 @@ final class LoginController extends Controller
 
         LoginThrottle::clear($data['email']);
         AuditLogger::login($result['user'], $ip, $request->header('user-agent'));
+
+        // Remember the signed-in address so the form is prefilled next time;
+        // a different account signing in overwrites it. Never the password.
+        LastEmailCookie::set($data['email']);
 
         $role = auth_role();
         $intended = session()->pull('url.intended');
