@@ -2,7 +2,6 @@
 @section('content')
 <?php
 /** @var array<string, string> $errors */
-/** @var string $token */
 /** @var string $email */
 ?>
 <div class="auth__header">
@@ -17,9 +16,8 @@
     </div>
 <?php endif; ?>
 
-<form class="auth__form-inner" method="POST" action="{!! url('/reset-password') !!}" novalidate>
+<form class="auth__form-inner" method="POST" action="{!! url('/reset-password/new') !!}" novalidate>
     {!! csrf_field() !!}
-    <input type="hidden" name="token" value="{{ $token }}">
 
     <div class="field">
         <label for="email">University Email</label>

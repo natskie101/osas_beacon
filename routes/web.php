@@ -60,8 +60,10 @@ Route::middleware(['guest'])->group(function () {
 /* Password reset */
 Route::get('/forgot-password', [ForgotPasswordController::class, 'show']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->middleware('throttle:10,3600');
-Route::get('/reset-password/{token}', [ResetPasswordController::class, 'show']);
-Route::post('/reset-password', [ResetPasswordController::class, 'store'])->middleware('throttle:10,600');
+Route::get('/reset-password/verify', [ResetPasswordController::class, 'showVerify']);
+Route::post('/reset-password/verify', [ResetPasswordController::class, 'storeVerify'])->middleware('throttle:10,600');
+Route::get('/reset-password/new', [ResetPasswordController::class, 'showNew']);
+Route::post('/reset-password/new', [ResetPasswordController::class, 'storeNew'])->middleware('throttle:10,600');
 
 /* Authenticated routes */
 Route::middleware(['auth'])->group(function () {

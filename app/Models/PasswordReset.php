@@ -14,17 +14,17 @@ final class PasswordReset
     {
         self::deleteForEmail((string) $user['email']);
 
-        $token = Str::random(32);
+        $code = sprintf('%06d', random_int(0, 999999));
 
         DB::table('password_resets')->insert([
             'user_id' => (int) $user['id'],
             'email' => (string) $user['email'],
-            'token_hash' => hash('sha256', $token),
+            'token_hash' => hash('sha256', $code),
             'expires_at' => date('Y-m-d H:i:s', time() + 900),
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
-        return $token;
+        return $code;
     }
 
     /** @return array<string, mixed>|null */
@@ -33,6 +33,29 @@ final class PasswordReset
         $row = DB::table('password_resets as pr')
             ->join('users as u', 'u.id', '=', 'pr.user_id')
             ->where('pr.token_hash', hash('sha256', $token))
+            ->select('pr.*', 'u.first_name', 'u.last_name', 'u.email')
+            ->first();
+
+        if ($row === null) {
+            return null;
+        }
+
+        $row = (array) $row;
+
+        if ($row['used_at'] !== null || strtotime((string) $row['expires_at']) < time()) {
+            return null;
+        }
+
+        return $row;
+    }
+
+    /** @return array<string, mixed>|null */
+    public static function findValidByCode(string $email, string $code): ?array
+    {
+        $row = DB::table('password_resets as pr')
+            ->join('users as u', 'u.id', '=', 'pr.user_id')
+            ->where('pr.email', mb_strtolower(trim($email)))
+            ->where('pr.token_hash', hash('sha256', trim($code)))
             ->select('pr.*', 'u.first_name', 'u.last_name', 'u.email')
             ->first();
 

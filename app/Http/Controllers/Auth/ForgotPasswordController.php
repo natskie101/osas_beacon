@@ -32,22 +32,21 @@ final class ForgotPasswordController extends Controller
         $user = User::findByEmail($data['email']);
 
         if ($user !== null) {
-            $token = PasswordReset::createForUser($user);
-            $resetUrl = absolute_url('/reset-password/' . $token);
+            $code = PasswordReset::createForUser($user);
 
             Mailer::send(
                 (string) $user['email'],
-                'Reset your BEACON OSAS password',
+                'Your BEACON OSAS Password Reset Code',
                 "Hello " . User::fullName($user) . ",\n\n"
-                . "Use the link below to choose a new password. It expires in 15 minutes.\n\n"
-                . $resetUrl . "\n\n"
+                . "Your 6-digit password reset code is: " . $code . "\n\n"
+                . "This code expires in 15 minutes.\n\n"
                 . "If you did not request this, you can ignore this message.\n",
             );
 
             AuditLogger::log(
                 'auth.password_reset_requested',
                 'Password Reset Requested',
-                'A password reset link was requested for ' . $user['email'] . '.',
+                'A password reset code was requested for ' . $user['email'] . '.',
                 [
                     'target_user_id' => (int) $user['id'],
                     'entity_type' => 'user',
@@ -59,8 +58,9 @@ final class ForgotPasswordController extends Controller
             );
         }
 
-        session()->flash('status', 'If that email belongs to a portal account, reset instructions are being processed. Any reset link expires in 15 minutes.');
+        session()->flash('status', 'If that email belongs to a portal account, a 6-digit reset code has been sent. It expires in 15 minutes.');
+        session()->flash('reset_email', $data['email']);
 
-        return redirect(url('/forgot-password'));
+        return redirect(url('/reset-password/verify'));
     }
 }
