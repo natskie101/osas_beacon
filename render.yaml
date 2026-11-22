@@ -51,6 +51,16 @@ services:
         sync: false
       - key: MAIL_MAILER
         value: log
+      - key: MAIL_HOST
+        value: smtp-relay.brevo.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
       - key: MAIL_FROM_ADDRESS
         value: osas.support@uc.edu.ph
       - key: MAIL_FROM_NAME

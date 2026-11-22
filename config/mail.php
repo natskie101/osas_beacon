@@ -7,4 +7,17 @@ return [
     'from_address' => env('MAIL_FROM_ADDRESS', 'osas.support@uc.edu.ph'),
     'from_name' => env('MAIL_FROM_NAME', 'BEACON OSAS Portal'),
     'log_path' => BASE_PATH . '/storage/logs/mail.log',
+
+    'mailers' => [
+        'smtp' => [
+            'transport' => 'smtp',
+            'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+            'port' => (int) env('MAIL_PORT', 587),
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            'username' => env('MAIL_USERNAME'),
+            'password' => env('MAIL_PASSWORD'),
+            'timeout' => null,
+            'auth_mode' => null,
+        ],
+    ],
 ];

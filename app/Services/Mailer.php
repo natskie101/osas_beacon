@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Mail;
+
 final class Mailer
 {
     public static function send(string $to, string $subject, string $body): bool
     {
-        if ((string) config('mail.mailer', 'log') === 'log') {
+        $mailer = (string) config('mail.mailer', 'log');
+
+        if ($mailer === 'log') {
             $line = sprintf(
                 "[%s] To: %s\nSubject: %s\n\n%s\n%s\n",
                 date('Y-m-d H:i:s'),
@@ -30,15 +34,19 @@ final class Mailer
             return true;
         }
 
-        $fromAddress = (string) config('mail.from_address');
-        $fromName = (string) config('mail.from_name');
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-type: text/plain; charset=UTF-8',
-            'From: ' . $fromName . ' <' . $fromAddress . '>',
-            'Reply-To: ' . $fromAddress,
-        ];
+        try {
+            $fromAddress = (string) config('mail.from_address');
+            $fromName = (string) config('mail.from_name');
 
-        return mail($to, $subject, $body, implode("\r\n", $headers));
+            Mail::mailer($mailer)->raw($body, static function ($message) use ($to, $subject, $fromAddress, $fromName): void {
+                $message->to($to)
+                    ->subject($subject)
+                    ->from($fromAddress, $fromName);
+            });
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }
