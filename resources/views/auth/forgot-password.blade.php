@@ -29,12 +29,6 @@ if ($errorMessage !== null) {
     <p class="auth__subtitle">Enter the university email address on your portal account.</p>
 </div>
 
-<?php if (config('mail.mailer', 'log') === 'log'): ?>
-    <aside class="auth-reset-note" role="note">
-        Local email delivery is logged to <code>storage/logs/mail.log</code>.
-    </aside>
-<?php endif; ?>
-
 <form class="auth__form-inner" method="POST" action="{!! url('/forgot-password') !!}" novalidate>
     {!! csrf_field() !!}
     <div class="field">
