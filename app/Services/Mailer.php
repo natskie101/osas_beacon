@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 final class Mailer
 {
     public static function send(string $to, string $subject, string $body): bool
     {
-        $mailer = (string) config('mail.mailer', 'log');
+        $mailer = (string) config('mail.mailer', 'smtp');
 
         if ($mailer === 'log') {
             $line = sprintf(
@@ -46,6 +47,12 @@ final class Mailer
 
             return true;
         } catch (\Throwable $e) {
+            Log::error('Mail delivery failed: ' . $e->getMessage(), [
+                'to' => $to,
+                'subject' => $subject,
+                'exception' => $e,
+            ]);
+
             return false;
         }
     }
