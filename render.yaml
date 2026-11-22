@@ -62,7 +62,7 @@ services:
       - key: MAIL_ENCRYPTION
         value: tls
       - key: MAIL_FROM_ADDRESS
-        value: noreply@osas-beacon.onrender.com
+        value: carlosnath991@gmail.com
       - key: MAIL_FROM_NAME
         value: BEACON OSAS Portal
       - key: NVIDIA_API_KEY
