@@ -11,7 +11,7 @@ final class Mailer
 {
     public static function send(string $to, string $subject, string $body): bool
     {
-        $mailer = (string) config('mail.mailer', 'log');
+        $mailer = (string) (config('mail.default') ?? config('mail.mailer', env('APP_ENV') === 'production' ? 'smtp' : 'log'));
 
         if ($mailer === 'log') {
             $line = sprintf(
@@ -34,8 +34,8 @@ final class Mailer
         }
 
         try {
-            $fromAddress = (string) config('mail.from_address');
-            $fromName = (string) config('mail.from_name');
+            $fromAddress = (string) (config('mail.from.address') ?? config('mail.from_address', 'carlosnath991@gmail.com'));
+            $fromName = (string) (config('mail.from.name') ?? config('mail.from_name', 'BEACON OSAS Portal'));
 
             Mail::mailer($mailer)->raw($body, static function ($message) use ($to, $subject, $fromAddress, $fromName): void {
                 $message->to($to)
