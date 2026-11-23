@@ -16,12 +16,12 @@ return [
     'mailers' => [
         'smtp' => [
             'transport' => 'smtp',
-            'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
-            'port' => (int) env('MAIL_PORT', 587),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+            'port' => (int) env('MAIL_PORT', 465),
+            'encryption' => env('MAIL_ENCRYPTION', 'ssl'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => 5,
+            'timeout' => (int) env('MAIL_TIMEOUT', 15),
             'auth_mode' => null,
         ],
         'log' => [
