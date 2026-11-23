@@ -34,7 +34,7 @@ final class ForgotPasswordController extends Controller
         if ($user !== null) {
             $code = PasswordReset::createForUser($user);
 
-            Mailer::send(
+            $sent = Mailer::send(
                 (string) $user['email'],
                 'Your BEACON OSAS Password Reset Code',
                 "Hello " . User::fullName($user) . ",\n\n"
@@ -43,19 +43,23 @@ final class ForgotPasswordController extends Controller
                 . "If you did not request this, you can ignore this message.\n",
             );
 
-            AuditLogger::log(
-                'auth.password_reset_requested',
-                'Password Reset Requested',
-                'A password reset code was requested for ' . $user['email'] . '.',
-                [
-                    'target_user_id' => (int) $user['id'],
-                    'entity_type' => 'user',
-                    'entity_id' => (string) $user['public_id'],
-                    'tone' => 'warning',
-                    'icon' => 'mail',
-                    'ip_address' => $request->ip(),
-                ],
-            );
+            if (!$sent) {
+                PasswordReset::deleteForEmail((string) $user['email']);
+            } else {
+                AuditLogger::log(
+                    'auth.password_reset_requested',
+                    'Password Reset Requested',
+                    'A password reset code was requested for ' . $user['email'] . '.',
+                    [
+                        'target_user_id' => (int) $user['id'],
+                        'entity_type' => 'user',
+                        'entity_id' => (string) $user['public_id'],
+                        'tone' => 'warning',
+                        'icon' => 'mail',
+                        'ip_address' => $request->ip(),
+                    ],
+                );
+            }
         }
 
         session()->flash('status', 'If that email belongs to a portal account, a 6-digit reset code has been sent. It expires in 15 minutes.');
