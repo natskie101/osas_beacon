@@ -67,12 +67,7 @@ if ($message !== null) {
         </span>
     </div>
 
-    <div class="field field--inline">
-        <label class="checkbox">
-            <input type="checkbox" name="remember" value="1">
-            <span class="checkbox__box"></span>
-            <span>Remember this device</span>
-        </label>
+    <div class="field field--inline" style="justify-content: flex-end;">
         <a href="{!! url('/forgot-password') !!}" class="link">Forgot Password?</a>
     </div>
 
