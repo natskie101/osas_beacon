@@ -67,6 +67,8 @@ services:
         value: carlosnath991@gmail.com
       - key: MAIL_FROM_NAME
         value: BEACON OSAS Portal
+      - key: BREVO_API_KEY
+        sync: false
       - key: NVIDIA_API_KEY
         sync: false
       - key: NVIDIA_BASE_URL
