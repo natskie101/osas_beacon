@@ -10,7 +10,10 @@ final class OrientationReportService
 {
     public static function studentCount(): int
     {
-        return DB::table('users')->where('role', 'Student')->count();
+        return DB::table('users')
+            ->where('role', 'Student')
+            ->whereIn('status', ['Active', 'Inactive'])
+            ->count();
     }
 
     /** @return array{rate:float,mandatory:int,students:int,compliant:int,in_progress:int,not_started:int,reports:int,records:int} */
@@ -56,7 +59,8 @@ final class OrientationReportService
         $students = self::studentCount();
         $rows = DB::table('orientation_modules as m')
             ->selectRaw("m.*, (SELECT COUNT(*) FROM orientation_progress p JOIN users u ON u.id = p.user_id
-                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student') AS completed")
+                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student'
+                    AND u.status IN ('Active', 'Inactive')) AS completed")
             ->where('m.mandatory', 1)
             ->where('m.status', 'Published')
             ->orderBy('m.id')
@@ -114,7 +118,8 @@ final class OrientationReportService
         $module = DB::table('orientation_modules as m')
             ->selectRaw("m.*, (SELECT COUNT(*) FROM orientation_progress p
                     JOIN users u ON u.id = p.user_id
-                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student') AS completed")
+                    WHERE p.module_id = m.id AND p.status = 'Completed' AND u.role = 'Student'
+                    AND u.status IN ('Active', 'Inactive')) AS completed")
             ->where('m.public_id', $publicId)
             ->where('m.mandatory', 1)
             ->limit(1)
@@ -143,6 +148,7 @@ final class OrientationReportService
             ->where('p.module_id', $moduleId)
             ->where('p.status', 'Completed')
             ->where('u.role', 'Student')
+            ->whereIn('u.status', ['Active', 'Inactive'])
             ->orderByRaw('p.completed_at DESC, u.last_name ASC')
             ->get()
             ->map(static fn (object $row): array => (array) $row)

@@ -166,12 +166,15 @@ final class User
         ]);
     }
 
-    /** @return array{total: int, students: int, active: int, active_students: int, signed_in_students: int, pending: int, inactive: int, staff: int, coordinators: int, administrators: int, latest_created_at: string|null} */
+    /** @return array{total: int, verified: int, students: int, verified_students: int, verified_staff: int, active: int, active_students: int, signed_in_students: int, pending: int, inactive: int, staff: int, coordinators: int, administrators: int, latest_created_at: string|null} */
     public static function counts(): array
     {
         $row = DB::table('users')
             ->selectRaw("COUNT(*) AS total,
+                    SUM(CASE WHEN status IN ('Active', 'Inactive') THEN 1 ELSE 0 END) AS verified,
                     SUM(CASE WHEN role = 'Student' THEN 1 ELSE 0 END) AS students,
+                    SUM(CASE WHEN role = 'Student' AND status IN ('Active', 'Inactive') THEN 1 ELSE 0 END) AS verified_students,
+                    SUM(CASE WHEN role <> 'Student' AND status IN ('Active', 'Inactive') THEN 1 ELSE 0 END) AS verified_staff,
                     SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS active,
                     SUM(CASE WHEN role = 'Student' AND status = 'Active' THEN 1 ELSE 0 END) AS active_students,
                     SUM(CASE WHEN role = 'Student' AND last_login_at IS NOT NULL THEN 1 ELSE 0 END) AS signed_in_students,
@@ -186,7 +189,10 @@ final class User
 
         return [
             'total' => (int) ($row['total'] ?? 0),
+            'verified' => (int) ($row['verified'] ?? 0),
             'students' => (int) ($row['students'] ?? 0),
+            'verified_students' => (int) ($row['verified_students'] ?? 0),
+            'verified_staff' => (int) ($row['verified_staff'] ?? 0),
             'active' => (int) ($row['active'] ?? 0),
             'active_students' => (int) ($row['active_students'] ?? 0),
             'signed_in_students' => (int) ($row['signed_in_students'] ?? 0),

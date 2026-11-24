@@ -2,7 +2,7 @@
 @section('content')
 <?php
 /** @var array<string, mixed> $user */
-/** @var array{total:int,students:int,active:int,pending:int,inactive:int,staff:int} $counts */
+/** @var array{total:int,verified:int,students:int,verified_students:int,verified_staff:int,active:int,pending:int,inactive:int,staff:int} $counts */
 /** @var list<array<string, mixed>> $recent */
 /** @var array{support_pending:int,support_open:int,support_in_progress:int,documents_pending:int,documents_submitted:int,documents_review:int,documents_ready:int,lost_found_pending:int,lost_found_claims:int,events_upcoming:int,announcements_published:int} $operations */
 ?>
@@ -21,9 +21,9 @@
 
 <div class="stats">
     <div class="stat">
-        <div class="stat__label">Portal Accounts</div>
-        <div class="stat__value">{!! number_format($counts['total']) !!}</div>
-        <div class="stat__sub">{!! number_format($counts['students']) !!} students &middot; {!! number_format($counts['staff']) !!} staff</div>
+        <div class="stat__label">Verified Portal Accounts</div>
+        <div class="stat__value">{!! number_format($counts['verified']) !!}</div>
+        <div class="stat__sub">{!! number_format($counts['verified_students']) !!} verified students &middot; {!! number_format($counts['verified_staff']) !!} staff</div>
     </div>
     <div class="stat">
         <div class="stat__label">Active Accounts</div>

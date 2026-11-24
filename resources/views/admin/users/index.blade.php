@@ -31,9 +31,9 @@ $directoryUrl = url('/admin/users?tab=directory');
 
 <div class="stats um-stats">
     <div class="stat">
-        <div class="stat__label">Registered Students</div>
-        <div class="stat__value">{!! number_format($counts['students'] ?? 0) !!}</div>
-        <div class="stat__sub"><span class="badge badge--info">All students</span> Joined {{ $joined }}</div>
+        <div class="stat__label">Verified Students</div>
+        <div class="stat__value">{!! number_format($counts['verified_students'] ?? 0) !!}</div>
+        <div class="stat__sub"><span class="badge badge--verified">Verified</span> Joined {{ $joined }}</div>
     </div>
     <div class="stat">
         <div class="stat__label">Active Student Accounts</div>

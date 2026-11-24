@@ -37,6 +37,7 @@ final class Participation
                 'status',
             )
             ->where('role', 'Student')
+            ->whereIn('status', ['Active', 'Inactive'])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()
