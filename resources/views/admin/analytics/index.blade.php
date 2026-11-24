@@ -51,6 +51,14 @@ $tabUrl = static fn (string $key): string => url('/admin/analytics?' . http_buil
             <div class="panel-title" style="font-size: 13px; color: var(--ink); margin-bottom: 4px;">Student Participation &amp; Orientation Ledger</div>
             <p class="panel-card__sub" style="max-width: 600px;">Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.</p>
         </div>
+    </div>
+
+    <div class="analytics-ledger__toolbar">
+        <div class="tabs analytics-tabs">
+            <a class="tab{!! $tab === 'all' ? ' tab--on' : '' !!}" href="{!! $tabUrl('all') !!}">All Student Logs ({!! number_format($summary['total']) !!})</a>
+            <a class="tab{!! $tab === 'progress' ? ' tab--on' : '' !!}" href="{!! $tabUrl('progress') !!}">Orientation Progress ({!! number_format($summary['in_progress']) !!})</a>
+            <a class="tab{!! $tab === 'at-risk' ? ' tab--on' : '' !!}" href="{!! $tabUrl('at-risk') !!}">At-Risk / Incomplete ({!! number_format($summary['at_risk']) !!})</a>
+        </div>
         <form class="analytics-ledger__filters" method="GET" action="{!! url('/admin/analytics') !!}">
             <input type="hidden" name="tab" value="{{ $tab }}">
             <span class="input-group">
@@ -62,12 +70,6 @@ $tabUrl = static fn (string $key): string => url('/admin/analytics?' . http_buil
                 <?php foreach ($programs as $program): ?><option value="{{ $program }}"{!! ($filters['program'] ?? '') === $program ? ' selected' : '' !!}>{{ $program }}</option><?php endforeach; ?>
             </select>
         </form>
-    </div>
-
-    <div class="tabs analytics-tabs">
-        <a class="tab{!! $tab === 'all' ? ' tab--on' : '' !!}" href="{!! $tabUrl('all') !!}">All Student Logs ({!! number_format($summary['total']) !!})</a>
-        <a class="tab{!! $tab === 'progress' ? ' tab--on' : '' !!}" href="{!! $tabUrl('progress') !!}">Orientation Progress ({!! number_format($summary['in_progress']) !!})</a>
-        <a class="tab{!! $tab === 'at-risk' ? ' tab--on' : '' !!}" href="{!! $tabUrl('at-risk') !!}">At-Risk / Incomplete ({!! number_format($summary['at_risk']) !!})</a>
     </div>
 </section>
 
