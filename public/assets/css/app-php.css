@@ -7630,18 +7630,33 @@ body .sr-badge svg {
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .topbar__search-trigger:hover {
   background: #fff;
   border-color: #cbd5e1;
   color: var(--ink);
 }
+/* Touch devices have no physical keyboard, so drop the shortcut hint first. */
+@media (max-width: 900px) {
+  .topbar__search-trigger .cmd-palette__kbd {
+    display: none;
+  }
+}
+/* Icon-only button on phones. */
 @media (max-width: 640px) {
+  .topbar__search-trigger {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+  }
   .topbar__search-trigger span {
     display: none;
   }
-  .topbar__search-trigger {
-    padding: 7px;
+  .cmd-palette {
+    padding: 8vh 12px 12px;
   }
 }
 
