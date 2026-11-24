@@ -137,7 +137,11 @@ $directoryUrl = url('/admin/users?tab=directory');
                             <td class="u-right">
                                 <div class="cell-actions">
                                     <?php if ($tab === 'queue'): ?>
-                                        <a class="btn btn--primary btn--sm" href="{!! url('/admin/users/' . $account['public_id']) !!}">Review</a>
+                                        <form method="POST" action="{!! url('/admin/users/' . $account['public_id'] . '/verify') !!}" data-confirm="Verify and activate {{ trim($account['first_name'] . ' ' . $account['last_name']) }}?">
+                                            {!! csrf_field() !!}
+                                            <button class="btn btn--success btn--sm" type="submit">{!! App\Support\Icons::render('check', 13) !!} Verify</button>
+                                        </form>
+                                        <a class="btn btn--outline btn--sm" href="{!! url('/admin/users/' . $account['public_id']) !!}">Review</a>
                                     <?php else: ?>
                                         <?php if ($canManage): ?><a class="btn btn--outline btn--sm" href="{!! url('/admin/users/' . $account['public_id'] . '/edit') !!}">Manage</a><?php endif; ?>
                                         <?php if ($account['status'] === 'Active' && $canManage): ?>

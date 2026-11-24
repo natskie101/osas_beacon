@@ -48,12 +48,15 @@ $tabUrl = static fn (string $key): string => url('/admin/analytics?' . http_buil
 <section class="card panel-card analytics-ledger">
     <div class="analytics-ledger__head">
         <div>
-            <div class="panel-title">Student Participation &amp; Orientation Ledger</div>
-            <p class="panel-card__sub">Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.</p>
+            <div class="panel-title" style="font-size: 13px; color: var(--ink); margin-bottom: 4px;">Student Participation &amp; Orientation Ledger</div>
+            <p class="panel-card__sub" style="max-width: 600px;">Monitor portal content reach, engagement quality, and viewing activity across all broadcasting modules.</p>
         </div>
         <form class="analytics-ledger__filters" method="GET" action="{!! url('/admin/analytics') !!}">
             <input type="hidden" name="tab" value="{{ $tab }}">
-            <span class="input-group"><span class="input-group__ico">{!! App\Support\Icons::render('search', 15) !!}</span><input class="input" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search student ID, name, program..."></span>
+            <span class="input-group">
+                <span class="input-group__ico">{!! App\Support\Icons::render('search', 15) !!}</span>
+                <input class="input" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search student ID, name, program..." type="search">
+            </span>
             <select class="input" name="program">
                 <option value="">All programs</option>
                 <?php foreach ($programs as $program): ?><option value="{{ $program }}"{!! ($filters['program'] ?? '') === $program ? ' selected' : '' !!}>{{ $program }}</option><?php endforeach; ?>

@@ -68,11 +68,17 @@ final class SupportController extends Controller
     {
         $actor = auth_user();
         $ticket = $this->find($publicId);
-        $data = $this->validate($request, ['body' => 'required|string|max:4000']);
+        $data = $this->validate($request, [
+            'body' => 'required|string|max:4000',
+            'status' => 'nullable|in:Open,In Progress,Resolved,Closed',
+        ]);
         $author = trim((string) $actor['first_name'] . ' ' . (string) $actor['last_name']);
         SupportTicket::addMessage((int) $ticket['id'], $author, 'OSAS Support', $data['body']);
 
-        if (in_array($ticket['status'], ['Open', 'Resolved'], true)) {
+        $nextStatus = $data['status'] ?? null;
+        if (!empty($nextStatus)) {
+            SupportTicket::update((int) $ticket['id'], ['status' => $nextStatus]);
+        } elseif (in_array($ticket['status'], ['Open', 'Resolved'], true)) {
             SupportTicket::update((int) $ticket['id'], ['status' => 'In Progress']);
         }
 

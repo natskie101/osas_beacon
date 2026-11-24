@@ -563,9 +563,9 @@
       });
     }
 
-    /* Close the account menu when clicking outside it */
+    /* Close the account menu or notification popover when clicking outside it */
     document.addEventListener("click", function (event) {
-      document.querySelectorAll("details.account[open]").forEach(function (details) {
+      document.querySelectorAll("details.account[open], details.notif-menu[open]").forEach(function (details) {
         if (!details.contains(event.target)) details.removeAttribute("open");
       });
 
@@ -697,6 +697,297 @@
         });
         ingoStart();
       }
+    }
+
+    /* Toast notification helper */
+    function showToast(message, isError) {
+      var root = document.getElementById("toast-root");
+      if (!root) return;
+
+      var toast = document.createElement("div");
+      toast.className = "auth-signout-toast" + (isError ? " auth-signout-toast--error" : "");
+      toast.setAttribute("role", isError ? "alert" : "status");
+
+      var text = document.createElement("span");
+      text.textContent = message;
+
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "auth-signout-toast__close";
+      close.innerHTML = "&times;";
+      close.setAttribute("aria-label", "Dismiss notification");
+      close.addEventListener("click", function () { toast.remove(); });
+
+      toast.appendChild(text);
+      toast.appendChild(close);
+      root.appendChild(toast);
+
+      window.setTimeout(function () {
+        if (toast.isConnected) toast.remove();
+      }, 5000);
+    }
+
+    /* Client-side File Upload Size Pre-check (Max 10 MB) */
+    document.querySelectorAll('input[type="file"]').forEach(function (input) {
+      input.addEventListener("change", function () {
+        var file = input.files && input.files.length ? input.files[0] : null;
+        if (!file) return;
+
+        var maxBytes = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxBytes) {
+          var sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+          input.value = "";
+          updateUploadLabel(input);
+          showToast("File is too large (" + sizeMb + " MB). Maximum allowed size is 10 MB.", true);
+        }
+      });
+    });
+
+    /* Prevent Accidental Double-Submits on POST forms */
+    document.addEventListener("submit", function (event) {
+      var form = event.target;
+      if (!form || form.tagName !== "FORM") return;
+      if ((form.method || "GET").toUpperCase() !== "POST") return;
+      if (event.defaultPrevented) return;
+      if (form.dataset.submitting === "true") {
+        event.preventDefault();
+        return;
+      }
+
+      // Check HTML5 validity before locking button
+      if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+        return;
+      }
+
+      var submitter = event.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+      if (!submitter) return;
+
+      setTimeout(function () {
+        form.dataset.submitting = "true";
+        submitter.disabled = true;
+        submitter.classList.add("is-submitting");
+        var spinner = document.createElement("span");
+        spinner.className = "btn-spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        submitter.prepend(spinner);
+      }, 20);
+    }, true);
+
+    window.addEventListener("pageshow", function () {
+      document.querySelectorAll("form[data-submitting]").forEach(function (form) {
+        delete form.dataset.submitting;
+        form.querySelectorAll(".is-submitting").forEach(function (btn) {
+          btn.disabled = false;
+          btn.classList.remove("is-submitting");
+          var spinner = btn.querySelector(".btn-spinner");
+          if (spinner) spinner.remove();
+        });
+      });
+    });
+
+    /* Quick-Jump Command Palette (Ctrl + K) */
+    var cmdPalette = document.getElementById("cmd-palette");
+    var cmdInput = document.getElementById("cmd-palette-input");
+    var cmdList = document.getElementById("cmd-palette-list");
+    var cmdTrigger = document.getElementById("cmd-palette-trigger");
+    var cmdEmpty = document.getElementById("cmd-palette-empty");
+
+    if (cmdPalette && cmdInput && cmdList) {
+      var cmdItems = Array.prototype.slice.call(cmdList.querySelectorAll(".cmd-palette__item"));
+      var selectedIndex = -1;
+
+      function getVisibleItems() {
+        return cmdItems.filter(function (item) {
+          return !item.hidden;
+        });
+      }
+
+      function selectIndex(index) {
+        var visible = getVisibleItems();
+        if (visible.length === 0) {
+          selectedIndex = -1;
+          return;
+        }
+        if (index < 0) index = 0;
+        if (index >= visible.length) index = visible.length - 1;
+        selectedIndex = index;
+
+        cmdItems.forEach(function (item) {
+          item.classList.remove("is-selected");
+        });
+        visible[selectedIndex].classList.add("is-selected");
+        visible[selectedIndex].scrollIntoView({ block: "nearest" });
+      }
+
+      function openPalette() {
+        cmdPalette.classList.add("cmd-palette--open");
+        cmdInput.value = "";
+        filterPalette("");
+        cmdInput.focus();
+        selectIndex(0);
+      }
+
+      function closePalette() {
+        cmdPalette.classList.remove("cmd-palette--open");
+        if (cmdTrigger) cmdTrigger.focus();
+      }
+
+      function filterPalette(query) {
+        var term = query.toLowerCase().trim();
+        var matchCount = 0;
+
+        cmdItems.forEach(function (item) {
+          var title = item.getAttribute("data-cmd-title") || "";
+          var badge = item.getAttribute("data-cmd-badge") || "";
+          var match = !term || title.indexOf(term) !== -1 || badge.indexOf(term) !== -1;
+          item.hidden = !match;
+          if (match) matchCount++;
+        });
+
+        if (cmdEmpty) cmdEmpty.hidden = matchCount > 0;
+        selectIndex(0);
+      }
+
+      if (cmdTrigger) {
+        cmdTrigger.addEventListener("click", openPalette);
+      }
+
+      cmdPalette.addEventListener("click", function (event) {
+        if (event.target === cmdPalette) closePalette();
+      });
+
+      cmdInput.addEventListener("input", function () {
+        filterPalette(cmdInput.value);
+      });
+
+      cmdInput.addEventListener("keydown", function (event) {
+        var visible = getVisibleItems();
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closePalette();
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          selectIndex(selectedIndex + 1);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          selectIndex(selectedIndex - 1);
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          if (selectedIndex >= 0 && visible[selectedIndex]) {
+            window.location.href = visible[selectedIndex].href;
+          }
+        }
+      });
+
+      // Global shortcut: Ctrl+K or Cmd+K
+      document.addEventListener("keydown", function (event) {
+        var isK = event.key === "k" || event.key === "K";
+        if ((event.ctrlKey || event.metaKey) && isK) {
+          event.preventDefault();
+          if (cmdPalette.classList.contains("cmd-palette--open")) {
+            closePalette();
+          } else {
+            openPalette();
+          }
+        } else if (event.key === "Escape" && cmdPalette.classList.contains("cmd-palette--open")) {
+          closePalette();
+        }
+      });
+    }
+
+    /* Inactivity Session Warning for Shared Campus Computers */
+    var portal = document.body.getAttribute("data-portal");
+    if (portal === "student" || portal === "admin") {
+      var IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+      var COUNTDOWN_TOTAL = 120; // 2 minutes warning
+      var idleTimer = null;
+      var countdownTimer = null;
+      var remainingSeconds = COUNTDOWN_TOTAL;
+
+      var inactivityDialog = document.createElement("dialog");
+      inactivityDialog.className = "inactivity-dialog";
+      inactivityDialog.setAttribute("aria-labelledby", "inactivity-title");
+      inactivityDialog.innerHTML =
+        '<div class="inactivity-dialog__card">' +
+          '<div class="inactivity-dialog__icon">' +
+            '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>' +
+          '</div>' +
+          '<h2 class="inactivity-dialog__title" id="inactivity-title">Inactivity Warning</h2>' +
+          '<p class="inactivity-dialog__message">For your security on shared campus computers, your portal session will sign out in <strong id="inactivity-countdown">' + COUNTDOWN_TOTAL + '</strong> seconds.</p>' +
+          '<div class="inactivity-dialog__actions">' +
+            '<button type="button" class="btn btn--ghost" id="inactivity-signout">Sign Out</button>' +
+            '<button type="button" class="btn btn--primary" id="inactivity-extend">Stay Signed In</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(inactivityDialog);
+
+      var countdownEl = inactivityDialog.querySelector("#inactivity-countdown");
+      var extendBtn = inactivityDialog.querySelector("#inactivity-extend");
+      var signoutBtn = inactivityDialog.querySelector("#inactivity-signout");
+
+      function performSignOut() {
+        var logoutForm = document.querySelector('form[action$="/logout"]');
+        if (logoutForm) {
+          logoutForm.submit();
+        } else {
+          window.location.href = "/logout";
+        }
+      }
+
+      function showWarning() {
+        remainingSeconds = COUNTDOWN_TOTAL;
+        if (countdownEl) countdownEl.textContent = String(remainingSeconds);
+        if (typeof inactivityDialog.showModal === "function") {
+          inactivityDialog.showModal();
+        } else {
+          inactivityDialog.setAttribute("open", "");
+        }
+        if (extendBtn) extendBtn.focus();
+
+        countdownTimer = setInterval(function () {
+          remainingSeconds--;
+          if (countdownEl) countdownEl.textContent = String(remainingSeconds);
+          if (remainingSeconds <= 0) {
+            clearInterval(countdownTimer);
+            performSignOut();
+          }
+        }, 1000);
+      }
+
+      function resetIdle() {
+        clearTimeout(idleTimer);
+        clearInterval(countdownTimer);
+        if (inactivityDialog.open) {
+          if (typeof inactivityDialog.close === "function") {
+            inactivityDialog.close();
+          } else {
+            inactivityDialog.removeAttribute("open");
+          }
+        }
+        idleTimer = setTimeout(showWarning, IDLE_TIMEOUT);
+      }
+
+      if (extendBtn) {
+        extendBtn.addEventListener("click", resetIdle);
+      }
+      if (signoutBtn) {
+        signoutBtn.addEventListener("click", performSignOut);
+      }
+
+      var activityDebounce = null;
+      ["mousemove", "mousedown", "keydown", "touchstart", "scroll"].forEach(function (evt) {
+        window.addEventListener(evt, function () {
+          if (inactivityDialog.open) return;
+          if (activityDebounce) return;
+          activityDebounce = setTimeout(function () {
+            activityDebounce = null;
+            resetIdle();
+          }, 1000);
+        }, { passive: true });
+      });
+
+      resetIdle();
     }
   });
 

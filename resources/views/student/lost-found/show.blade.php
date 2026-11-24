@@ -14,18 +14,67 @@
         <?php if ($ownReport && $claims !== []): ?>
             <section class="card panel-card"><div class="panel-title">Claims on Your Report</div><div class="claim-list"><?php foreach ($claims as $claim): ?><article class="claim-card"><div class="claim-card__head"><div><strong>{{ $claim['claimant_name'] }}</strong><span>{{ $claim['claimant_email'] }} · {{ fmt_datetime($claim['created_at']) }}</span></div><span class="badge {{ status_class($claim['status']) }}">{{ $claim['status'] }}</span></div><p>{{ $claim['message'] }}</p></article><?php endforeach; ?></div></section>
         <?php elseif ($myClaim): ?>
-            <section class="card panel-card"><div class="panel-card__head"><div><div class="panel-title">Your Claim</div><p class="panel-card__sub">Submitted {{ fmt_datetime($myClaim['created_at']) }}</p></div><span class="badge {{ status_class($myClaim['status']) }}">{{ $myClaim['status'] }}</span></div><p class="panel-card__text">{{ $myClaim['message'] }}</p><div class="cell-sub">Proof: {{ $myClaim['proof'] }}</div></section>
+            <section class="card panel-card">
+                <div class="panel-card__head">
+                    <div>
+                        <div class="panel-title">Your Ownership Claim</div>
+                        <p class="panel-card__sub">Submitted on {{ fmt_datetime($myClaim['created_at']) }}</p>
+                    </div>
+                    <span class="badge {{ status_class($myClaim['status']) }}">{{ $myClaim['status'] }}</span>
+                </div>
+                <?php if ($myClaim['status'] === 'Pending'): ?>
+                    <div class="dr-stepper-alert dr-stepper-alert--amber" style="margin: 0 0 14px;">
+                        {!! App\Support\Icons::render('clock', 18) !!}
+                        <div>
+                            <strong>Claim Under Review</strong>
+                            <div>Your proof of ownership is being verified by OSAS coordinators. You will receive an alert once verified.</div>
+                        </div>
+                    </div>
+                <?php elseif ($myClaim['status'] === 'Verified'): ?>
+                    <div class="dr-stepper-alert dr-stepper-alert--danger" style="margin: 0 0 14px; background: var(--green-bg); border-color: var(--green-line); color: var(--green);">
+                        {!! App\Support\Icons::render('checkCircle', 18) !!}
+                        <div>
+                            <strong>Ownership Verified! Ready for Pickup</strong>
+                            <div>Please proceed to the OSAS office with your Southway College Student ID to retrieve your item.</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                <div class="detail-note">
+                    <strong>Proof Details Provided</strong>
+                    <p>{!! nl2br(e($myClaim['proof'])) !!}</p>
+                </div>
+                <div class="detail-note" style="margin-top: 10px;">
+                    <strong>Message to OSAS</strong>
+                    <p>{!! nl2br(e($myClaim['message'])) !!}</p>
+                </div>
+            </section>
         <?php elseif (!$ownReport): ?>
-            <section class="card panel-card"><div class="panel-card__head"><div><div class="panel-title">{!! $item['type'] === 'Found' ? 'Is this yours?' : 'Do you have information?' !!}</div><p class="panel-card__sub">Submit proof or details for OSAS verification.</p></div>{!! App\Support\Icons::render('shield', 22) !!}</div>
+            <section class="card panel-card">
+                <div class="panel-card__head">
+                    <div>
+                        <div class="panel-title">{!! $item['type'] === 'Found' ? 'Is this your item?' : 'Do you have information?' !!}</div>
+                        <p class="panel-card__sub">Submit ownership verification details to the OSAS custody desk.</p>
+                    </div>
+                    {!! App\Support\Icons::render('shield', 22) !!}
+                </div>
                 <?php if ($errors !== []): ?><div class="alert alert--danger"><div class="alert__text">{{ reset($errors) }}</div></div><?php endif; ?>
                 <?php if (in_array($item['status'], ['Open', 'Unclaimed', 'Claim Pending'], true)): ?>
-                    <form method="POST" action="{!! url('/student/lost-found/' . $item['public_id'] . '/claim') !!}" class="form-grid">
+                    <form method="POST" action="{!! url('/student/lost-found/' . $item['public_id'] . '/claim') !!}" class="form-grid" data-confirm="Submit this ownership claim to OSAS for verification?">
                         {!! csrf_field() !!}
-                        <div class="field"><label for="proof">Proof of ownership or information</label><textarea class="input" id="proof" name="proof" rows="3" required placeholder="e.g. The backpack has a scratched silver buckle and a library card inside.">{{ old('proof') }}</textarea><div class="help-text">Describe identifying details that only the owner would know.</div></div>
-                        <div class="field"><label for="message">Message to OSAS</label><textarea class="input" id="message" name="message" rows="3" required placeholder="e.g. I lost this around 4 PM - happy to pick it up at the OSAS office.">{{ old('message') }}</textarea></div>
-                        <button class="btn btn--primary" type="submit">Submit Claim</button>
+                        <div class="field">
+                            <label for="proof">Proof of Ownership / Identifying Characteristics <span class="req">*</span></label>
+                            <textarea class="input" id="proof" name="proof" rows="3" required placeholder="Specify unique markings, serial numbers, case/brand, internal contents, or lockscreen/wallpaper that only the owner would know.">{{ old('proof') }}</textarea>
+                            <div class="help-text">OSAS verifies these details against the physical item in custody before release.</div>
+                        </div>
+                        <div class="field">
+                            <label for="message">Loss Details &amp; Contact Note <span class="req">*</span></label>
+                            <textarea class="input" id="message" name="message" rows="2" required placeholder="e.g. When and where you misplaced it, your phone number, or preferred pickup time.">{{ old('message') }}</textarea>
+                        </div>
+                        <button class="btn btn--primary" type="submit">Submit Verification Claim</button>
                     </form>
-                <?php else: ?><p class="panel-card__text">This item is no longer accepting claims.</p><?php endif; ?>
+                <?php else: ?>
+                    <p class="panel-card__text">This item is no longer accepting claims.</p>
+                <?php endif; ?>
             </section>
         <?php endif; ?>
     </div>

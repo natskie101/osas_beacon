@@ -6,6 +6,7 @@
 /** @var int|null $announcementCount */
 /** @var list<array<string, mixed>> $infographics */
 /** @var array<string, mixed>|null $featuredModule */
+/** @var array{completed:int,in_progress:int,not_started:int,total:int,percent:float} $orientation */
 /** @var int|null $activeTickets */
 /** @var int|null $activeRequests */
 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
@@ -78,15 +79,33 @@ $latest = $announcements[0] ?? null;
 
         <aside class="sd-side">
             <section class="sd-card sd-side-card">
-                <div class="sd-label">Orientation</div>
-                <?php if ($featuredModule !== null): ?>
-                    <h3>{{ $featuredModule['title'] }}</h3>
-                    <p>Please read the Orientation Module for the instructions.</p>
-                    <a class="sd-link" href="{!! url('/student/orientation/' . $featuredModule['public_id']) !!}">Instructions <span>&rarr;</span></a>
+                <div class="sd-label">Orientation &amp; Compliance</div>
+                <?php
+                $orCompleted = (int) ($orientation['completed'] ?? 0);
+                $orTotal = (int) ($orientation['total'] ?? 0);
+                $orPercent = (float) ($orientation['percent'] ?? 0);
+                $isFullyCompliant = $orTotal > 0 && $orCompleted >= $orTotal;
+                ?>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+                    <strong style="font-size: 14px; color: var(--ink);">{!! $orCompleted !!} of {!! $orTotal !!} Completed</strong>
+                    <span style="font-size: 12px; font-weight: 700; color: {!! $isFullyCompliant ? 'var(--green)' : 'var(--brand)' !!};">{!! $orPercent !!}%</span>
+                </div>
+                <div class="or-compliance-card__bar-wrap">
+                    <div class="or-compliance-card__bar{!! $isFullyCompliant ? ' or-compliance-card__bar--complete' : '' !!}" style="width: {!! $orPercent !!}%;"></div>
+                </div>
+                <div class="or-compliance-card__meta">
+                    <?php if ($isFullyCompliant): ?>
+                        <span class="or-compliance-card__badge or-compliance-card__badge--complete">{!! App\Support\Icons::render('checkCircle', 13) !!} Compliant</span>
+                    <?php else: ?>
+                        <span class="or-compliance-card__badge or-compliance-card__badge--pending">{!! App\Support\Icons::render('clock', 13) !!} {!! max(0, $orTotal - $orCompleted) !!} {!! (max(0, $orTotal - $orCompleted) === 1) ? 'module' : 'modules' !!} remaining</span>
+                    <?php endif; ?>
+                    <span>Required for clearance</span>
+                </div>
+                <?php if ($featuredModule !== null && !$isFullyCompliant): ?>
+                    <p style="margin-top: 10px;">Next module: <strong>{{ $featuredModule['title'] }}</strong></p>
+                    <a class="sd-link" href="{!! url('/student/orientation/' . $featuredModule['public_id']) !!}">Continue Orientation <span>&rarr;</span></a>
                 <?php else: ?>
-                    <h3>Orientation modules</h3>
-                    <p>Your orientation modules will appear here once published.</p>
-                    <a class="sd-link" href="{!! url('/student/orientation') !!}">Open Orientation <span>&rarr;</span></a>
+                    <a class="sd-link" href="{!! url('/student/orientation') !!}">View Orientation Modules <span>&rarr;</span></a>
                 <?php endif; ?>
             </section>
 

@@ -69,6 +69,7 @@ if ($profilePhotoFile !== null) {
 </div>
 <div id="modal-root" class="modal-root"></div>
 <div id="toast-root" class="toast-root"></div>
+@include('partials/command-palette', compact('portal', 'role'))
 <?php if ($role === 'Administrator' && ($pageKey ?? '') === 'system-overview'): ?>
     <script src="{!! asset('js/chart.umd.js') !!}?v={!! filemtime(BASE_PATH . '/public/assets/js/chart.umd.js') !!}"></script>
     <script src="{!! asset('js/technical-overview.js') !!}?v={!! filemtime(BASE_PATH . '/public/assets/js/technical-overview.js') !!}"></script>

@@ -17,7 +17,7 @@
                             <p><strong>Proof:</strong> {{ $claim['proof'] }}</p>
                             <p>{{ $claim['message'] }}</p>
                             <?php if ($claim['status'] === 'Pending'): ?>
-                                <div class="claim-card__actions"><form method="POST" action="{!! url('/admin/lost-found/' . $item['public_id'] . '/claims/' . $claim['public_id'] . '/approve') !!}">{!! csrf_field() !!}<button class="btn btn--primary btn--sm" type="submit">Verify Claim</button></form><form method="POST" action="{!! url('/admin/lost-found/' . $item['public_id'] . '/claims/' . $claim['public_id'] . '/reject') !!}">{!! csrf_field() !!}<button class="btn btn--ghost btn--sm" type="submit">Reject</button></form></div>
+                                <div class="claim-card__actions"><form method="POST" action="{!! url('/admin/lost-found/' . $item['public_id'] . '/claims/' . $claim['public_id'] . '/approve') !!}" data-confirm="Verify ownership claim by {{ $claim['claimant_name'] }} and approve release?">{!! csrf_field() !!}<button class="btn btn--primary btn--sm" type="submit">Verify Claim</button></form><form method="POST" action="{!! url('/admin/lost-found/' . $item['public_id'] . '/claims/' . $claim['public_id'] . '/reject') !!}" data-confirm="Reject this ownership claim?">{!! csrf_field() !!}<button class="btn btn--ghost btn--sm" type="submit">Reject</button></form></div>
                             <?php elseif ($claim['verified_by']): ?><div class="cell-sub">Reviewed by {{ $claim['verified_by'] }} on {{ fmt_datetime($claim['verified_at']) }}</div><?php endif; ?>
                         </article>
                     <?php endforeach; ?>
