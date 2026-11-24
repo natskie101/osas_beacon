@@ -218,7 +218,7 @@ final class LostFoundController extends Controller
         return view('student/lost-found/show', [
             'title' => $item['title'],
             'pageTitle' => $item['title'],
-            'pageSubtitle' => $item['type'] . ' Â· ' . $item['category'] . ' Â· ' . $item['status'],
+            'pageSubtitle' => $item['type'] . ' · ' . $item['category'] . ' · ' . $item['status'],
             'pageKey' => 'lost-found',
             'user' => $actor,
             'role' => $actor['role'],

@@ -75,7 +75,7 @@ final class BroadcastController extends Controller
         return view('admin/broadcasts/show', [
             'title' => $broadcast['subject'],
             'pageTitle' => $broadcast['subject'],
-            'pageSubtitle' => $broadcast['public_id'] . ' Â· ' . $broadcast['status'] . ' Â· ' . $broadcast['channel'],
+            'pageSubtitle' => $broadcast['public_id'] . ' · ' . $broadcast['status'] . ' · ' . $broadcast['channel'],
             'pageKey' => 'broadcasts',
             'user' => $actor,
             'role' => $actor['role'],

@@ -77,7 +77,7 @@ final class OrientationQuizController extends Controller
         return view('student/orientation/quiz', [
             'title' => $quiz['title'],
             'pageTitle' => $quiz['title'],
-            'pageSubtitle' => number_format(count($questions)) . ' questions Â· ' . number_format((int) $quiz['time_limit_minutes']) . ' minutes',
+            'pageSubtitle' => number_format(count($questions)) . ' questions · ' . number_format((int) $quiz['time_limit_minutes']) . ' minutes',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],

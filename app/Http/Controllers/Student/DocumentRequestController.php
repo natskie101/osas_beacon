@@ -103,7 +103,7 @@ final class DocumentRequestController extends Controller
         return view('student/document-requests/show', [
             'title' => $documentRequest['document_type'],
             'pageTitle' => $documentRequest['document_type'],
-            'pageSubtitle' => $documentRequest['public_id'] . ' Â· ' . $documentRequest['status'],
+            'pageSubtitle' => $documentRequest['public_id'] . ' · ' . $documentRequest['status'],
             'pageKey' => 'document-requests',
             'user' => $actor,
             'role' => $actor['role'],

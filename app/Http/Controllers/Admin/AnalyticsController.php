@@ -117,7 +117,7 @@ final class AnalyticsController extends Controller
         return view('admin/analytics/show', [
             'title' => 'Student Tracking Logs',
             'pageTitle' => 'View Student Profile & Tracking Logs',
-            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' Â· ' . $student['public_id'],
+            'pageSubtitle' => trim($student['first_name'] . ' ' . $student['last_name']) . ' · ' . $student['public_id'],
             'pageKey' => 'analytics',
             'user' => $actor,
             'role' => $actor['role'],

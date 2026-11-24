@@ -65,7 +65,7 @@ final class RegulationController extends Controller
         return view('student/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['reference_code'] . ' Â· ' . $regulation['category'],
+            'pageSubtitle' => $regulation['reference_code'] . ' · ' . $regulation['category'],
             'pageKey' => 'rules',
             'user' => $actor,
             'role' => $actor['role'],

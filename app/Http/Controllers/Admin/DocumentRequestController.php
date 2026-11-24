@@ -58,7 +58,7 @@ final class DocumentRequestController extends Controller
         return view('admin/document-requests/show', [
             'title' => $documentRequest['document_type'],
             'pageTitle' => $documentRequest['document_type'],
-            'pageSubtitle' => $documentRequest['public_id'] . ' Â· ' . $documentRequest['student_name'] . ' Â· ' . $documentRequest['status'],
+            'pageSubtitle' => $documentRequest['public_id'] . ' · ' . $documentRequest['student_name'] . ' · ' . $documentRequest['status'],
             'pageKey' => 'document-requests',
             'user' => $actor,
             'role' => $actor['role'],

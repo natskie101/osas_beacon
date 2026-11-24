@@ -24,7 +24,7 @@ final class OrientationQuizController extends Controller
         return view('admin/orientation/quiz', [
             'title' => 'Manage Quiz',
             'pageTitle' => $module['title'] . ' Quiz',
-            'pageSubtitle' => $module['public_id'] . ' Â· ' . count($questions) . ' questions',
+            'pageSubtitle' => $module['public_id'] . ' · ' . count($questions) . ' questions',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],

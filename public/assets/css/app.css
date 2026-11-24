@@ -16,7 +16,7 @@
   --ink:#1f2937;
   --ink-2:#3f4753;
   --muted:#6b7280;
-  --muted-2:#9aa1ab;
+  --muted-2:#64748b;
 
   --line:#e4e7ec;
   --line-2:#eef0f3;
@@ -52,8 +52,8 @@ html,body{height:100%}
 body{
   margin:0;
   font-family:var(--sans);
-  font-size:13px;
-  line-height:1.45;
+  font-size:14px;
+  line-height:1.5;
   color:var(--ink);
   background:var(--bg);
   -webkit-font-smoothing:antialiased;
@@ -132,7 +132,7 @@ svg{display:block}
 }
 .topbar__mark{flex:0 0 24px}
 .topbar__title{font-size:17px;line-height:1.2}
-.topbar__sub{font-size:10.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.topbar__sub{font-size:11.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
 .topbar__actions{margin-left:auto;display:flex;align-items:center;gap:9px}
 .icon-btn{
   width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
@@ -166,7 +166,7 @@ svg{display:block}
 .btn--danger:hover{background:#99201a}
 .btn--success{background:var(--green);color:#fff}
 .btn--success:hover{background:#0c773f}
-.btn--sm{padding:6px 11px;font-size:10.5px;border-radius:7px}
+.btn--sm{padding:7px 12px;font-size:11.5px;border-radius:7px;min-height:32px}
 .btn--block{width:100%}
 .btn--link{background:none;border:0;color:var(--brand);text-transform:none;letter-spacing:0;font-size:12px;padding:0}
 .btn--link:hover{text-decoration:underline}
@@ -183,7 +183,7 @@ svg{display:block}
 .card__foot{padding:12px 16px;border-top:1px solid var(--line-2);display:flex;justify-content:center}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px}
-.stat__label{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat__label{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .stat__value{font-family:var(--serif);font-size:29px;font-weight:700;line-height:1.15;margin:7px 0 5px;color:var(--ink)}
 .stat__value small{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--muted)}
 .stat__sub{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -199,8 +199,8 @@ svg{display:block}
 /* ---------- 8. Badges / pills ---------- */
 .badge{
   display:inline-flex;align-items:center;gap:5px;
-  padding:3px 9px;border-radius:5px;font-size:9.5px;font-weight:800;
-  letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;
+  padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
   background:#f1f2f4;color:#4b5563;
 }
 .badge--published,.badge--sent,.badge--active,.badge--resolved,.badge--completed,.badge--verified{background:var(--green-bg);color:var(--green)}
@@ -238,12 +238,12 @@ svg{display:block}
 /* ---------- 10. Tables ---------- */
 .table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
 .table-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
-.panel-title{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.panel-title{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
 .table-scroll{overflow-x:auto}
 table.data{width:100%;border-collapse:collapse}
 table.data th{
   background:#fafbfc;text-align:left;padding:10px 14px;
-  font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
   border-bottom:1px solid var(--line);white-space:nowrap;
 }
 table.data td{padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle;font-size:12.5px}
@@ -286,11 +286,11 @@ table.data th.u-right,table.data td.u-right{text-align:right}
 
 /* ---------- 12. Forms ---------- */
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
-.field > label,.flabel{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.field > label,.flabel{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
 .req{color:var(--red);margin-left:3px}
 .input,select.input,textarea.input{
   width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;
-  padding:10px 12px;font-family:inherit;font-size:12.5px;color:var(--ink);
+  padding:10px 12px;font-family:inherit;font-size:13.5px;color:var(--ink);
   transition:border-color .15s ease,box-shadow .15s ease;
 }
 .input::placeholder{color:#a7aeb8}
@@ -481,7 +481,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .auth__hint b{color:var(--brand);font-weight:700}
 .auth__alt-row{display:flex;align-items:center;gap:12px;margin:4px 0 14px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
 .auth__alt-line{flex:1;height:1px;background:var(--line)}
-.auth__legal{margin-top:14px;text-align:center;font-size:10px;letter-spacing:.02em;color:#bcc2cb}
+.auth__legal{margin-top:14px;text-align:center;font-size:11.5px;letter-spacing:.02em;color:var(--muted)}
 #auth-alert:not(:empty){margin-bottom:16px}
 
 /* Form field enhancements for login */
@@ -911,6 +911,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-102%);transition:transform .2s ease;box-shadow:var(--shadow-lg)}
   .sidebar--on{transform:none}
   .menu-btn{display:inline-flex}
+  .icon-btn{width:38px;height:38px}
   .content{padding:16px 14px 40px}
   .topbar{padding:0 14px}
   .topbar__sub{display:none}
@@ -1098,6 +1099,7 @@ body{background:#f4f6f9}
     transform:translateX(-102%);box-shadow:0 0 44px rgba(16,24,40,.2)}
   .sidebar--on{transform:none}
   .menu-btn{display:inline-flex}
+  .icon-btn{width:38px;height:38px}
   .content{padding:16px 14px 34px}
   .topbar{padding:0 14px}
 }

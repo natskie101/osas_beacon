@@ -85,7 +85,7 @@ final class EventController extends Controller
         return view('admin/events/show', [
             'title' => $event['title'],
             'pageTitle' => $event['title'],
-            'pageSubtitle' => $event['public_id'] . ' Â· ' . $event['status'],
+            'pageSubtitle' => $event['public_id'] . ' · ' . $event['status'],
             'pageKey' => 'events',
             'user' => $actor,
             'role' => $actor['role'],

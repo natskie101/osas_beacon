@@ -38,7 +38,7 @@ if ($profilePhotoFile !== null) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $pageTitle ?? 'OSAS Portal' }} Â· BEACON OSAS Portal</title>
+    <title>{{ $pageTitle ?? 'OSAS Portal' }} · BEACON OSAS Portal</title>
     <link rel="stylesheet" href="{!! asset('css/app.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app.css') !!}">
     <link rel="stylesheet" href="{!! asset('css/app-php.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app-php.css') !!}">
     <?php if ($role === 'Administrator' && ($pageKey ?? '') === 'system-overview'): ?>

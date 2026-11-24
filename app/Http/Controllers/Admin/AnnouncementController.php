@@ -110,7 +110,7 @@ final class AnnouncementController extends Controller
         return view('admin/announcements/show', [
             'title' => $announcement['title'],
             'pageTitle' => $announcement['title'],
-            'pageSubtitle' => $announcement['public_id'] . ' Â· ' . $announcement['status'],
+            'pageSubtitle' => $announcement['public_id'] . ' · ' . $announcement['status'],
             'pageKey' => 'announcements',
             'user' => $actor,
             'role' => $actor['role'],

@@ -54,7 +54,7 @@ final class SupportController extends Controller
         return view('admin/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
-            'pageSubtitle' => $ticket['public_id'] . ' Â· ' . $ticket['student_name'] . ' Â· ' . $ticket['status'],
+            'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['student_name'] . ' · ' . $ticket['status'],
             'pageKey' => 'support',
             'user' => $actor,
             'role' => $actor['role'],

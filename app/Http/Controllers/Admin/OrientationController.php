@@ -126,7 +126,7 @@ final class OrientationController extends Controller
         return view('admin/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
-            'pageSubtitle' => $module['public_id'] . ' Â· ' . $module['status'],
+            'pageSubtitle' => $module['public_id'] . ' · ' . $module['status'],
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],

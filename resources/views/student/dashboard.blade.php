@@ -3,8 +3,11 @@
 <?php
 /** @var array<string, mixed> $user */
 /** @var list<array<string, mixed>> $announcements */
+/** @var int|null $announcementCount */
 /** @var list<array<string, mixed>> $infographics */
 /** @var array<string, mixed>|null $featuredModule */
+/** @var int|null $activeTickets */
+/** @var int|null $activeRequests */
 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 $program = $user['program'] ?: ($user['department'] ?: $user['role']);
 $latest = $announcements[0] ?? null;
@@ -35,6 +38,20 @@ $latest = $announcements[0] ?? null;
                 <?php if ($latest !== null): ?>
                     <h3><a href="{!! url('/student/announcements/' . $latest['public_id']) !!}">{{ $latest['title'] }}</a></h3>
                     <p>{{ $latest['summary'] ?: 'Open the announcement to read the full details.' }}</p>
+                    <?php if (count($announcements) > 1): ?>
+                        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-2);">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">Recent Updates</div>
+                            <ul style="display: flex; flex-direction: column; gap: 8px;">
+                                <?php foreach (array_slice($announcements, 1, 2) as $ann): ?>
+                                    <li style="font-size: 13px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;">
+                                        <a href="{!! url('/student/announcements/' . $ann['public_id']) !!}" style="color: var(--ink); text-decoration: none; font-weight: 600;">&bull; {{ $ann['title'] }}</a>
+                                        <span style="font-size: 11px; color: var(--muted-2); white-space: nowrap;">{{ fmt_date($ann['published_at'] ?? $ann['created_at']) }}</span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    <a class="sd-link" href="{!! url('/student/announcements') !!}">View All Announcements ({!! (int) ($announcementCount ?? count($announcements)) !!}) <span>&rarr;</span></a>
                 <?php else: ?>
                     <h3>No announcements yet</h3>
                     <p>Official OSAS updates will appear here once published.</p>
@@ -74,10 +91,22 @@ $latest = $announcements[0] ?? null;
             </section>
 
             <section class="sd-card sd-side-card">
-                <div class="sd-label">Submit Feedback/Report</div>
-                <p>Please check Feedback/Report module</p>
-                <a class="sd-link" href="{!! url('/student/support') !!}">Open Feedback/Report <span>&rarr;</span></a>
+                <div class="sd-label">Support Desk &amp; Concerns</div>
+                <?php if (($activeTickets ?? 0) > 0): ?>
+                    <p>You have <strong>{!! (int) $activeTickets !!}</strong> active {!! $activeTickets === 1 ? 'ticket' : 'tickets' !!} currently with OSAS.</p>
+                <?php else: ?>
+                    <p>Have an inquiry or student concern? Submit a support ticket to OSAS.</p>
+                <?php endif; ?>
+                <a class="sd-link" href="{!! url('/student/support') !!}">Open Support Desk <span>&rarr;</span></a>
             </section>
+
+            <?php if (($activeRequests ?? 0) > 0): ?>
+                <section class="sd-card sd-side-card">
+                    <div class="sd-label">Document Requests</div>
+                    <p>You have <strong>{!! (int) $activeRequests !!}</strong> active {!! $activeRequests === 1 ? 'request' : 'requests' !!} in process.</p>
+                    <a class="sd-link" href="{!! url('/student/document-requests') !!}">Track Requests <span>&rarr;</span></a>
+                </section>
+            <?php endif; ?>
         </aside>
     </div>
 </div>

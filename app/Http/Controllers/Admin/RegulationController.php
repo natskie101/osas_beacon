@@ -93,7 +93,7 @@ final class RegulationController extends Controller
         return view('admin/regulations/show', [
             'title' => $regulation['title'],
             'pageTitle' => $regulation['title'],
-            'pageSubtitle' => $regulation['public_id'] . ' Â· ' . $regulation['status'],
+            'pageSubtitle' => $regulation['public_id'] . ' · ' . $regulation['status'],
             'pageKey' => 'regulations',
             'user' => $actor,
             'role' => $actor['role'],

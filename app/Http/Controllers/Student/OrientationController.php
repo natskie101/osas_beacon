@@ -71,7 +71,7 @@ final class OrientationController extends Controller
         return view('student/orientation/show', [
             'title' => $module['title'],
             'pageTitle' => $module['title'],
-            'pageSubtitle' => $module['category'] . ' Â· ' . $module['duration_minutes'] . ' min',
+            'pageSubtitle' => $module['category'] . ' · ' . $module['duration_minutes'] . ' min',
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],

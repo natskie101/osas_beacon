@@ -131,7 +131,7 @@ final class LostFoundController extends Controller
         return view('admin/lost-found/show', [
             'title' => $item['title'],
             'pageTitle' => $item['title'],
-            'pageSubtitle' => $item['type'] . ' Â· ' . $item['public_id'] . ' Â· ' . $item['status'],
+            'pageSubtitle' => $item['type'] . ' · ' . $item['public_id'] . ' · ' . $item['status'],
             'pageKey' => 'lost-found',
             'user' => $actor,
             'role' => $actor['role'],

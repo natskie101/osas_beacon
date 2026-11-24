@@ -43,37 +43,44 @@
       });
     });
 
-    /* Filter bars submit automatically as the user searches or changes filters. */
+    /* Filter bars submit automatically when changing dropdown filters or clearing search. */
     document.querySelectorAll("form.filter-bar").forEach(function (form) {
-      var timer = null;
-
-      function submitSoon() {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(function () {
-          form.submit();
-        }, 350);
-      }
-
       function submitNow() {
-        window.clearTimeout(timer);
         form.submit();
       }
-
-      form.querySelectorAll("input").forEach(function (control) {
-        var type = (control.getAttribute("type") || "text").toLowerCase();
-
-        if (["hidden", "submit", "button", "reset", "file", "checkbox", "radio"].indexOf(type) !== -1) {
-          return;
-        }
-
-        control.addEventListener("input", submitSoon);
-        control.addEventListener("change", submitNow);
-      });
 
       form.querySelectorAll("select").forEach(function (control) {
         control.addEventListener("change", submitNow);
       });
+
+      form.querySelectorAll("input").forEach(function (control) {
+        var type = (control.getAttribute("type") || "text").toLowerCase();
+
+        // Native search clear button (x)
+        if (type === "search") {
+          control.addEventListener("search", function () {
+            if (control.value === "") {
+              submitNow();
+            }
+          });
+        }
+      });
     });
+
+    /* Retain focus on active search filter input if user just searched */
+    try {
+      var searchParam = new URLSearchParams(window.location.search).get("search");
+      if (searchParam) {
+        var searchInput = document.querySelector('form.filter-bar input[name="search"]');
+        if (searchInput && document.activeElement === document.body) {
+          searchInput.focus();
+          var len = searchInput.value.length;
+          searchInput.setSelectionRange(len, len);
+        }
+      }
+    } catch (ignored) {
+      /* Older browsers without URLSearchParams */
+    }
 
     /* Show selected files and support dropping files onto custom upload areas. */
     function updateUploadLabel(input) {

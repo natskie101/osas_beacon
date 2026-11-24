@@ -168,7 +168,7 @@ final class SupportController extends Controller
         return view('student/support/show', [
             'title' => $ticket['subject'],
             'pageTitle' => $ticket['subject'],
-            'pageSubtitle' => $ticket['public_id'] . ' Â· ' . $ticket['status'],
+            'pageSubtitle' => $ticket['public_id'] . ' · ' . $ticket['status'],
             'pageKey' => 'support',
             'user' => $actor,
             'role' => $actor['role'],

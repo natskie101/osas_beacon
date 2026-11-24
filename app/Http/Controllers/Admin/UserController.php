@@ -75,7 +75,7 @@ final class UserController extends Controller
         return view('admin/users/show', [
             'title' => User::fullName($target),
             'pageTitle' => User::fullName($target),
-            'pageSubtitle' => $target['public_id'] . ' Â· ' . $target['role'] . ' account',
+            'pageSubtitle' => $target['public_id'] . ' · ' . $target['role'] . ' account',
             'pageKey' => 'users',
             'user' => $actor,
             'role' => $actor['role'],
