@@ -6482,7 +6482,7 @@ body[data-portal="admin"][data-page="document-requests"] .content {
 }
 body[data-portal="admin"][data-page="document-requests"] .request-filters {
   display: grid;
-  grid-template-columns: minmax(240px, 1.5fr) repeat(2, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: 12px;
   padding: 16px;
@@ -6491,6 +6491,9 @@ body[data-portal="admin"][data-page="document-requests"] .request-filters {
   border-radius: var(--radius);
   background: var(--panel);
   box-shadow: var(--shadow);
+}
+body[data-portal="admin"][data-page="document-requests"] .request-filters > .field:first-of-type {
+  grid-column: 1 / -1;
 }
 body[data-portal="admin"][data-page="document-requests"] .request-actions {
   display: flex;
