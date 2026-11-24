@@ -7632,6 +7632,10 @@ body .sr-badge svg {
   transition: all 0.15s ease;
   flex-shrink: 0;
   white-space: nowrap;
+  min-width: 210px;
+}
+.topbar__search-trigger kbd {
+  margin-left: auto;
 }
 .topbar__search-trigger:hover {
   background: #fff;
@@ -7649,6 +7653,7 @@ body .sr-badge svg {
   .topbar__search-trigger {
     width: 34px;
     height: 34px;
+    min-width: 0;
     padding: 0;
     justify-content: center;
   }
