@@ -2579,9 +2579,12 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
 
 /* Portal confirmation dialog — built from the same tokens as .modal / .modal__foot */
 .app-confirm {
+  --confirm-strong: var(--brand);
+  --confirm-soft: var(--brand-tint);
+  --confirm-line: var(--brand-tint-2);
   position: fixed;
   inset: 0;
-  width: min(390px, calc(100vw - 32px));
+  width: min(410px, calc(100vw - 32px));
   max-width: none;
   max-height: calc(100vh - 32px);
   margin: auto;
@@ -2593,51 +2596,110 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   color: var(--ink);
 }
 .app-confirm::backdrop {
-  background: rgba(24, 28, 36, 0.46);
+  background: rgba(24, 28, 36, 0.5);
+  backdrop-filter: blur(3px);
 }
 .app-confirm[open] {
-  animation: modal-pop 0.16s ease-out;
+  animation: modal-pop 0.18s ease-out;
+}
+.app-confirm--danger {
+  --confirm-strong: var(--red);
+  --confirm-soft: var(--red-bg);
+  --confirm-line: var(--red-line);
+}
+.app-confirm--success {
+  --confirm-strong: var(--green);
+  --confirm-soft: var(--green-bg);
+  --confirm-line: var(--green-line);
+}
+.app-confirm--warning {
+  --confirm-strong: var(--amber);
+  --confirm-soft: var(--amber-bg);
+  --confirm-line: var(--amber-line);
+}
+.app-confirm--session {
+  --confirm-strong: var(--brand);
+  --confirm-soft: var(--brand-tint);
+  --confirm-line: var(--brand-tint-2);
 }
 .app-confirm__card {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: #fff;
   box-shadow: var(--shadow-lg);
 }
+.app-confirm__card::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, var(--confirm-strong), var(--confirm-soft));
+}
 .app-confirm__body {
-  padding: 28px 26px 22px;
+  padding: 26px 28px 22px;
   text-align: center;
 }
 .app-confirm__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
+  width: 60px;
+  height: 60px;
   margin-bottom: 14px;
-  border: 1px solid var(--brand-tint-2);
-  border-radius: 50%;
-  background: var(--brand-tint);
-  color: var(--brand);
+  border: 1px solid var(--confirm-line);
+  border-radius: 18px;
+  background: radial-gradient(circle at 30% 20%, #fff, var(--confirm-soft) 78%);
+  color: var(--confirm-strong);
+  box-shadow: 0 8px 18px -10px var(--confirm-strong), inset 0 0 0 5px rgba(255, 255, 255, 0.55);
+}
+.app-confirm[open] .app-confirm__icon {
+  animation: confirmIconPop 0.32s cubic-bezier(0.22, 1, 0.36, 1.15);
+}
+@keyframes confirmIconPop {
+  from {
+    transform: scale(0.72);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .app-confirm__icon svg {
   display: block;
 }
-.app-confirm--danger .app-confirm__icon {
-  border-color: var(--red-line);
-  background: var(--red-bg);
-  color: var(--red);
+.app-confirm__kicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: var(--confirm-strong);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.app-confirm__kicker::before,
+.app-confirm__kicker::after {
+  content: "";
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.35;
 }
 .app-confirm__title {
   margin: 0 0 8px;
   color: var(--ink);
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
+  line-height: 1.3;
 }
 .app-confirm__message {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 310px;
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.65;
@@ -2648,11 +2710,12 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid var(--line);
-  background: #fcfcfd;
+  border-top: 1px solid var(--line-2);
+  background: #fbfbfc;
 }
 .app-confirm__actions .btn {
   min-width: 104px;
+  justify-content: center;
 }
 .auth-pop {
   position: fixed;

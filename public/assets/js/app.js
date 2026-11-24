@@ -419,10 +419,56 @@
     confirmCard.className = "app-confirm__card";
     var confirmBody = document.createElement("div");
     confirmBody.className = "app-confirm__body";
+    var confirmIconPaths = {
+      logout: '<path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/>',
+      trash: '<path d="M4 7h16"/><path d="M9 7V4.8h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5M13.5 11v5"/>',
+      archive: '<path d="M3 4h18v4H3z"/><path d="M5 8v12h14V8"/><path d="M10 12h4"/>',
+      checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16 9.5"/>',
+      alert: '<path d="M12 4 2.8 20h18.4L12 4Z"/><path d="M12 10v4.5M12 17.4v.2"/>',
+      shield: '<path d="M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>',
+      check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+      send: '<path d="M4 12 20 4l-6.5 16-3-6.5L4 12Z"/>',
+      info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/>'
+    };
+
+    function confirmIconSvg(name) {
+      return '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + (confirmIconPaths[name] || confirmIconPaths.shield) + '</svg>';
+    }
+
+    /* Pick an icon, tone and heading that match the action being confirmed. */
+    function describeConfirmation(message, actionUrl) {
+      var text = ((message || '') + ' ' + (actionUrl || '')).toLowerCase();
+
+      if (/sign\s*out|log\s*out|logout/.test(text)) {
+        return { tone: 'session', icon: 'logout', kicker: 'Session security', title: 'End your session' };
+      }
+      if (/delete|remove|purge/.test(text)) {
+        return { tone: 'danger', icon: 'trash', kicker: 'Destructive action', title: 'Delete permanently' };
+      }
+      if (/archive/.test(text)) {
+        return { tone: 'danger', icon: 'archive', kicker: 'Destructive action', title: 'Archive this record' };
+      }
+      if (/reject|decline|deny|deactivate|block/.test(text)) {
+        return { tone: 'danger', icon: 'alert', kicker: 'Destructive action', title: 'Confirm this change' };
+      }
+      if (/verify|approve|activate|publish|restore|resolve|release|returned/.test(text)) {
+        return { tone: 'success', icon: 'checkCircle', kicker: 'Verification', title: 'Confirm this action' };
+      }
+      if (/save|update|edit/.test(text)) {
+        return { tone: 'brand', icon: 'check', kicker: 'Please confirm', title: 'Save your changes' };
+      }
+      if (/submit|send|post|notify|claim/.test(text)) {
+        return { tone: 'brand', icon: 'send', kicker: 'Please confirm', title: 'Confirm this submission' };
+      }
+      return { tone: 'brand', icon: 'shield', kicker: 'Please confirm', title: 'Please confirm' };
+    }
+
     var confirmIcon = document.createElement("span");
     confirmIcon.className = "app-confirm__icon";
     confirmIcon.setAttribute("aria-hidden", "true");
-    confirmIcon.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.8 20h18.4L12 4Z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>';
+    var confirmKicker = document.createElement("span");
+    confirmKicker.className = "app-confirm__kicker";
     var confirmTitle = document.createElement("h2");
     confirmTitle.className = "app-confirm__title";
     confirmTitle.id = "app-confirm-title";
@@ -443,6 +489,7 @@
     confirmActions.appendChild(confirmCancel);
     confirmActions.appendChild(confirmAccept);
     confirmBody.appendChild(confirmIcon);
+    confirmBody.appendChild(confirmKicker);
     confirmBody.appendChild(confirmTitle);
     confirmBody.appendChild(confirmMessage);
     confirmCard.appendChild(confirmBody);
@@ -468,16 +515,22 @@
 
         event.preventDefault();
         pendingConfirmation = { form: form, submitter: submitter };
+        var spec = describeConfirmation(message, form.getAttribute("action") || "");
         confirmMessage.textContent = message;
         confirmTitle.textContent = submitter && submitter.getAttribute("data-confirm-title")
           ? submitter.getAttribute("data-confirm-title")
-          : "Please confirm";
+          : spec.title;
+        confirmKicker.textContent = spec.kicker;
+        confirmIcon.innerHTML = confirmIconSvg(spec.icon);
         var actionLabel = submitter ? submitter.textContent.trim() : "";
-        var isDangerous = /delete|remove|deactivate/i.test(message);
         confirmAccept.textContent = actionLabel && actionLabel.length <= 24 ? actionLabel : "Confirm";
-        confirmDialog.classList.toggle("app-confirm--danger", isDangerous);
-        confirmAccept.classList.toggle("btn--danger", isDangerous);
-        confirmAccept.classList.toggle("btn--primary", !isDangerous);
+
+        ["brand", "session", "danger", "success", "warning"].forEach(function (tone) {
+          confirmDialog.classList.remove("app-confirm--" + tone);
+        });
+        confirmDialog.classList.add("app-confirm--" + spec.tone);
+        confirmAccept.classList.remove("btn--primary", "btn--danger", "btn--success");
+        confirmAccept.classList.add(spec.tone === "danger" ? "btn--danger" : (spec.tone === "success" ? "btn--success" : "btn--primary"));
 
         if (!confirmDialog.open) confirmDialog.showModal();
         confirmCancel.focus();
