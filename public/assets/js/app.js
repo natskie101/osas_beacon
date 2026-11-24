@@ -537,14 +537,22 @@
       });
     });
 
+    function releaseSubmitLock(form, submitter) {
+      if (!form) return;
+      delete form.dataset.submitting;
+      if (!submitter) return;
+      submitter.disabled = false;
+      submitter.classList.remove("is-submitting");
+      var spinner = submitter.querySelector(".btn-spinner");
+      if (spinner) spinner.remove();
+    }
+
     confirmCancel.addEventListener("click", function () {
-      pendingConfirmation = null;
       confirmDialog.close();
     });
 
     confirmDialog.addEventListener("click", function (event) {
       if (event.target === confirmDialog) {
-        pendingConfirmation = null;
         confirmDialog.close();
       }
     });
@@ -555,16 +563,26 @@
       confirmDialog.close();
 
       if (!confirmation || !confirmation.form.isConnected) return;
-      confirmation.form.dataset.confirmApproved = "true";
-      if (confirmation.submitter && confirmation.submitter.form === confirmation.form) {
-        confirmation.form.requestSubmit(confirmation.submitter);
+
+      // A confirmation dialog intercepts the first submit, so clear any
+      // double-submit lock that may have been queued before it opened.
+      var confirmedForm = confirmation.form;
+      var confirmedSubmitter = confirmation.submitter;
+      releaseSubmitLock(confirmedForm, confirmedSubmitter);
+
+      confirmedForm.dataset.confirmApproved = "true";
+      if (confirmedSubmitter && confirmedSubmitter.form === confirmedForm) {
+        confirmedForm.requestSubmit(confirmedSubmitter);
       } else {
-        confirmation.form.requestSubmit();
+        confirmedForm.requestSubmit();
       }
-      delete confirmation.form.dataset.confirmApproved;
+      delete confirmedForm.dataset.confirmApproved;
     });
 
     confirmDialog.addEventListener("close", function () {
+      if (pendingConfirmation) {
+        releaseSubmitLock(pendingConfirmation.form, pendingConfirmation.submitter);
+      }
       pendingConfirmation = null;
     });
 
@@ -816,6 +834,9 @@
       if (!submitter) return;
 
       setTimeout(function () {
+        // A confirmation dialog may have cancelled this submit while the
+        // timer was queued; do not lock the form in that case.
+        if (event.defaultPrevented) return;
         form.dataset.submitting = "true";
         submitter.disabled = true;
         submitter.classList.add("is-submitting");
