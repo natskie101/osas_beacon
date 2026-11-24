@@ -10,7 +10,7 @@
 <div class="stats">
     <div class="stat"><div class="stat__label">Published Modules</div><div class="stat__value">{!! number_format($counts['published'] ?? 0) !!}</div><div class="stat__sub">Available to students</div></div>
     <div class="stat"><div class="stat__label">Completion Rate</div><div class="stat__value">{!! number_format((float) ($counts['rate'] ?? 0), 1) !!}%</div><div class="stat__sub">Average across modules</div></div>
-    <div class="stat"><div class="stat__label">Learners Reached</div><div class="stat__value">{!! number_format($counts['learners'] ?? 0) !!}</div><div class="stat__sub">Total module enrollments</div></div>
+    <div class="stat"><div class="stat__label">Learners Reached</div><div class="stat__value">{!! number_format($counts['learners'] ?? 0) !!}</div><div class="stat__sub">Unique student enrollments</div></div>
     <div class="stat"><div class="stat__label">Completions</div><div class="stat__value">{!! number_format($counts['completions'] ?? 0) !!}</div><div class="stat__sub">Modules finished</div></div>
 </div>
 <form class="filter-bar filter-bar--3" method="GET" action="{!! url('/admin/orientation') !!}">

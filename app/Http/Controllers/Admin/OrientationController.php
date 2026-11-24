@@ -46,7 +46,7 @@ final class OrientationController extends Controller
             'pageKey' => 'orientation',
             'user' => $actor,
             'role' => $actor['role'],
-            'modules' => $pagination['data'],
+            'modules' => OrientationModule::withProgressStats($pagination['data']),
             'pagination' => $pagination,
             'filters' => $filters,
             'counts' => OrientationModule::counts(),
@@ -119,7 +119,7 @@ final class OrientationController extends Controller
     public function show(Request $request, string $publicId)
     {
         $actor = auth_user();
-        $module = $this->find($publicId);
+        $module = OrientationModule::withProgressStats([$this->find($publicId)])[0];
         $quiz = OrientationQuizService::findForModule((int) $module['id']);
         $quizQuestions = $quiz !== null ? OrientationQuizService::questions((int) $quiz['id']) : [];
 
