@@ -39,6 +39,9 @@ if ($profilePhotoFile !== null) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $pageTitle ?? 'OSAS Portal' }} · BEACON OSAS Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{!! asset('css/app.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app.css') !!}">
     <link rel="stylesheet" href="{!! asset('css/app-php.css') !!}?v={!! filemtime(BASE_PATH . '/public/assets/css/app-php.css') !!}">
     <?php if ($role === 'Administrator' && ($pageKey ?? '') === 'system-overview'): ?>
@@ -62,8 +65,8 @@ if ($profilePhotoFile !== null) {
             <?php endif; ?>
         </main>
         <footer class="app-foot">
-            <span>BEACON OSAS Portal &middot; {{ config('app.institution.department') }}</span>
-            <span>{{ config('app.institution.name') }} &middot; {{ config('app.institution.academic_year') }}</span>
+            <span>BEACON OSAS Portal / {{ config('app.institution.department') }}</span>
+            <span>{{ config('app.institution.name') }} / {{ config('app.institution.academic_year') }}</span>
         </footer>
     </div>
 </div>

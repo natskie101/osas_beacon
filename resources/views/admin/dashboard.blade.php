@@ -23,7 +23,7 @@
     <div class="stat">
         <div class="stat__label">Verified Portal Accounts</div>
         <div class="stat__value">{!! number_format($counts['verified']) !!}</div>
-        <div class="stat__sub">{!! number_format($counts['verified_students']) !!} verified students &middot; {!! number_format($counts['verified_staff']) !!} staff</div>
+        <div class="stat__sub">{!! number_format($counts['verified_students']) !!} verified students, {!! number_format($counts['verified_staff']) !!} staff</div>
     </div>
     <div class="stat">
         <div class="stat__label">Active Accounts</div>
@@ -91,21 +91,21 @@
                 <span class="log-item__ico log-item__ico--amber">{!! App\Support\Icons::render('headset', 13) !!}</span>
                 <div class="log-item__body">
                     <div class="log-item__title"><a class="link" href="{!! url('/admin/support') !!}">Support &amp; Concerns</a></div>
-                    <div class="log-item__text">{!! number_format($operations['support_pending']) !!} unresolved &middot; {!! number_format($operations['support_open']) !!} open, {!! number_format($operations['support_in_progress']) !!} in progress</div>
+                    <div class="log-item__text">{!! number_format($operations['support_pending']) !!} unresolved ({!! number_format($operations['support_open']) !!} open, {!! number_format($operations['support_in_progress']) !!} in progress)</div>
                 </div>
             </div>
             <div class="log-item">
                 <span class="log-item__ico log-item__ico--blue">{!! App\Support\Icons::render('printer', 13) !!}</span>
                 <div class="log-item__body">
                     <div class="log-item__title"><a class="link" href="{!! url('/admin/document-requests') !!}">Document Requests</a></div>
-                    <div class="log-item__text">{!! number_format($operations['documents_pending']) !!} in process &middot; {!! number_format($operations['documents_ready']) !!} ready for pick-up</div>
+                    <div class="log-item__text">{!! number_format($operations['documents_pending']) !!} in process, {!! number_format($operations['documents_ready']) !!} ready for pick-up</div>
                 </div>
             </div>
             <div class="log-item">
                 <span class="log-item__ico">{!! App\Support\Icons::render('search', 13) !!}</span>
                 <div class="log-item__body">
                     <div class="log-item__title"><a class="link" href="{!! url('/admin/lost-found') !!}">Lost &amp; Found</a></div>
-                    <div class="log-item__text">{!! number_format($operations['lost_found_pending']) !!} open records &middot; {!! number_format($operations['lost_found_claims']) !!} claims pending verification</div>
+                    <div class="log-item__text">{!! number_format($operations['lost_found_pending']) !!} open records, {!! number_format($operations['lost_found_claims']) !!} claims pending verification</div>
                 </div>
             </div>
             <div class="log-item">

@@ -21,7 +21,6 @@
             <?php foreach ($navItems as $index => $item): ?>
                 <li class="nav__item{!! ($pageKey ?? '') === ($item['page'] ?? '') ? ' nav__item--active' : '' !!}">
                     <a href="{{ url($item['path']) }}">
-                        <span class="nav__num">{!! $index + 1 !!}.</span>
                         <span class="nav__ico">{!! App\Support\Icons::render($item['icon'], 15) !!}</span>
                         <span>{{ $item['label'] }}</span>
                     </a>

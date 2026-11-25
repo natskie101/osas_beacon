@@ -3848,17 +3848,9 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   gap: 24px;
   box-shadow: 0 16px 34px rgba(92, 15, 24, 0.22);
 }
-.sd-hero__eyebrow {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.66);
-}
 .sd-hero__name {
-  font-size: 24px;
-  font-weight: 800;
-  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 700;
   line-height: 1.2;
 }
 .sd-hero__program {

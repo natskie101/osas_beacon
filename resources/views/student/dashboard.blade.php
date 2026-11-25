@@ -16,9 +16,8 @@ $latest = $announcements[0] ?? null;
 <div class="sd-dashboard">
     <section class="sd-hero">
         <div class="sd-hero__identity">
-            <div class="sd-hero__eyebrow">Welcome back</div>
             <div class="sd-hero__name">{{ $fullName }}</div>
-            <div class="sd-hero__program">{{ $program }}{!! !empty($user['year_level']) ? ' &middot; ' . e($user['year_level']) : '' !!}</div>
+            <div class="sd-hero__program">{{ $program }}{!! !empty($user['year_level']) ? ' / ' . e($user['year_level']) : '' !!}</div>
         </div>
         <div class="sd-hero__facts">
             <div>
