@@ -724,6 +724,8 @@
       var ingoIndex = 0;
       var ingoTimer = null;
       var ingoDots = ingoCarousel.querySelectorAll("[data-ingo-dot]");
+      var ingoPauseBtn = ingoCarousel.querySelector("[data-ingo-pause]");
+      var ingoPaused = false;
 
       var ingoGo = function (next) {
         ingoIndex = ((next % ingoSlides) + ingoSlides) % ingoSlides;
@@ -738,7 +740,7 @@
       };
 
       var ingoStart = function () {
-        if (ingoTimer === null) {
+        if (ingoTimer === null && !ingoPaused) {
           ingoTimer = setInterval(ingoAdvance, 5000);
         }
       };
@@ -755,6 +757,27 @@
         ingoCarousel.addEventListener("mouseleave", ingoStart);
         ingoCarousel.addEventListener("focusin", ingoStop);
         ingoCarousel.addEventListener("focusout", ingoStart);
+        
+        if (ingoPauseBtn) {
+          ingoPauseBtn.addEventListener("click", function () {
+            ingoPaused = !ingoPaused;
+            var pauseIcon = ingoPauseBtn.querySelector(".sd-carousel__pause-icon");
+            var playIcon = ingoPauseBtn.querySelector(".sd-carousel__play-icon");
+            
+            if (ingoPaused) {
+              ingoStop();
+              if (pauseIcon) pauseIcon.classList.add("u-hide");
+              if (playIcon) playIcon.classList.remove("u-hide");
+              ingoPauseBtn.setAttribute("aria-label", "Play slideshow");
+            } else {
+              ingoStart();
+              if (pauseIcon) pauseIcon.classList.remove("u-hide");
+              if (playIcon) playIcon.classList.add("u-hide");
+              ingoPauseBtn.setAttribute("aria-label", "Pause slideshow");
+            }
+          });
+        }
+        
         ingoDots.forEach(function (dot, i) {
           dot.addEventListener("click", function () {
             ingoGo(i);

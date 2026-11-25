@@ -69,7 +69,10 @@
                             <div class="log-item__text">{{ $entry['text'] }}</div>
                             <div class="log-item__time">
                                 {!! App\Support\Icons::render('clock', 11) !!}
-                                {{ time_ago($entry['created_at']) }} &middot; {{ fmt_datetime($entry['created_at']) }}
+                                <?php
+                                $isRecent = strtotime($entry['created_at']) > strtotime('-24 hours');
+                                echo $isRecent ? time_ago($entry['created_at']) : fmt_datetime($entry['created_at']);
+                                ?>
                             </div>
                         </div>
                     </div>

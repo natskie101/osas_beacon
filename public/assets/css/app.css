@@ -71,6 +71,16 @@ svg{display:block}
 ::-webkit-scrollbar-thumb{background:#c9ced6;border-radius:6px;border:3px solid transparent;background-clip:content-box}
 ::-webkit-scrollbar-track{background:transparent}
 
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
 /* ---------- 3. Helpers ---------- */
 .u-muted{color:var(--muted)}
 .u-nowrap{white-space:nowrap}
@@ -109,7 +119,8 @@ svg{display:block}
   display:flex;align-items:center;gap:10px;
   padding:9px 12px;border-radius:8px;margin-bottom:1px;
   color:rgba(255,255,255,.84);font-size:13px;font-weight:500;
-  border-left:2px solid transparent;transition:background .14s ease,color .14s ease;
+  border-left:2px solid transparent;
+  transition:background .2s cubic-bezier(.4,0,.2,1),color .2s cubic-bezier(.4,0,.2,1),border-color .2s cubic-bezier(.4,0,.2,1);
 }
 .nav__item a:hover{background:rgba(255,255,255,.09);color:#fff}
 .nav__ico{width:16px;flex:0 0 16px;opacity:.9}
@@ -154,8 +165,11 @@ svg{display:block}
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
   padding:9px 15px;border-radius:8px;border:1px solid transparent;
   font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;
-  cursor:pointer;white-space:nowrap;transition:background .15s ease,border-color .15s ease,color .15s ease;
+  cursor:pointer;white-space:nowrap;
+  transition:background .2s cubic-bezier(.4,0,.2,1),border-color .2s cubic-bezier(.4,0,.2,1),color .2s cubic-bezier(.4,0,.2,1),transform .1s cubic-bezier(.4,0,.2,1);
 }
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 .btn--primary{background:var(--brand);color:#fff}
 .btn--primary:hover{background:var(--brand-600)}

@@ -44,7 +44,7 @@ if ($message !== null) {
                    name="email"
                    type="email"
                    value="{{ $old['email'] ?? '' }}"
-                   placeholder="Enter your email"
+                   placeholder="juan.delacruz@southway.edu"
                    autocomplete="username"
                    required>
         </span>
@@ -58,7 +58,7 @@ if ($message !== null) {
                    id="password"
                    name="password"
                    type="password"
-                   placeholder="Enter your password"
+                   placeholder="Your password"
                    autocomplete="current-password"
                    required>
             <button type="button" class="input-group__toggle" data-password-toggle="password" aria-label="Show password">
