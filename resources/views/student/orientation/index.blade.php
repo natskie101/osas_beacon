@@ -55,7 +55,7 @@ $contentLabel = static function (array $module): string {
                 <div class="or-module__score">{!! number_format((float) $module['completion_rate'], 1) !!}% ({!! number_format($completions) !!}/{!! number_format($learners) !!})</div>
             </div>
             <div class="or-module__foot">
-                <span>{{ fmt_date($module['updated_at']) }} &middot; By {{ $module['department'] ?: 'OSAS' }}</span>
+                <span>{{ fmt_date($module['updated_at']) }} / By {{ $module['department'] ?: 'OSAS' }}</span>
                 {!! App\Support\Icons::render('chevronRight', 14) !!}
             </div>
             <a class="or-module__link" href="{!! url('/student/orientation/' . $module['public_id']) !!}" aria-label="{{ $module['title'] }}"></a>

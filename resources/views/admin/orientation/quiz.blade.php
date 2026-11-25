@@ -11,7 +11,7 @@ $errorFor = static fn (string $field): ?string => $errors[$field] ?? null;
     <div>
         <div class="page-head__eyebrow"><a href="{!! url('/admin/orientation') !!}">Orientation Content</a> / <a href="{!! url('/admin/orientation/' . $module['public_id']) !!}">{{ $module['public_id'] }}</a> / Quiz</div>
         <h2 class="page-head__title">Quiz Assessment</h2>
-        <p class="page-head__sub">{{ $module['title'] }} &middot; {!! number_format(count($questions)) !!} questions &middot; Passing rate {!! number_format((float) $module['passing_rate'], 0) !!}%</p>
+        <p class="page-head__sub">{{ $module['title'] }} / {!! number_format(count($questions)) !!} questions / Passing rate {!! number_format((float) $module['passing_rate'], 0) !!}%</p>
     </div>
     <div class="page-head__actions">
         <a class="btn btn--outline" href="{!! url('/admin/orientation/' . $module['public_id']) !!}">Back to Module</a>

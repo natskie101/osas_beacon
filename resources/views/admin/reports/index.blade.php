@@ -26,7 +26,7 @@
     <div class="stat">
         <div class="stat__label">Fully Compliant</div>
         <div class="stat__value">{!! number_format($summary['compliant']) !!} / {!! number_format($summary['students']) !!}</div>
-        <div class="stat__sub"><span class="badge badge--verified">Cleared</span> {!! number_format($summary['in_progress']) !!} in progress &middot; {!! number_format($summary['not_started']) !!} not started</div>
+        <div class="stat__sub"><span class="badge badge--verified">Cleared</span> {!! number_format($summary['in_progress']) !!} in progress, {!! number_format($summary['not_started']) !!} not started</div>
     </div>
     <div class="stat">
         <div class="stat__label">Orientation Reports on File</div>
@@ -75,8 +75,8 @@
                         <tr>
                             <td>
                                 <div class="cell-title">{{ $module['title'] }}</div>
-                                <div class="cell-sub mono">{{ $module['public_id'] }} &middot; {{ $module['version'] }} &middot; {{ $module['category'] }}</div>
-                                <div class="cell-sub">{!! $module['quiz_status'] !== null ? 'Quiz ' . e($module['quiz_status']) . ' &middot; ' . number_format((float) $module['quiz_pass_rate'], 0) . '% pass rate &middot; ' . number_format((float) $module['quiz_average'], 0) . '% average' : 'No assessment' !!}</div>
+                                <div class="cell-sub mono">{{ $module['public_id'] }} / {{ $module['version'] }} / {{ $module['category'] }}</div>
+                                <div class="cell-sub">{!! $module['quiz_status'] !== null ? 'Quiz ' . e($module['quiz_status']) . ' / ' . number_format((float) $module['quiz_pass_rate'], 0) . '% pass rate / ' . number_format((float) $module['quiz_average'], 0) . '% average' : 'No assessment' !!}</div>
                             </td>
                             <td>
                                 <div class="cell-title">{!! number_format((int) $module['completed']) !!} / {!! number_format((int) $module['total_students']) !!} tracked students</div>

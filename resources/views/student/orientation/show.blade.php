@@ -30,7 +30,7 @@ $contentLabel = match ($contentType) {
     <div class="or-detail__head">
         <div>
             <h1 class="or-detail__title">{{ $module['title'] }}</h1>
-            <div class="or-detail__meta">{{ $contentLabel }} + {!! $quiz !== null ? 'Quiz' : 'Module' !!} &middot; {!! (int) $module['duration_minutes'] !!} mins &middot; {{ $module['department'] ?: 'Office of Student Affairs and Services' }}</div>
+            <div class="or-detail__meta">{{ $contentLabel }} + {!! $quiz !== null ? 'Quiz' : 'Module' !!} / {!! (int) $module['duration_minutes'] !!} mins / {{ $module['department'] ?: 'Office of Student Affairs and Services' }}</div>
             <?php if (!empty($module['compliance_deadline'])): ?>
                 <div class="or-detail__deadline"><strong>Compliance Deadline:</strong> {{ fmt_date($module['compliance_deadline']) }}</div>
             <?php endif; ?>
@@ -54,7 +54,7 @@ $contentLabel = match ($contentType) {
                 <span class="or-file-card__icon">{!! App\Support\Icons::render('fileText', 22) !!}</span>
                 <div class="or-file-card__body">
                     <div class="or-file-card__title">{{ $mediaFile['original_name'] ?? 'Module file' }}</div>
-                    <div class="or-file-card__meta">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} &middot; {{ $mediaFile['mime_type'] ?? 'File' }}</div>
+                    <div class="or-file-card__meta">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} / {{ $mediaFile['mime_type'] ?? 'File' }}</div>
                 </div>
                 <a class="btn btn--primary" href="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}" download>{!! App\Support\Icons::render('download', 14) !!} Download File</a>
             </div>

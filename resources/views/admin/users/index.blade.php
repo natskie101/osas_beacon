@@ -48,7 +48,7 @@ $directoryUrl = url('/admin/users?tab=directory');
     <div class="stat">
         <div class="stat__label">Administrative Staff</div>
         <div class="stat__value">{!! number_format($counts['staff'] ?? 0) !!}</div>
-        <div class="stat__sub">{!! number_format($counts['coordinators'] ?? 0) !!} coordinator &middot; {!! number_format($counts['administrators'] ?? 0) !!} administrator in the directory</div>
+        <div class="stat__sub">{!! number_format($counts['coordinators'] ?? 0) !!} coordinator, {!! number_format($counts['administrators'] ?? 0) !!} administrator in the directory</div>
     </div>
 </div>
 

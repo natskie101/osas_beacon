@@ -30,7 +30,7 @@ $notifyMessage = sprintf(
     <div>
         <div class="page-head__eyebrow"><a href="{!! url('/admin/analytics') !!}">Viewing &amp; Tracking</a> / {{ $student['public_id'] }}</div>
         <h2 class="page-head__title">View Student Profile &amp; Tracking Logs</h2>
-        <p class="page-head__sub">{{ $fullName }} &middot; {{ $student['student_id'] ?: $student['public_id'] }}</p>
+        <p class="page-head__sub">{{ $fullName }} / {{ $student['student_id'] ?: $student['public_id'] }}</p>
     </div>
     <div class="page-head__actions">
         <?php if ($trackingStatus !== 'Compliant'): ?><button class="btn btn--outline" type="button" data-notify-open data-notify-url="{{ url('/admin/analytics/' . $student['public_id'] . '/notify') }}" data-notify-name="{{ $fullName }}" data-notify-message="{{ $notifyMessage }}" data-notify-return="tracking">Notify Student</button><?php endif; ?>
@@ -43,7 +43,7 @@ $notifyMessage = sprintf(
         <span class="avatar avatar--lg"><?php if ($studentPhotoFile !== null): ?><img class="avatar__photo" src="{!! url('/admin/analytics/' . $student['public_id'] . '/photo') !!}" alt=""><?php else: ?>{{ initials($student['first_name'], $student['last_name']) }}<?php endif; ?></span>
         <div>
             <div class="tracking-profile__name">{{ $fullName }}</div>
-            <div class="tracking-profile__meta">{{ $student['email'] }} &middot; {{ $student['program'] ?: 'No program' }} &middot; Year Level: {{ $student['year_level'] ?: 'Not set' }}</div>
+            <div class="tracking-profile__meta">{{ $student['email'] }} / {{ $student['program'] ?: 'No program' }} / Year Level: {{ $student['year_level'] ?: 'Not set' }}</div>
         </div>
     </div>
     <span class="badge {{ $statusTone }}">{{ strtoupper($trackingStatus) }}</span>
@@ -86,7 +86,7 @@ $notifyMessage = sprintf(
                     <span class="tracking-item__icon{!! $module['status'] === 'In Progress' ? ' tracking-item__icon--amber' : '' !!}">{!! App\Support\Icons::render($module['status'] === 'In Progress' ? 'clock' : 'dot', 13) !!}</span>
                     <div>
                         <div class="tracking-item__title">{{ $module['title'] }}</div>
-                        <div class="tracking-item__meta">{{ $module['status'] ?: 'Not Started' }} &middot; {!! number_format((int) $module['progress']) !!}%</div>
+                        <div class="tracking-item__meta">{{ $module['status'] ?: 'Not Started' }} / {!! number_format((int) $module['progress']) !!}%</div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -107,7 +107,7 @@ $notifyMessage = sprintf(
                     <span class="tracking-item__icon{!! (int) $quiz['passed'] === 1 ? ' tracking-item__icon--green' : ' tracking-item__icon--amber' !!}">{!! App\Support\Icons::render((int) $quiz['passed'] === 1 ? 'check' : 'clock', 13) !!}</span>
                     <div>
                         <div class="tracking-item__title">{{ $quiz['module_title'] }}</div>
-                        <div class="tracking-item__meta">{!! number_format((int) $quiz['attempts']) !!} attempt{!! (int) $quiz['attempts'] === 1 ? '' : 's' !!} &middot; best {!! number_format((float) $quiz['best_score'], 0) !!}% &middot; passing {!! number_format((float) $quiz['passing_rate'], 0) !!}% &middot; {!! (int) $quiz['passed'] === 1 ? 'Passed' : 'Not passed yet' !!}</div>
+                        <div class="tracking-item__meta">{!! number_format((int) $quiz['attempts']) !!} attempt{!! (int) $quiz['attempts'] === 1 ? '' : 's' !!} / best {!! number_format((float) $quiz['best_score'], 0) !!}% / passing {!! number_format((float) $quiz['passing_rate'], 0) !!}% / {!! (int) $quiz['passed'] === 1 ? 'Passed' : 'Not passed yet' !!}</div>
                     </div>
                 </div>
             <?php endforeach; ?>

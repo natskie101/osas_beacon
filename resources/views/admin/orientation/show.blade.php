@@ -57,7 +57,7 @@
                         <span class="file-row__icon">{!! App\Support\Icons::render('fileText', 18) !!}</span>
                         <div class="file-row__body">
                             <div class="cell-title">{{ $mediaFile['original_name'] ?? 'Module media' }}</div>
-                            <div class="cell-sub">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} &middot; {{ $module['content_type'] }}</div>
+                            <div class="cell-sub">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} / {{ $module['content_type'] }}</div>
                         </div>
                         <a class="btn btn--ghost btn--sm" href="{!! url('/admin/orientation/' . $module['public_id'] . '/media') !!}">{!! App\Support\Icons::render('download', 13) !!} Download</a>
                     </div>

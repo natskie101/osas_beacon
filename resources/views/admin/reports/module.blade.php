@@ -8,7 +8,7 @@
     <div>
         <div class="page-head__eyebrow"><a href="{!! url('/admin/reports') !!}">Reports</a> / {{ $module['public_id'] }}</div>
         <h2 class="page-head__title">{{ $module['title'] }}</h2>
-        <p class="page-head__sub">{{ $module['public_id'] }} &middot; {{ $module['version'] }} &middot; {{ $module['category'] }}</p>
+        <p class="page-head__sub">{{ $module['public_id'] }} / {{ $module['version'] }} / {{ $module['category'] }}</p>
     </div>
     <div class="page-head__actions">
         <a class="editor-close" href="{!! url('/admin/reports') !!}" aria-label="Close">&times;</a>

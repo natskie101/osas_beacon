@@ -22,7 +22,7 @@
     <div class="stat">
         <div class="stat__label">Open Reports</div>
         <div class="stat__value">{!! number_format($counts['open'] ?? 0) !!}</div>
-        <div class="stat__sub"><span class="badge badge--info">{!! number_format($counts['total'] ?? 0) !!} total items</span> {!! number_format($counts['lost'] ?? 0) !!} lost &middot; {!! number_format($counts['found'] ?? 0) !!} found</div>
+        <div class="stat__sub"><span class="badge badge--info">{!! number_format($counts['total'] ?? 0) !!} total items</span> {!! number_format($counts['lost'] ?? 0) !!} lost, {!! number_format($counts['found'] ?? 0) !!} found</div>
     </div>
     <div class="stat">
         <div class="stat__label">Claim Pending</div>
@@ -111,7 +111,7 @@
                             <span class="lf-card__status">{{ $statusLabel }}</span>
                         </div>
                         <div class="lf-card__body">
-                            <div class="lf-card__meta">{{ $item['public_id'] }} &middot; {{ mb_strtoupper((string) $item['category']) }}</div>
+                            <div class="lf-card__meta">{{ $item['public_id'] }} / {{ mb_strtoupper((string) $item['category']) }}</div>
                             <a class="lf-card__title" href="{!! url('/admin/lost-found/' . $item['public_id']) !!}">{{ $item['title'] }}</a>
                             <ul class="lf-card__facts">
                                 <li>{!! App\Support\Icons::render('pin', 12) !!} {{ $item['location'] ?: 'Location not recorded' }}</li>

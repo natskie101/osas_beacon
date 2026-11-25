@@ -113,7 +113,7 @@ sort($categories);
                             <span class="lf-card__status">{{ $statusLabel }}</span>
                         </div>
                         <div class="lf-card__body">
-                            <div class="lf-card__meta">{{ $item['public_id'] }} &middot; {{ mb_strtoupper((string) $item['category']) }}</div>
+                            <div class="lf-card__meta">{{ $item['public_id'] }} / {{ mb_strtoupper((string) $item['category']) }}</div>
                             <a class="lf-card__title" href="{!! url('/student/lost-found/' . $item['public_id']) !!}">{{ $item['title'] }}</a>
                             <ul class="lf-card__facts">
                                 <li>{!! App\Support\Icons::render('pin', 12) !!} {{ $item['location'] ?: 'Location not recorded' }}</li>
