@@ -34,7 +34,6 @@ $latest = $announcements[0] ?? null;
     <div class="sd-grid">
         <div class="sd-main">
             <section class="sd-card sd-announcement">
-                <div class="sd-label">Announcement</div>
                 <?php if ($latest !== null): ?>
                     <h3><a href="{!! url('/student/announcements/' . $latest['public_id']) !!}">{{ $latest['title'] }}</a></h3>
                     <p>{{ $latest['summary'] ?: 'Open the announcement to read the full details.' }}</p>
@@ -78,7 +77,6 @@ $latest = $announcements[0] ?? null;
 
         <aside class="sd-side">
             <section class="sd-card sd-side-card">
-                <div class="sd-label">Orientation &amp; Compliance</div>
                 <?php
                 $orCompleted = (int) ($orientation['completed'] ?? 0);
                 $orTotal = (int) ($orientation['total'] ?? 0);
@@ -109,7 +107,6 @@ $latest = $announcements[0] ?? null;
             </section>
 
             <section class="sd-card sd-side-card">
-                <div class="sd-label">Support Desk &amp; Concerns</div>
                 <?php if (($activeTickets ?? 0) > 0): ?>
                     <p>You have <strong>{!! (int) $activeTickets !!}</strong> active {!! $activeTickets === 1 ? 'ticket' : 'tickets' !!} currently with OSAS.</p>
                 <?php else: ?>
@@ -120,7 +117,6 @@ $latest = $announcements[0] ?? null;
 
             <?php if (($activeRequests ?? 0) > 0): ?>
                 <section class="sd-card sd-side-card">
-                    <div class="sd-label">Document Requests</div>
                     <p>You have <strong>{!! (int) $activeRequests !!}</strong> active {!! $activeRequests === 1 ? 'request' : 'requests' !!} in process.</p>
                     <a class="sd-link" href="{!! url('/student/document-requests') !!}">Track Requests <span>&rarr;</span></a>
                 </section>
