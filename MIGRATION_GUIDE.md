@@ -1,159 +1,184 @@
-# Neon to Supabase Migration Guide
+# Supabase to Aiven Migration Guide
 
-## Current Status
-- **Local `.env`**: Already pointing to Supabase (empty database)
-- **Production (Render)**: `render.yaml` updated to point to Supabase
-- **Neon Database**: Contains your production data (needs to be exported)
+## What actually depends on Supabase
 
-## Migration Steps
+**Nothing but the Postgres connection string.** Verified before writing this guide:
 
-### Step 1: Get Your Neon Credentials
+| Concern | Where it actually lives |
+|---|---|
+| Database | Supabase Postgres (`pgsql` driver) — **this is what we're moving** |
+| Authentication | Laravel's own `auth_*` tables + custom controllers (`app/Http/Controllers/Auth/`) |
+| File storage | Cloudflare R2 (`app/Services/R2Storage.php`) |
+| Email | Brevo / Gmail SMTP |
+| Realtime, PostgREST, Edge Functions, Supabase Auth, Supabase Storage | **Not used at all** |
 
-You need three pieces of information from your Neon database:
+There are no Supabase extensions, RLS policies, `auth.uid()` functions, or RPC/PostgREST calls anywhere in `database/migrations/` or `app/`. It's a plain Postgres database, so Aiven is a drop-in replacement.
 
-#### Option A: From Render Dashboard
-1. Go to https://dashboard.render.com
-2. Click on your `osas-beacon` service
-3. Go to **Environment** tab
-4. Find these values:
-   - `DB_DATABASE` = ?
-   - `DB_USERNAME` = ?
-   - `DB_PASSWORD` = ?
+**Current state of the Supabase database:** 30 tables in `public`, **zero rows** (only the `migrations` table has 23 rows). There is no production data to carry over — only schema.
 
-#### Option B: From Neon Console
-1. Go to https://console.neon.tech
-2. Select your project
-3. Go to **Connection Details**
-4. Copy the connection string or individual values
-
-**Neon Host** (from render.yaml): `ep-weathered-hat-a1ets3w2.ap-southeast-1.aws.neon.tech`
+Supabase also owns these schemas, which are **not** part of your app and must not be copied: `auth`, `storage`, `realtime`, `extensions`, `graphql`, `graphql_public`, `vault`.
 
 ---
 
-### Step 2: Export from Neon
+## Step 1: Create the Aiven service
 
-Once you have the credentials, run this command in PowerShell:
+1. Sign in at <https://console.aiven.io/> and **Create a service**.
+2. Service type: **Aiven for PostgreSQL**.
+3. Pick a cloud/region near your Render region (Render uses `singapore`, so choose a Singapore/Asia region if one is offered — lower latency between app and DB).
+4. Choose your plan, then **Create**. Startup takes a few minutes.
+
+### Step 1b: Get the connection details
+
+On the service **Overview** page, open **Connection Information** and copy:
+
+| Field | Your value |
+|---|---|
+| `DB_HOST` | `pg-2c2d6ca1-carlosnath991-aec2.h.aivencloud.com` |
+| `DB_PORT` | **`26572`** — *not* 5432 |
+| `DB_DATABASE` | `defaultdb` — *not* `postgres` |
+| `DB_USERNAME` | `avnadmin` |
+| `DB_PASSWORD` | set in `.env` |
+
+> **⚠️ Two things in this table will silently break you:**
+>
+> 1. **Port `26572`, not 5432.** Aiven assigns a random port when 5432 is taken.
+>    Copy it exactly — a stale `5432` here is the single most likely cause of a
+>    future "connection refused".
+> 2. **Database `defaultdb`, not `postgres`.** Aiven's Postgres ships with
+>    `defaultdb` (plus its own internal `_aiven`). There is no `postgres`
+>    database, and you get `FATAL: database "postgres" does not exist` rather
+>    than a helpful "unknown database".
+>
+> Port 6432 is Aiven's pgbouncer pooler — don't use it either. Laravel uses PDO
+> prepared statements and `DB::transaction()` (sessions, migrations), which
+> misbehave through pgbouncer unless it's in transaction pooling mode. Same
+> reason your old Supabase note said "use the direct connection."
+
+> **Allow inbound traffic.** Aiven services have IP allowlists. Add your dev machine's public IP and Render's egress IPs, or temporarily allow `0.0.0.0/0` while migrating (tighten afterwards).
+
+---
+
+## Step 2: Migrate the schema — ✅ DONE
+
+Supabase had 30 tables but **zero rows** (only `migrations` had 23), so there was
+no data to copy. Option A was taken: schema rebuilt from Laravel migrations.
 
 ```powershell
-$env:PGPASSWORD="<your_neon_password>"
-& "C:\laragon\bin\postgresql\postgresql\bin\pg_dump.exe" `
-  --host="ep-weathered-hat-a1ets3w2.ap-southeast-1.aws.neon.tech" `
-  --port="5432" `
-  --username="<your_neon_username>" `
-  --dbname="<your_neon_database>" `
-  --no-owner `
-  --no-acl `
-  --clean `
-  --if-exists `
-  --file="neon_backup.sql"
+# .env now points at Aiven
+& "C:\laragon\bin\php\php-8.3.36-Win32-vs16-x64\php.exe" artisan migrate --force
 ```
 
-**Note**: Neon requires SSL, so this should work. If you get an SSL error, the pg_dump command will automatically use SSL.
+All **23 migrations ran** against `defaultdb` (batch 1).
 
----
+<details>
+<summary>Option B — dump & restore instead (kept for reference)</summary>
 
-### Step 3: Import to Supabase
-
-After the export completes, import to Supabase:
+Only needed if Supabase ever had real data. Dumps **only `public`**
+(`--schema=public --no-owner --no-acl --clean --if-exists`) so Supabase's
+`auth`/`storage`/`realtime`/`extensions`/`graphql`/`vault` schemas never reach
+Aiven — they'd fail there (their roles don't exist) and the app doesn't use them.
 
 ```powershell
-$env:PGPASSWORD="UcUbUECqfz/_9@9"
-& "C:\laragon\bin\postgresql\postgresql\bin\psql.exe" `
-  --host="db.auzgbleenlypuxogwanx.supabase.co" `
-  --port="5432" `
-  --username="postgres" `
-  --dbname="postgres" `
-  --file="neon_backup.sql"
+# Windows (prompts for the Aiven password; nothing stored in the script)
+.\scripts\migrate-supabase-to-aiven.ps1
 ```
+
+```bash
+# Linux / macOS
+export AIVEN_HOST=pg-2c2d6ca1-carlosnath991-aec2.h.aivencloud.com
+export AIVEN_PORT=26572
+export AIVEN_DATABASE=defaultdb
+export AIVEN_USERNAME=avnadmin
+export AIVEN_PASSWORD=...
+bash scripts/migrate-supabase-to-aiven.sh
+```
+
+</details>
 
 ---
 
-### Step 4: Verify the Migration
-
-Check that your tables were imported:
-
-```powershell
-$env:PGPASSWORD="UcUbUECqfz/_9@9"
-& "C:\laragon\bin\postgresql\postgresql\bin\psql.exe" `
-  --host="db.auzgbleenlypuxogwanx.supabase.co" `
-  --port="5432" `
-  --username="postgres" `
-  --dbname="postgres" `
-  --command="SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;"
-```
-
----
-
-### Step 5: Test Locally
-
-Your local `.env` is already configured for Supabase. Test your application:
+## Step 3: Verify — ✅ DONE
 
 ```powershell
 & "C:\laragon\bin\php\php-8.3.36-Win32-vs16-x64\php.exe" artisan migrate:status
+& "C:\laragon\bin\php\php-8.3.36-Win32-vs16-x64\php.exe" scripts\aiven-connection-probe.php
 ```
 
-If everything looks good, start your local server and test:
+Latest run:
 
-```powershell
-& "C:\laragon\bin\php\php-8.3.36-Win32-vs16-x64\php.exe" artisan serve
+```
+database: defaultdb
+user:     avnadmin
+server:   PostgreSQL 18.7 on x86_64-pc-linux-gnu ...
+tables:   30
+
+OK - PDO connection works.
+```
+
+`migrate:status` reports all 23 as `Ran`.
+
+> Your local `pg_dump` is probably older than Aiven's **PostgreSQL 18**. If you
+> ever use Option B and hit `server version mismatch`, either install a newer
+> client or use Option A.
+
+---
+
+## Step 4: Update local `.env` — ✅ DONE
+
+```
+DB_CONNECTION="pgsql"
+DB_HOST="pg-2c2d6ca1-carlosnath991-aec2.h.aivencloud.com"
+DB_PORT="26572"
+DB_DATABASE="defaultdb"
+DB_USERNAME="avnadmin"
+DB_PASSWORD=<your Aiven password>
+DB_SSLMODE="require"
 ```
 
 ---
 
-### Step 6: Update Production (Render)
+## Step 5: Update production (Render)
 
-1. Go to https://dashboard.render.com
-2. Find your `osas-beacon` service
-3. Go to **Environment** tab
-4. Update these three variables:
-   ```
-   DB_DATABASE = postgres
-   DB_USERNAME = postgres
-   DB_PASSWORD = UcUbUECqfz/_9@9
-   ```
-5. Render will automatically redeploy
+`render.yaml` now has `DB_HOST: REPLACE_WITH_AIVEN_HOST` — replace that with your real Aiven host, commit, and Render will redeploy.
+
+Then in the **Render dashboard → osas-beacon → Environment**, set the `sync: false` variables it can't infer:
+
+```
+DB_DATABASE = defaultdb
+DB_USERNAME  = avnadmin
+DB_PASSWORD  = <your_aiven_password>
+```
 
 ---
 
-### Step 7: Security - Rotate Credentials
+## Step 6: Lock it down
 
-**IMPORTANT**: After the migration succeeds, rotate your Supabase password since it's been exposed in this conversation:
-
-1. Go to https://supabase.com/dashboard/project/auzgbleenlypuxogwanx/settings/database
-2. Reset the database password
-3. Update:
-   - Local `.env` → `DB_PASSWORD=<new_password>`
-   - Render dashboard → `DB_PASSWORD=<new_password>`
+1. **Tighten the Aiven IP allowlist** — remove `0.0.0.0/0` if you added it.
+2. **Rotate the `avnadmin` password** if it was ever printed anywhere.
+3. **Delete the Supabase project** once the app has run against Aiven for a while. Deleting it is the only way to be sure nothing still points at it.
+4. Delete the dump file if you used Option B: `Remove-Item supabase_backup.sql`.
 
 ---
 
 ## Troubleshooting
 
-### Error: "password authentication failed"
-- Double-check your Neon credentials
-- Make sure you're using the exact values from Render dashboard or Neon console
+**`password authentication failed`**
+Double-check the password — Aiven shows it once, and it's easy to grab the *service* password instead of the *database* password. Reset it from the Overview page if unsure.
 
-### Error: "connection is insecure"
-- This is normal with Neon - the pg_dump command should automatically use SSL
-- If it persists, add `PGSSLMODE=require` before the command:
-  ```powershell
-  $env:PGSSLMODE="require"
-  $env:PGPASSWORD="<password>"
-  ```
+**`Connection refused` / times out**
+Almost always the **IP allowlist**. Your public IP and Render's IPs must be permitted.
 
-### Error: "relation already exists" during import
-- This is usually safe to ignore if using `--clean --if-exists`
-- The import will drop existing objects before creating new ones
+**`SSL connection required` / `server does not support SSL`**
+Set `DB_SSLMODE=require` in `.env` (Aiven mandates TLS).
 
-### No tables after import
-- Check the neon_backup.sql file to see if it contains data
-- Verify you exported from the correct database
+**`pg_dump: error: aborting because of server version mismatch`**
+Your local `pg_dump` is older than Aiven's Postgres (Aiven ships 15–17). Install a matching or newer client, or use Option A.
 
----
+**`role "anon" does not exist` or `schema "auth" does not exist` during import**
+Something dumped more than `public`. Re-run the script as-is — it passes `--schema=public` — or import manually with that flag.
 
-## Need Help?
+**`relation already exists`**
+Harmless with `--clean --if-exists`. If it persists and the DB is disposable: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on **Aiven only**, then re-import.
 
-If you encounter any issues, share:
-1. The exact error message
-2. Which step you're on
-3. The neon_backup.sql file size (to confirm export worked)
+**Afterwards: `php artisan` hangs or the app times out**
+Check you pointed at port `5432` and not `6432`.

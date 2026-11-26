@@ -30,11 +30,13 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
-        # Supabase Postgres direct connection (not pooled)
-        # For production, use the direct connection endpoint
-        value: db.auzgbleenlypuxogwanx.supabase.co
+        # Aiven for PostgreSQL direct connection. NOT the pooler.
+        # Taken from: Aiven console > service > Overview > Connection Information
+        value: pg-2c2d6ca1-carlosnath991-aec2.h.aivencloud.com
       - key: DB_PORT
-        value: "5432"
+        # Aiven assigned a non-default port for this service - copied from the
+        # console. Do not "fix" this back to 5432; it will not connect.
+        value: "26572"
       - key: DB_SSLMODE
         value: require
       - key: DB_DATABASE
