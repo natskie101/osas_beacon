@@ -45,19 +45,20 @@ $statusUrl = static function (string $status) use ($filters): string {
             $end = strtotime((string) $event['end_at']);
             ?>
             <article class="ev-card">
-                <div class="ev-card__head">
-                    <span class="ev-card__code">{{ $event['public_id'] }}</span>
-                    <span class="badge {!! $event['status'] === 'Scheduled' ? 'badge--pending' : 'badge--published' !!}">{!! $event['status'] === 'Scheduled' ? 'Upcoming' : e((string) $event['status']) !!}</span>
-                </div>
                 <div class="ev-card__body">
+                    <div class="ev-card__head">
+                        <span class="ev-card__code">REF: {{ $event['public_id'] }}</span>
+                        <span class="badge">{!! $event['status'] === 'Scheduled' ? 'Upcoming' : e((string) $event['status']) !!}</span>
+                    </div>
                     <h3 class="ev-card__title"><a href="{!! url('/student/events/' . $event['public_id']) !!}">{{ $event['title'] }}</a></h3>
                     <p class="ev-card__desc">{{ App\Support\Html::summary($event['description'], 200) }}</p>
                     <div class="ev-card__meta">
                         <span>{!! App\Support\Icons::render('calendar', 12) !!} {{ fmt_date($event['start_at']) }} · {{ date('g:i A', $start) }} - {{ date('g:i A', $end) }}</span>
+                        <span>·</span>
                         <span>{!! App\Support\Icons::render('pin', 12) !!} {{ $event['venue'] }} · {{ $event['mode'] }}</span>
                     </div>
                 </div>
-                <a class="btn btn--outline btn--sm ev-card__action" href="{!! url('/student/events/' . $event['public_id']) !!}">View Details</a>
+                <a class="btn sr-view-btn" href="{!! url('/student/events/' . $event['public_id']) !!}">View Details</a>
             </article>
         <?php endforeach; ?>
     </div>

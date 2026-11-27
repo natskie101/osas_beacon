@@ -49,16 +49,18 @@ $statusUrl = static function (string $status) use ($filters): string {
             <article class="feed-item support-item">
                 <div class="feed-item__body">
                     <div class="support-item__head">
-                        <span class="support-item__code">{{ $ticket['public_id'] }}</span>
+                        <span class="support-item__code">REF: {{ $ticket['public_id'] }}</span>
                         <span class="badge {{ status_class($ticket['status']) }}">{{ (string) $ticket['status'] }}</span>
                     </div>
                     <h3 class="feed-item__title"><a href="{!! url('/student/support/' . $ticket['public_id']) !!}">{{ $ticket['subject'] }}</a></h3>
                     <p class="support-item__category">{{ $ticket['category'] }}</p>
                     <div class="feed-item__meta">
                         <span>{!! App\Support\Icons::render('calendar', 12) !!} {{ fmt_date($ticket['submitted_at']) }}</span>
+                        <span>·</span>
                         <span>{{ $ticket['student_name'] }}</span>
                         <?php if ($ticket['rating'] !== null): ?>
                             <?php $rating = max(1, min(5, (int) $ticket['rating'])); ?>
+                            <span>·</span>
                             <span class="support-item__rating" aria-label="Rated {!! $rating !!} out of 5">
                                 <span class="support-item__stars">{!! str_repeat('★', $rating) !!}<span>{!! str_repeat('★', 5 - $rating) !!}</span></span>
                                 <strong>{!! $rating !!}/5</strong>
@@ -66,7 +68,7 @@ $statusUrl = static function (string $status) use ($filters): string {
                         <?php endif; ?>
                     </div>
                 </div>
-                <a class="btn btn--primary btn--sm support-item__action" href="{!! url('/student/support/' . $ticket['public_id']) !!}">View</a>
+                <a class="btn sr-view-btn" href="{!! url('/student/support/' . $ticket['public_id']) !!}">View Ticket</a>
             </article>
         <?php endforeach; ?>
     </div>

@@ -3,10 +3,46 @@
 <?php
 /** @var list<array<string, mixed>> $requests */
 /** @var array<string, int> $counts */
-?><div class="page-head"><div><h2 class="page-head__title">{{ $pageTitle }}</h2><p class="page-head__sub">{{ $pageSubtitle }}</p></div><a class="btn btn--primary" href="{!! url('/student/document-requests/create') !!}">New Request</a></div>
-<div class="stats"><div class="stat"><div class="stat__label">Total Requests</div><div class="stat__value">{!! number_format($counts['total']) !!}</div><div class="stat__sub">All submitted requests</div></div><div class="stat"><div class="stat__label">In Progress</div><div class="stat__value">{!! number_format($counts['active']) !!}</div><div class="stat__sub">Submitted or under review</div></div><div class="stat"><div class="stat__label">Ready</div><div class="stat__value">{!! number_format($counts['ready']) !!}</div><div class="stat__sub">Ready for pick-up</div></div><div class="stat"><div class="stat__label">Released</div><div class="stat__value">{!! number_format($counts['released']) !!}</div><div class="stat__sub">Completed requests</div></div></div>
-<?php if ($requests === []): ?><div class="card panel-card"><div class="empty-state"><strong>You have not requested any documents yet.</strong><div>Use the New Request button to submit your first request.</div><a class="btn btn--primary" href="{!! url('/student/document-requests/create') !!}">Request a Document</a></div></div><?php else: ?>
-<div class="table-wrap"><div class="table-toolbar"><div><div class="panel-title">My Document Requests</div><div class="cell-sub">Track the status of every request you submitted.</div></div></div><div class="table-scroll"><table class="data"><thead><tr><th>Document</th><th>Status</th><th>Requested</th><th>Delivery</th><th class="u-right">Open</th></tr></thead><tbody><?php foreach ($requests as $requestRecord): ?><tr><td><div class="cell-title">{{ $requestRecord['document_type'] }}</div><div class="cell-sub">{{ $requestRecord['public_id'] }} · {!! (int) $requestRecord['copies'] !!} cop{!! (int) $requestRecord['copies'] === 1 ? 'y' : 'ies' !!}</div></td><td><span class="badge {{ status_class($requestRecord['status']) }}">{{ $requestRecord['status'] }}</span></td><td><div class="cell-title">{{ fmt_date($requestRecord['requested_at']) }}</div><div class="cell-sub">{{ time_ago($requestRecord['requested_at']) }}</div></td><td>{{ $requestRecord['delivery_mode'] }}</td><td class="u-right"><a class="btn btn--outline btn--sm" href="{!! url('/student/document-requests/' . $requestRecord['public_id']) !!}">View</a></td></tr><?php endforeach; ?></tbody></table></div></div>
+?>
+<div class="page-head">
+    <div>
+        <h2 class="page-head__title">{{ $pageTitle }}</h2>
+        <p class="page-head__sub">{{ $pageSubtitle }}</p>
+    </div>
+    <a class="btn btn--primary" href="{!! url('/student/document-requests/create') !!}">New Request</a>
+</div>
+
+<?php if ($requests === []): ?>
+    <div class="card panel-card">
+        <div class="empty-state">
+            <strong>You have not requested any documents yet.</strong>
+            <div>Use the New Request button to submit your first request.</div>
+            <a class="btn btn--primary" href="{!! url('/student/document-requests/create') !!}">Request a Document</a>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="doc-list">
+        <?php foreach ($requests as $requestRecord): ?>
+            <article class="doc-card">
+                <div class="doc-card__body">
+                    <div class="doc-card__head">
+                        <span class="doc-card__code">REF: {{ $requestRecord['public_id'] }}</span>
+                        <span class="badge">{{ $requestRecord['status'] }}</span>
+                    </div>
+                    <h3 class="doc-card__title"><a href="{!! url('/student/document-requests/' . $requestRecord['public_id']) !!}">{{ $requestRecord['document_type'] }}</a></h3>
+                    <p class="doc-card__desc">{!! (int) $requestRecord['copies'] !!} cop{!! (int) $requestRecord['copies'] === 1 ? 'y' : 'ies' !!} · Delivery: {{ $requestRecord['delivery_mode'] }}<?php if (!empty($requestRecord['purpose'])): ?> · Purpose: {{ App\Support\Html::summary($requestRecord['purpose'], 160) }}<?php endif; ?></p>
+                    <div class="doc-card__meta">
+                        <span>Requested {{ fmt_date($requestRecord['requested_at']) }} ({{ time_ago($requestRecord['requested_at']) }})</span>
+                        <?php if (!empty($requestRecord['processed_by'])): ?>
+                            <span>·</span>
+                            <span>Processed by {{ $requestRecord['processed_by'] }}</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <a class="btn sr-view-btn" href="{!! url('/student/document-requests/' . $requestRecord['public_id']) !!}">View Request</a>
+            </article>
+        <?php endforeach; ?>
+    </div>
 <?php endif; ?>
 
 @endsection

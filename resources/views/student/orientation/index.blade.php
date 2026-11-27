@@ -41,24 +41,22 @@ $contentLabel = static function (array $module): string {
         $completions = max(0, (int) $module['completions']);
         ?>
         <article class="or-module">
-            <div class="or-module__head">
-                <div class="or-module__title-wrap">
-                    <span class="or-code">{{ $module['public_id'] }}</span>
-                    <h3>{{ $module['title'] }}</h3>
+            <div class="or-module__body">
+                <div class="or-module__head">
+                    <span class="or-code">REF: {{ $module['public_id'] }}</span>
+                    <span class="or-badge">{!! $status === 'Completed' ? 'Completed' : 'In Progress' !!}</span>
                 </div>
-                <span class="or-badge {!! $module['mandatory'] ? 'or-badge--mandatory' : 'or-badge--recommended' !!}">{!! $module['mandatory'] ? 'Mandatory' : 'Recommended' !!}</span>
+                <h3 class="or-module__title"><a href="{!! url('/student/orientation/' . $module['public_id']) !!}">{{ $module['title'] }}</a></h3>
+                <p class="or-module__desc">{{ $module['description'] ?: App\Support\Html::summary($module['body'], 180) }}</p>
+                <div class="or-module__meta">
+                    <span>{{ $contentLabel($module) }}</span>
+                    <span>·</span>
+                    <span>By {{ $module['department'] ?: 'Office of Student Affairs and Services' }}</span>
+                    <span>·</span>
+                    <span>Updated {{ fmt_date($module['updated_at']) }}</span>
+                </div>
             </div>
-            <p class="or-module__desc">{{ $module['description'] ?: App\Support\Html::summary($module['body'], 160) }}</p>
-            <div class="or-module__meta">
-                <span class="or-module__progress-status{!! $status === 'Completed' ? ' or-module__progress-status--completed' : ' or-module__progress-status--in-progress' !!}">{!! $status === 'Completed' ? 'COMPLETED' : 'IN PROGRESS' !!}</span>
-                <div class="or-module__type">{{ $contentLabel($module) }}</div>
-                <div class="or-module__score">{!! number_format((float) $module['completion_rate'], 1) !!}% ({!! number_format($completions) !!}/{!! number_format($learners) !!})</div>
-            </div>
-            <div class="or-module__foot">
-                <span>{{ fmt_date($module['updated_at']) }} / By {{ $module['department'] ?: 'OSAS' }}</span>
-                {!! App\Support\Icons::render('chevronRight', 14) !!}
-            </div>
-            <a class="or-module__link" href="{!! url('/student/orientation/' . $module['public_id']) !!}" aria-label="{{ $module['title'] }}"></a>
+            <a class="btn sr-view-btn" href="{!! url('/student/orientation/' . $module['public_id']) !!}">View Module</a>
         </article>
     <?php endforeach; ?>
 </div>

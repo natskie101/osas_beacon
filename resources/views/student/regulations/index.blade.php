@@ -39,15 +39,18 @@ $pillUrl = static function (?string $category) use ($search): string {
     <div class="sr-list">
         <?php foreach ($regulations as $regulation): ?>
             <article class="sr-card">
-                <div class="sr-card__head">
-                    <span class="sr-code">{{ $regulation['reference_code'] }}</span>
-                    <span class="sr-badge">In force</span>
-                </div>
-                <h3 class="sr-card__title">{{ $regulation['title'] }}</h3>
-                <p class="sr-card__desc">{{ $regulation['summary'] ?: App\Support\Html::summary($regulation['body'], 220) }}</p>
-                <div class="sr-card__facts">
-                    <span>{!! App\Support\Icons::render('scale', 13) !!} {{ $regulation['category'] }}</span>
-                    <span>{!! App\Support\Icons::render('calendar', 13) !!} Revised: {{ fmt_date($regulation['updated_at']) }}</span>
+                <div class="sr-card__body">
+                    <div class="sr-card__head">
+                        <span class="sr-code">REF: {{ $regulation['reference_code'] }}</span>
+                        <span class="sr-badge">In Force</span>
+                    </div>
+                    <h3 class="sr-card__title"><a href="{!! url('/student/rules/' . $regulation['public_id']) !!}">{{ $regulation['title'] }}</a></h3>
+                    <p class="sr-card__desc">{{ $regulation['summary'] ?: App\Support\Html::summary($regulation['body'], 220) }}</p>
+                    <div class="sr-card__facts">
+                        <span>{!! App\Support\Icons::render('scale', 13) !!} {{ $regulation['category'] }}</span>
+                        <span>·</span>
+                        <span>Revised {{ fmt_date($regulation['updated_at']) }}</span>
+                    </div>
                 </div>
                 <a class="btn sr-view-btn" href="{!! url('/student/rules/' . $regulation['public_id']) !!}">View Policy</a>
             </article>
