@@ -6,8 +6,8 @@
 ?><div class="page-head">
     <div>
         <div class="page-head__eyebrow"><a href="{!! url('/admin/announcements') !!}">Announcements</a> / {{ $announcement['public_id'] }}</div>
-        <h2 class="page-head__title">{{ $announcement['title'] }}</h2>
-        <p class="page-head__sub">{{ $announcement['category'] }} · {{ $announcement['audience'] }} · {{ $announcement['status'] }}</p>
+        <h2 class="page-head__title" style="font-size: 28px;">{{ $announcement['title'] }}</h2>
+        <p class="page-head__sub" style="font-size: 14px;">{{ $announcement['category'] }} / {{ $announcement['audience'] }} / {{ $announcement['status'] }}</p>
     </div>
     <div class="page-head__actions">
         <a class="btn btn--outline" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/edit') !!}">{!! App\Support\Icons::render('edit', 14) !!} Edit</a>
@@ -21,58 +21,53 @@
     </div>
 </div>
 
-<div class="detail-grid">
-    <div class="detail-grid__main">
-        <section class="card panel-card">
-            <div class="panel-card__head">
-                <div>
-                    <div class="panel-title">Announcement Content</div>
-                    <p class="panel-card__sub">Rendered exactly as students see it in the portal.</p>
-                </div>
-                <span class="badge {{ status_class($announcement['status']) }}">{{ $announcement['status'] }}</span>
-            </div>
-            <?php if (!empty($announcement['summary'])): ?>
-                <p class="content-lede">{{ $announcement['summary'] }}</p>
-            <?php endif; ?>
-            <div class="content-detail">{!! body_html($announcement['body']) !!}</div>
-
-            <?php if ($attachments !== []): ?>
-                <div class="content-attachments">
-                    <?php foreach ($attachments as $attachment): ?>
-                        <?php if (!empty($attachment['file_id'])): ?>
-                            <a class="attachment-chip" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/attachment/' . $attachment['file_id']) !!}">
-                                {!! App\Support\Icons::render('download', 14) !!}<span>{{ $attachment['name'] }}</span><em>Download{!! !empty($attachment['size']) ? ' · ' . e($attachment['size']) : '' !!}</em>
-                            </a>
-                        <?php else: ?>
-                            <span class="attachment-chip">{!! App\Support\Icons::render('fileText', 14) !!}<span>{{ $attachment['name'] }}</span><em>{{ $attachment['size'] ?? '' }}</em></span>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </section>
+<section class="card panel-card" style="max-width: 1200px;">
+    <div class="panel-card__head">
+        <div>
+            <div class="panel-title">Announcement Content</div>
+            <p class="panel-card__sub">Rendered exactly as students see it in the portal.</p>
+        </div>
+        <span class="badge {{ status_class($announcement['status']) }}">{{ $announcement['status'] }}</span>
     </div>
+    <?php if (!empty($announcement['summary'])): ?>
+        <p class="content-lede" style="font-size: 16px;">{{ $announcement['summary'] }}</p>
+    <?php endif; ?>
+    <div class="content-detail" style="font-size: 15px; line-height: 1.7;">{!! body_html($announcement['body']) !!}</div>
 
-    <aside class="detail-grid__side">
-        <section class="card panel-card">
-            <div class="panel-title">Publishing Details</div>
-            <dl class="detail-list">
-                <div><dt>Reference</dt><dd class="mono">{{ $announcement['public_id'] }}</dd></div>
-                <div><dt>Category</dt><dd>{{ $announcement['category'] }}</dd></div>
-                <div><dt>Audience</dt><dd>{{ $announcement['audience'] }}</dd></div>
-                <div><dt>Priority</dt><dd>{{ $announcement['priority'] }}</dd></div>
-                <div><dt>Author</dt><dd>{{ $announcement['author'] }}</dd></div>
-                <div><dt>Published</dt><dd>{{ fmt_datetime($announcement['published_at']) }}</dd></div>
-                <div><dt>Scheduled</dt><dd>{{ fmt_datetime($announcement['scheduled_for']) }}</dd></div>
-                <div><dt>Last updated</dt><dd>{{ fmt_datetime($announcement['updated_at']) }}</dd></div>
-                <div><dt>Views</dt><dd>{!! number_format((int) $announcement['views']) !!}</dd></div>
-            </dl>
-        </section>
-        <section class="card panel-card">
-            <div class="panel-title">Visibility</div>
-            <p class="panel-card__text">{!! $announcement['status'] === 'Published' ? 'This notice is live in the student portal and appears in the recipient notification bell.' : 'This notice is not currently visible to students.' !!}</p>
-            <a class="btn btn--outline btn--block" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/edit') !!}">Change Publishing Settings</a>
-        </section>
-    </aside>
-</div>
+    <?php if ($attachments !== []): ?>
+        <div class="content-attachments">
+            <?php foreach ($attachments as $attachment): ?>
+                <?php if (!empty($attachment['file_id'])): ?>
+                    <a class="attachment-chip" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/attachment/' . $attachment['file_id']) !!}">
+                        {!! App\Support\Icons::render('download', 14) !!}<span>{{ $attachment['name'] }}</span><em>Download{!! !empty($attachment['size']) ? ' / ' . e($attachment['size']) : '' !!}</em>
+                    </a>
+                <?php else: ?>
+                    <span class="attachment-chip">{!! App\Support\Icons::render('fileText', 14) !!}<span>{{ $attachment['name'] }}</span><em>{{ $attachment['size'] ?? '' }}</em></span>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
+
+<section class="card panel-card" style="max-width: 1200px; margin-top: 20px;">
+    <div class="panel-title">Publishing Details</div>
+    <dl class="detail-list">
+        <div><dt>Reference</dt><dd class="mono">{{ $announcement['public_id'] }}</dd></div>
+        <div><dt>Category</dt><dd>{{ $announcement['category'] }}</dd></div>
+        <div><dt>Audience</dt><dd>{{ $announcement['audience'] }}</dd></div>
+        <div><dt>Priority</dt><dd>{{ $announcement['priority'] }}</dd></div>
+        <div><dt>Author</dt><dd>{{ $announcement['author'] }}</dd></div>
+        <div><dt>Published</dt><dd>{{ fmt_datetime($announcement['published_at']) }}</dd></div>
+        <div><dt>Scheduled</dt><dd>{{ fmt_datetime($announcement['scheduled_for']) }}</dd></div>
+        <div><dt>Last updated</dt><dd>{{ fmt_datetime($announcement['updated_at']) }}</dd></div>
+        <div><dt>Views</dt><dd>{!! number_format((int) $announcement['views']) !!}</dd></div>
+    </dl>
+</section>
+
+<section class="card panel-card" style="max-width: 1200px; margin-top: 20px;">
+    <div class="panel-title">Visibility</div>
+    <p class="panel-card__text">{!! $announcement['status'] === 'Published' ? 'This notice is live in the student portal and appears in the recipient notification bell.' : 'This notice is not currently visible to students.' !!}</p>
+    <a class="btn btn--outline btn--block" href="{!! url('/admin/announcements/' . $announcement['public_id'] . '/edit') !!}">Change Publishing Settings</a>
+</section>
 
 @endsection
