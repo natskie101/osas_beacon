@@ -5297,7 +5297,6 @@ body[data-page="support"] .support-item .sr-view-btn {
     top: 18px;
     right: 18px;
   }
-}
   body[data-page="support"] .support-tabs {
     gap: 14px;
   }
@@ -7762,6 +7761,465 @@ body .sr-badge svg {
   }
   .cmd-palette {
     padding: 8vh 12px 12px;
+  }
+}
+
+/* ==========================================================================
+   Student portal — responsive behaviour
+   Card lists, detail headers and dense grids adapt to narrow viewports.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Page headers scale down (the detail views set 28px/14px inline, so the
+      override needs !important to win over the inline declaration).
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  body[data-portal="student"] .page-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  body[data-portal="student"] .page-head__title {
+    font-size: 24px !important;
+    line-height: 1.25;
+  }
+  body[data-portal="student"] .page-head__sub {
+    font-size: 13px !important;
+    line-height: 1.5;
+  }
+  body[data-portal="student"] .page-head__eyebrow {
+    font-size: 9.5px;
+  }
+}
+@media (max-width: 560px) {
+  body[data-portal="student"] .page-head__title {
+    font-size: 21px !important;
+  }
+  body[data-portal="student"] .page-head__sub {
+    font-size: 12.5px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. List cards stack their action button below the body and drop the
+      absolutely positioned status badge back into the header row, so nothing
+      is squeezed or overlapped on phones.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  /* Announcements */
+  body[data-page="announcements"] .feed-item,
+  /* Rules and Regulations */
+  body[data-page="rules"] .sr-card,
+  /* Orientation */
+  body[data-page="orientation"] .or-module,
+  /* Events */
+  body[data-page="events"] .ev-card,
+  /* Document Requests */
+  body[data-portal="student"][data-page="document-requests"] .doc-card,
+  /* Feedback and Concerns */
+  body[data-page="support"] .support-item {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  body[data-page="announcements"] .feed-item > .sr-view-btn,
+  body[data-page="rules"] .sr-card .sr-view-btn,
+  body[data-page="orientation"] .or-module > .sr-view-btn,
+  body[data-page="events"] .ev-card > .sr-view-btn,
+  body[data-portal="student"][data-page="document-requests"] .doc-card > .sr-view-btn,
+  body[data-page="support"] .support-item .sr-view-btn {
+    width: 100%;
+    align-self: stretch;
+    margin: 0;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+  /* The status badge returns to the flow so it can never overlap the title. */
+  body[data-page="announcements"] .feed-item__eyebrow .badge,
+  body[data-page="rules"] .sr-card .sr-badge,
+  body[data-page="orientation"] .or-badge,
+  body[data-page="events"] .ev-card .badge,
+  body[data-portal="student"][data-page="document-requests"] .doc-card .badge,
+  body[data-page="support"] .support-item__head .badge {
+    position: static;
+    top: auto;
+    right: auto;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+  body[data-page="announcements"] .feed-item__eyebrow,
+  body[data-page="rules"] .sr-card__head,
+  body[data-page="orientation"] .or-module__head,
+  body[data-page="events"] .ev-card__head,
+  body[data-portal="student"][data-page="document-requests"] .doc-card__head,
+  body[data-page="support"] .support-item__head {
+    padding-right: 0;
+    gap: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Card typography tightens on small phones.
+   -------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  body[data-page="announcements"] .feed-item,
+  body[data-page="rules"] .sr-card,
+  body[data-page="orientation"] .or-module,
+  body[data-page="events"] .ev-card,
+  body[data-portal="student"][data-page="document-requests"] .doc-card,
+  body[data-page="support"] .support-item {
+    padding: 18px;
+  }
+  body[data-page="announcements"] .feed-item__title,
+  body[data-page="rules"] .sr-card__title,
+  body[data-page="orientation"] .or-module__title,
+  body[data-page="events"] .ev-card__title,
+  body[data-portal="student"][data-page="document-requests"] .doc-card__title,
+  body[data-page="support"] .support-item .feed-item__title {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+  body[data-page="announcements"] .feed-item__text,
+  body[data-page="rules"] .sr-card__desc,
+  body[data-page="orientation"] .or-module__desc,
+  body[data-page="events"] .ev-card__desc,
+  body[data-portal="student"][data-page="document-requests"] .doc-card__desc,
+  body[data-page="support"] .support-item__category {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  body[data-page="announcements"] .feed-item__meta,
+  body[data-page="rules"] .sr-card__facts,
+  body[data-page="orientation"] .or-module__meta,
+  body[data-page="events"] .ev-card__meta,
+  body[data-portal="student"][data-page="document-requests"] .doc-card__meta,
+  body[data-page="support"] .support-item .feed-item__meta {
+    font-size: 11.5px;
+    gap: 6px;
+  }
+  body[data-page="announcements"] .feed-item__reference,
+  body[data-page="rules"] .sr-card .sr-code,
+  body[data-page="orientation"] .or-code,
+  body[data-page="events"] .ev-card__code,
+  body[data-portal="student"][data-page="document-requests"] .doc-card__code,
+  body[data-page="support"] .support-item__code {
+    font-size: 10.5px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Filter pills and status tabs stay reachable on narrow screens.
+   -------------------------------------------------------------------------- */
+@media (max-width: 620px) {
+  body[data-page="rules"] .sr-pills,
+  body[data-page="events"] .ev-tabs {
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+  body[data-page="rules"] .sr-pill,
+  body[data-page="events"] .ev-tab {
+    padding: 7px 11px;
+    font-size: 11.5px;
+  }
+  body[data-page="support"] .support-tabs {
+    gap: 14px;
+  }
+  body[data-page="support"] .support-tab {
+    font-size: 12px;
+  }
+  /* Search fields fill the row on every module and keep a 48px touch target. */
+  body[data-page="announcements"] .filter-bar:has(+ .feed-list),
+  body[data-page="rules"] .sr-search,
+  body[data-page="orientation"] .or-search,
+  body[data-page="events"] .ev-search,
+  body[data-page="support"] .support-search {
+    margin-bottom: 12px;
+  }
+  body[data-page="rules"] .sr-search .input,
+  body[data-page="orientation"] .or-search .input,
+  body[data-page="events"] .ev-search .input,
+  body[data-page="support"] .support-search .input {
+    min-height: 48px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Detail pages: readable article text and stacked fact grids.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  body[data-portal="student"] .content-article,
+  body[data-portal="student"] .panel-card,
+  body[data-portal="student"] .card {
+    padding: 16px 15px;
+  }
+  body[data-portal="student"] .content-lede {
+    font-size: 15px !important;
+    line-height: 1.65;
+  }
+  body[data-portal="student"] .content-detail {
+    font-size: 14px !important;
+    line-height: 1.7;
+  }
+  body[data-portal="student"] .content-detail h3,
+  body[data-portal="student"] .content-detail h4 {
+    font-size: 16px;
+    margin: 16px 0 7px;
+  }
+  body[data-portal="student"] .content-attachments {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@media (max-width: 620px) {
+  /* Fact grids drop from three columns to two, then one. */
+  body[data-portal="student"] .event-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+  body[data-portal="student"] .event-facts > div {
+    min-width: 0;
+    padding: 10px 11px;
+  }
+  body[data-portal="student"] .event-facts strong {
+    font-size: 13px;
+  }
+  body[data-portal="student"] .event-facts span {
+    font-size: 10px;
+  }
+  body[data-portal="student"] .message {
+    max-width: 100%;
+  }
+  body[data-portal="student"] .message__head {
+    flex-direction: column;
+    gap: 2px;
+  }
+  body[data-portal="student"] .support-attachment img {
+    max-height: 220px;
+  }
+}
+@media (max-width: 430px) {
+  body[data-portal="student"] .event-facts {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Orientation detail: player, file card and requirement block.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  body[data-page="orientation"] .or-objectives li {
+    font-size: 13.5px;
+  }
+  body[data-page="orientation"] .or-file-card {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 15px;
+  }
+  body[data-page="orientation"] .or-file-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body[data-page="orientation"] .or-file-card__body {
+    flex: 1 1 100%;
+  }
+  body[data-page="orientation"] .or-requirement {
+    padding: 16px 15px;
+  }
+  body[data-page="orientation"] .or-requirement__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    font-size: 13px;
+  }
+  body[data-page="orientation"] .or-player__mock {
+    min-height: 190px;
+  }
+}
+@media (max-width: 560px) {
+  body[data-page="orientation"] .or-section-label {
+    font-size: 9.5px;
+    margin: 18px 0 6px;
+  }
+  body[data-page="orientation"] .or-player__clock {
+    font-size: 9.5px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. Rules detail: sanctions and the acknowledge button.
+   -------------------------------------------------------------------------- */
+@media (max-width: 620px) {
+  body[data-page="rules"] .sr-sanction {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    font-size: 13px;
+  }
+  body[data-page="rules"] .sr-ack__btn {
+    padding: 13px 16px;
+    font-size: 12px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   8. Document request tracker and timeline.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  body[data-portal="student"][data-page="document-requests"] .dr-stepper-head {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  body[data-portal="student"] .timeline__item {
+    gap: 9px;
+  }
+  body[data-portal="student"] .timeline__item > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  body[data-portal="student"] .detail-note {
+    padding: 12px 13px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Buttons and form controls keep a comfortable touch target.
+   -------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  body[data-portal="student"] .page-head > .btn,
+  body[data-portal="student"] .page-head__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body[data-portal="student"] .btn--block {
+    width: 100%;
+  }
+  body[data-portal="student"] .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. Dashboard: hero and side cards.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  body[data-portal="student"] .sd-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  body[data-portal="student"] .sd-hero__facts {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+  }
+  body[data-portal="student"] .sd-hero__facts > div {
+    min-width: 0;
+  }
+}
+@media (max-width: 560px) {
+  body[data-portal="student"] .sd-hero__name {
+    font-size: 20px;
+  }
+  body[data-portal="student"] .sd-grid {
+    gap: 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   11. Orientation assessment: quiz and result screens.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  body[data-page="orientation"] .or-quiz__title,
+  body[data-page="orientation"] .or-result__title {
+    font-size: 21px;
+    line-height: 1.25;
+  }
+  body[data-page="orientation"] .or-quiz__top {
+    gap: 10px;
+  }
+  body[data-page="orientation"] .or-quiz__timer {
+    width: 100%;
+    text-align: center;
+  }
+  body[data-page="orientation"] .or-quiz__prompt {
+    padding: 13px 14px;
+    font-size: 13px;
+  }
+  body[data-page="orientation"] .or-quiz__option {
+    padding: 12px 13px;
+    gap: 10px;
+  }
+  body[data-page="orientation"] .or-quiz__controls {
+    gap: 10px;
+  }
+  body[data-page="orientation"] .or-quiz__controls .btn {
+    flex: 1;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  body[data-page="orientation"] .or-result__summary {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 18px;
+    padding: 18px 15px;
+  }
+  body[data-page="orientation"] .or-result__facts {
+    width: 100%;
+  }
+  body[data-page="orientation"] .or-result__facts > div {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  body[data-page="orientation"] .or-result__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body[data-page="orientation"] .or-result__actions .btn,
+  body[data-page="orientation"] .or-result__actions form,
+  body[data-page="orientation"] .or-result__actions form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. Lost and found board and item detail.
+   -------------------------------------------------------------------------- */
+@media (max-width: 620px) {
+  body[data-page="lost-found"] .lf-board-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body[data-page="lost-found"] .lf-board-head .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body[data-page="lost-found"] .lf-detail-media img {
+    max-height: 240px;
+    object-fit: cover;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13. Create/report forms: panel heads wrap and actions stay reachable.
+   -------------------------------------------------------------------------- */
+@media (max-width: 620px) {
+  body[data-portal="student"] .panel-card__head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  body[data-portal="student"] .panel-card__head > div {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  body[data-portal="student"] .filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body[data-portal="student"] .field > label {
+    font-size: 11px;
   }
 }
 
