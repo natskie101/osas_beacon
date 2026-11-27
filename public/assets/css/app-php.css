@@ -5604,10 +5604,10 @@ body[data-page="support"] .support-attachment__heading {
   }
 }
 
-body[data-page="rules"] .content {
+body[data-page="rules"]:has(.sr-search) .content {
   max-width: 860px;
 }
-body[data-page="rules"] .page-head {
+body[data-page="rules"]:has(.sr-search) .page-head {
   display: none;
 }
 body[data-page="rules"] .sr-search {
@@ -5773,27 +5773,27 @@ body[data-page="rules"] .sr-detail__body li {
   margin-bottom: 5px;
 }
 body[data-page="rules"] .sr-sanctions {
-  gap: 6px;
-  margin-top: 5px;
+  gap: 8px;
+  margin-top: 20px;
 }
 body[data-page="rules"] .sr-sanction {
-  padding: 8px 10px;
-  border-radius: 7px;
-  font-size: 10px;
-  line-height: 1.55;
+  padding: 12px 15px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 body[data-page="rules"] .sr-ack {
-  margin-top: 16px;
+  margin-top: 24px;
 }
 body[data-page="rules"] .sr-ack__btn {
-  padding: 12px 14px;
-  border-radius: 7px;
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
 }
 body[data-page="rules"] .sr-ack__note {
-  font-size: 9px;
-  margin-top: 6px;
+  font-size: 11px;
+  margin-top: 8px;
 }
 @media (max-width: 560px) {
   body[data-page="rules"] .sr-facts {
