@@ -5928,7 +5928,7 @@ body[data-page="events"] .ev-tab {
   border-radius: 9px;
   background: #fff;
   color: var(--ink-2);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
@@ -5952,8 +5952,10 @@ body[data-page="events"] .ev-card {
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  padding: 15px 17px 54px;
+  padding: 16px 18px 56px;
   border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 body[data-page="events"] .ev-card__head {
@@ -5964,14 +5966,16 @@ body[data-page="events"] .ev-card__head {
 }
 body[data-page="events"] .ev-card__code {
   color: var(--brand);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 body[data-page="events"] .ev-card__head .badge {
-  padding: 4px 9px;
-  border-radius: 7px;
-  font-size: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  color: var(--brand) !important;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -5981,30 +5985,40 @@ body[data-page="events"] .ev-card__body {
 body[data-page="events"] .ev-card__title {
   margin-bottom: 6px;
   font-size: 15px;
+  font-weight: 800;
 }
 body[data-page="events"] .ev-card__desc {
   margin-bottom: 12px;
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
 }
 body[data-page="events"] .ev-card__meta {
   flex-direction: column;
   gap: 6px;
-  font-size: 10.5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+body[data-page="events"] .ev-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
 }
 body[data-page="events"] .ev-card__meta svg {
   color: var(--brand);
+  flex: 0 0 auto;
 }
 body[data-page="events"] .ev-card__action {
   position: absolute;
-  right: 17px;
-  bottom: 15px;
-  padding: 8px 14px;
+  right: 18px;
+  bottom: 16px;
+  padding: 8px 15px;
   border-color: var(--brand);
   border-radius: 8px;
   background: var(--brand);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 body[data-page="events"] .ev-card__action:hover {
@@ -6971,64 +6985,78 @@ body[data-portal="student"][data-page="events"] .detail-grid__side {
 body[data-portal="student"][data-page="events"] .detail-grid .card {
   min-width: 0;
   padding: 18px;
-  border-color: #eadfe1;
+  border-color: var(--line-2);
   border-radius: 12px;
-  box-shadow: 0 3px 12px rgba(80, 20, 30, 0.05);
+  box-shadow: var(--shadow);
 }
 body[data-portal="student"][data-page="events"] .page-head > .badge {
   flex: 0 0 auto;
-  padding: 5px 10px;
-  border: 1px solid #efd9dd;
-  border-radius: 7px;
-  background: #f9ecee;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--brand);
 }
 body[data-portal="student"][data-page="events"] .content-lede {
   margin: 0;
-  padding: 3px 0 3px 12px;
+  padding: 3px 0 3px 13px;
   border-left: 3px solid var(--brand);
-  color: #49393c;
-  font-size: 13px;
-  line-height: 1.75;
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.7;
 }
 body[data-portal="student"][data-page="events"] .event-facts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
-  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
 }
 body[data-portal="student"][data-page="events"] .event-facts > div {
-  min-width: 0;
-  padding: 11px 12px;
-  border-color: #f0e5e7;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 calc(33.333% - 10px);
+  min-width: 130px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
   border-radius: 9px;
-  background: #fcf7f8;
+  background: transparent;
 }
 body[data-portal="student"][data-page="events"] .event-facts span {
   color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
 }
 body[data-portal="student"][data-page="events"] .event-facts strong {
-  color: #34282a;
-  font-size: 11px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 body[data-portal="student"][data-page="events"]
   .detail-grid__side
   .panel-title {
   margin-bottom: 9px;
   color: var(--brand);
+  font-size: 14px;
+  font-weight: 800;
 }
 body[data-portal="student"][data-page="events"]
   .detail-grid__side
   .panel-card__text {
   margin-bottom: 12px;
-  color: #5e5355;
-  line-height: 1.65;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.7;
 }
 body[data-portal="student"][data-page="events"] .detail-grid__side .badge {
   max-width: 100%;
   white-space: normal;
   text-align: center;
   line-height: 1.45;
-  background: #f9ecee;
+  background: transparent;
   color: var(--brand);
 }
 body[data-portal="student"][data-page="events"] .attachment-chip {
@@ -7037,9 +7065,10 @@ body[data-portal="student"][data-page="events"] .attachment-chip {
   width: 100%;
   min-width: 0;
   padding: 9px 10px;
-  border-color: #eee2e4;
+  border-color: var(--line-2);
   border-radius: 8px;
-  background: #fdf9fa;
+  background: transparent;
+  font-size: 13px;
 }
 body[data-portal="student"][data-page="events"] .attachment-chip span {
   min-width: 0;
@@ -7047,6 +7076,7 @@ body[data-portal="student"][data-page="events"] .attachment-chip span {
 }
 body[data-portal="student"][data-page="events"] .attachment-chip em {
   flex: 0 0 auto;
+  font-size: 11px;
 }
 @media (max-width: 860px) {
   body[data-portal="student"][data-page="events"] .detail-grid {
@@ -7057,9 +7087,8 @@ body[data-portal="student"][data-page="events"] .attachment-chip em {
   body[data-portal="student"][data-page="events"] .detail-grid .card {
     padding: 15px;
   }
-  body[data-portal="student"][data-page="events"] .event-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+  body[data-portal="student"][data-page="events"] .event-facts > div {
+    flex: 1 1 calc(50% - 8px);
   }
   body[data-portal="student"][data-page="events"] .page-head {
     flex-wrap: wrap;
