@@ -4219,26 +4219,6 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   outline-offset: 2px;
   border-radius: 10px;
 }
-.or-detail {
-  max-width: 1000px;
-}
-.or-detail__title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--ink);
-  margin: 0 0 8px;
-  line-height: 1.25;
-}
-.or-detail__meta {
-  font-size: 11.5px;
-  color: var(--muted);
-  font-weight: 600;
-}
-.or-detail__deadline {
-  font-size: 11.5px;
-  color: var(--ink-2);
-  margin-top: 6px;
-}
 .or-section-label {
   font-size: 10px;
   font-weight: 800;
@@ -4246,12 +4226,6 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   text-transform: uppercase;
   color: var(--brand);
   margin: 22px 0 8px;
-}
-.or-detail__text {
-  font-size: 12.5px;
-  color: var(--ink-2);
-  line-height: 1.7;
-  margin: 0;
 }
 .or-objectives {
   list-style: none;
@@ -4265,9 +4239,9 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-2);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 .or-objectives svg {
   color: var(--green);
@@ -4431,7 +4405,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--muted);
   margin-top: 8px;
 }
@@ -4461,13 +4435,13 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   flex: 1;
 }
 .or-file-card__title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--ink);
   line-height: 1.4;
 }
 .or-file-card__meta {
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
 }
@@ -4481,7 +4455,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   }
 }
 .or-requirement {
-  padding: 18px 20px;
+  padding: 20px 24px;
 }
 .or-requirement__alert {
   display: flex;
@@ -4490,7 +4464,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   background: #fdf1d8;
   border: 1px solid #f0dba6;
   border-radius: 8px;
-  padding: 11px 13px;
+  padding: 12px 14px;
   margin-bottom: 14px;
 }
 .or-requirement__icon {
@@ -4500,12 +4474,12 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
 }
 .or-requirement__alert strong {
   display: block;
-  font-size: 12px;
+  font-size: 13.5px;
   color: #7a5510;
 }
 .or-requirement__alert span {
   display: block;
-  font-size: 11px;
+  font-size: 12.5px;
   color: #9a6b12;
   margin-top: 2px;
 }
@@ -4514,9 +4488,9 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
+  padding: 11px 0;
   border-bottom: 1px dashed var(--line);
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--muted);
 }
 .or-requirement__row strong {
@@ -4529,7 +4503,7 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   gap: 8px;
   color: #1f7a45;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13.5px;
   padding-top: 12px;
 }
 .or-take-btn {

@@ -26,19 +26,18 @@ $contentLabel = match ($contentType) {
     default => $contentType,
 };
 ?>
-<div class="or-detail">
-    <div class="or-detail__head">
-        <div>
-            <h1 class="or-detail__title">{{ $module['title'] }}</h1>
-            <div class="or-detail__meta">{{ $contentLabel }} + {!! $quiz !== null ? 'Quiz' : 'Module' !!} / {!! (int) $module['duration_minutes'] !!} mins / {{ $module['department'] ?: 'Office of Student Affairs and Services' }}</div>
-            <?php if (!empty($module['compliance_deadline'])): ?>
-                <div class="or-detail__deadline"><strong>Compliance Deadline:</strong> {{ fmt_date($module['compliance_deadline']) }}</div>
-            <?php endif; ?>
-        </div>
+<div class="page-head">
+    <div>
+        <div class="page-head__eyebrow"><a href="{!! url('/student/orientation') !!}">Orientations</a> / {{ $module['category'] }}</div>
+        <h2 class="page-head__title" style="font-size: 28px;">{{ $module['title'] }}</h2>
+        <p class="page-head__sub" style="font-size: 14px;">{{ $contentLabel }} + {!! $quiz !== null ? 'Quiz' : 'Module' !!} / {!! (int) $module['duration_minutes'] !!} mins / {{ $module['department'] ?: 'Office of Student Affairs and Services' }}<?php if (!empty($module['compliance_deadline'])): ?> / Deadline: {{ fmt_date($module['compliance_deadline']) }}<?php endif; ?></p>
     </div>
+</div>
 
-    <div class="or-section-label">Summary / Overview Description</div>
-    <p class="or-detail__text">{{ $module['description'] }}</p>
+<article class="card panel-card content-article" style="max-width: 1200px;">
+    <?php if (!empty($module['description'])): ?>
+        <p class="content-lede" style="font-size: 16px;">{{ $module['description'] }}</p>
+    <?php endif; ?>
 
     <?php if ($objectives !== []): ?>
         <div class="or-section-label">Learning Objectives</div>
@@ -47,7 +46,6 @@ $contentLabel = match ($contentType) {
         </ul>
     <?php endif; ?>
 
-    <div class="or-section-label">Content Type: {{ $contentLabel }}</div>
     <?php if ($isFileContent && !$isVideo): ?>
         <?php if ($mediaFile !== null): ?>
             <div class="or-file-card">
@@ -84,55 +82,55 @@ $contentLabel = match ($contentType) {
             <div class="or-player__note">{!! App\Support\Icons::render('info', 13) !!} Watch the full video before taking the assessment or acknowledging the module.</div>
         <?php endif; ?>
     <?php endif; ?>
+</article>
 
-    <div class="or-section-label">Completion Requirement</div>
-    <section class="card panel-card or-requirement">
-        <?php if ($quiz !== null): ?>
-            <div class="or-requirement__alert">
-                <span class="or-requirement__icon">{!! App\Support\Icons::render('alert', 16) !!}</span>
-                <div><strong>Quiz Assessment Attached</strong><span>Passing score is required to complete this module.</span></div>
-            </div>
-            <div class="or-requirement__row"><span>Required Passing Rate</span><strong>{!! number_format((float) $module['passing_rate'], 0) !!}%</strong></div>
-            <div class="or-requirement__row"><span>Your Current Status</span><strong>{!! $passed ? 'Assessment Passed' : ($latestAttempt !== null ? 'Not Passed Yet' : 'Pending Quiz Attempt') !!}</strong></div>
-            <?php if ($passed): ?>
-                <div class="or-requirement__done">{!! App\Support\Icons::render('checkCircle', 18) !!} Assessment passed. Module complete.</div>
-            <?php else: ?>
-                <?php if (!$videoWatched): ?>
-                    <div class="or-requirement__alert" id="assessmentLock">
-                        <span class="or-requirement__icon">{!! App\Support\Icons::render('lock', 16) !!}</span>
-                        <div><strong>Assessment locked</strong><span>Watch the video all the way to the end to unlock the assessment.</span></div>
-                    </div>
-                <?php endif; ?>
-                <form method="POST" action="{!! url('/student/orientation/' . $module['public_id'] . '/quiz/start') !!}">
-                    {!! csrf_field() !!}
-                    <button class="btn or-take-btn" type="submit" id="assessmentAction"{!! $videoWatched ? '' : ' disabled' !!}>{!! $quizAttempts === [] ? 'TAKE MODULE QUIZ ASSESSMENT' : 'RETAKE MODULE QUIZ ASSESSMENT' !!}</button>
-                </form>
-            <?php endif; ?>
+<div class="or-section-label" style="max-width: 1200px;">Completion Requirement</div>
+<section class="card panel-card or-requirement" style="max-width: 1200px;">
+    <?php if ($quiz !== null): ?>
+        <div class="or-requirement__alert">
+            <span class="or-requirement__icon">{!! App\Support\Icons::render('alert', 16) !!}</span>
+            <div><strong>Quiz Assessment Attached</strong><span>Passing score is required to complete this module.</span></div>
+        </div>
+        <div class="or-requirement__row"><span>Required Passing Rate</span><strong>{!! number_format((float) $module['passing_rate'], 0) !!}%</strong></div>
+        <div class="or-requirement__row"><span>Your Current Status</span><strong>{!! $passed ? 'Assessment Passed' : ($latestAttempt !== null ? 'Not Passed Yet' : 'Pending Quiz Attempt') !!}</strong></div>
+        <?php if ($passed): ?>
+            <div class="or-requirement__done">{!! App\Support\Icons::render('checkCircle', 18) !!} Assessment passed. Module complete.</div>
         <?php else: ?>
-            <?php if ($module['verification_method'] === 'Quiz Assessment'): ?>
-                <div class="or-requirement__alert">
-                    <span class="or-requirement__icon">{!! App\Support\Icons::render('alert', 16) !!}</span>
-                    <div><strong>Assessment not yet available</strong><span>The coordinator has not published a quiz for this module yet. You can acknowledge the module to complete it.</span></div>
+            <?php if (!$videoWatched): ?>
+                <div class="or-requirement__alert" id="assessmentLock">
+                    <span class="or-requirement__icon">{!! App\Support\Icons::render('lock', 16) !!}</span>
+                    <div><strong>Assessment locked</strong><span>Watch the video all the way to the end to unlock the assessment.</span></div>
                 </div>
             <?php endif; ?>
-            <div class="or-requirement__row"><span>Completion method</span><strong>Watch the video, then acknowledge this module.</strong></div>
-            <?php if ($status !== 'Completed'): ?>
-                <?php if (!$videoWatched): ?>
-                    <div class="or-requirement__alert" id="assessmentLock">
-                        <span class="or-requirement__icon">{!! App\Support\Icons::render('lock', 16) !!}</span>
-                        <div><strong>Acknowledgement locked</strong><span>Watch the video all the way to the end to acknowledge this module.</span></div>
-                    </div>
-                <?php endif; ?>
-                <form method="POST" action="{!! url('/student/orientation/' . $module['public_id'] . '/complete') !!}">
-                    {!! csrf_field() !!}
-                    <button class="btn or-take-btn" type="submit" id="assessmentAction"{!! $videoWatched ? '' : ' disabled' !!}>I ACKNOWLEDGE THIS MODULE</button>
-                </form>
-            <?php else: ?>
-                <div class="or-requirement__done">{!! App\Support\Icons::render('checkCircle', 18) !!} Module complete.</div>
-            <?php endif; ?>
+            <form method="POST" action="{!! url('/student/orientation/' . $module['public_id'] . '/quiz/start') !!}">
+                {!! csrf_field() !!}
+                <button class="btn or-take-btn" type="submit" id="assessmentAction"{!! $videoWatched ? '' : ' disabled' !!}>{!! $quizAttempts === [] ? 'TAKE MODULE QUIZ ASSESSMENT' : 'RETAKE MODULE QUIZ ASSESSMENT' !!}</button>
+            </form>
         <?php endif; ?>
-    </section>
-</div>
+    <?php else: ?>
+        <?php if ($module['verification_method'] === 'Quiz Assessment'): ?>
+            <div class="or-requirement__alert">
+                <span class="or-requirement__icon">{!! App\Support\Icons::render('alert', 16) !!}</span>
+                <div><strong>Assessment not yet available</strong><span>The coordinator has not published a quiz for this module yet. You can acknowledge the module to complete it.</span></div>
+            </div>
+        <?php endif; ?>
+        <div class="or-requirement__row"><span>Completion method</span><strong>Watch the video, then acknowledge this module.</strong></div>
+        <?php if ($status !== 'Completed'): ?>
+            <?php if (!$videoWatched): ?>
+                <div class="or-requirement__alert" id="assessmentLock">
+                    <span class="or-requirement__icon">{!! App\Support\Icons::render('lock', 16) !!}</span>
+                    <div><strong>Acknowledgement locked</strong><span>Watch the video all the way to the end to acknowledge this module.</span></div>
+                </div>
+            <?php endif; ?>
+            <form method="POST" action="{!! url('/student/orientation/' . $module['public_id'] . '/complete') !!}">
+                {!! csrf_field() !!}
+                <button class="btn or-take-btn" type="submit" id="assessmentAction"{!! $videoWatched ? '' : ' disabled' !!}>I ACKNOWLEDGE THIS MODULE</button>
+            </form>
+        <?php else: ?>
+            <div class="or-requirement__done">{!! App\Support\Icons::render('checkCircle', 18) !!} Module complete.</div>
+        <?php endif; ?>
+    <?php endif; ?>
+</section>
 
 <script>
 (function () {
