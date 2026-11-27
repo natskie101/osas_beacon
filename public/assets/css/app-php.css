@@ -5548,29 +5548,26 @@ body[data-page="support"] .support-attachment__heading {
   margin-top: 6px;
 }
 .sr-sanction {
-  border-radius: 9px;
-  padding: 12px 15px;
-  font-size: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 0;
+  font-size: 13px;
   line-height: 1.6;
-  border: 1px solid transparent;
+  background: transparent;
+  border: 0;
+  color: var(--brand);
 }
 .sr-sanction strong {
   font-weight: 800;
+  color: var(--brand);
 }
-.sr-sanction--red {
-  background: #fdecec;
-  border-color: #f3cccc;
-  color: #8f1d1d;
-}
-.sr-sanction--amber {
-  background: #fdf6e5;
-  border-color: #f0e2b8;
-  color: #8a6412;
-}
+.sr-sanction--red,
+.sr-sanction--amber,
 .sr-sanction--gray {
-  background: #f1f3f6;
-  border-color: #e0e4ea;
-  color: #4b5563;
+  background: transparent;
+  border: 0;
+  color: var(--brand);
 }
 .sr-ack {
   margin-top: 24px;
@@ -5777,8 +5774,7 @@ body[data-page="rules"] .sr-sanctions {
   margin-top: 20px;
 }
 body[data-page="rules"] .sr-sanction {
-  padding: 12px 15px;
-  border-radius: 9px;
+  padding: 12px 0;
   font-size: 13px;
   line-height: 1.6;
 }
