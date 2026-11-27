@@ -4130,13 +4130,13 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
 }
 .or-code {
   display: inline-block;
-  background: #7a1420;
-  color: #fff;
-  font-size: 9.5px;
+  background: transparent;
+  color: var(--brand);
+  font-size: 11.5px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  border-radius: 4px;
-  padding: 4px 7px;
+  letter-spacing: 0.04em;
+  border-radius: 0;
+  padding: 0;
   white-space: nowrap;
 }
 .or-badge {
@@ -4891,11 +4891,13 @@ body[data-page="orientation"] .or-module__head {
 }
 body[data-page="orientation"] .or-code {
   color: var(--brand);
+  background: transparent !important;
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
   padding: 0;
   border-radius: 0;
+  border: 0;
 }
 body[data-page="orientation"] .or-badge {
   position: absolute;
@@ -4946,6 +4948,7 @@ body[data-page="orientation"] .or-module > .sr-view-btn {
   background: #7a1420;
   color: #fff;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   body[data-page="orientation"] .or-module > .sr-view-btn {
@@ -5084,6 +5087,7 @@ body[data-page="announcements"] .feed-item > .sr-view-btn {
   font-weight: 800;
   border-radius: 8px;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   body[data-page="announcements"] .feed-item > .sr-view-btn {
@@ -5278,6 +5282,7 @@ body[data-page="support"] .support-item .sr-view-btn {
   background: #7a1420;
   color: #fff;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   body[data-page="support"] .support-item .sr-view-btn {
@@ -5425,7 +5430,7 @@ body[data-page="support"] .support-attachment__heading {
   font-weight: 800;
   letter-spacing: 0.04em;
   font-size: 11px;
-  text-transform: uppercase;
+  text-transform: none;
   border-radius: 7px;
   padding: 10px 16px;
   float: right;
@@ -5762,6 +5767,7 @@ body[data-page="rules"] .sr-pill {
   background: #7a1420;
   color: #fff;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   .sr-card .sr-view-btn {
@@ -6152,6 +6158,7 @@ body[data-page="events"] .ev-card > .sr-view-btn {
   background: #7a1420;
   color: #fff;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   body[data-page="events"] .ev-card > .sr-view-btn {
@@ -6272,6 +6279,7 @@ body[data-portal="student"][data-page="document-requests"] .doc-card > .sr-view-
   background: #7a1420;
   color: #fff;
   white-space: nowrap;
+  text-transform: none;
 }
 @media (max-width: 720px) {
   body[data-portal="student"][data-page="document-requests"] .doc-card > .sr-view-btn {
