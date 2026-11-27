@@ -402,7 +402,7 @@ final class OrientationController extends Controller
                 'orientation_media',
                 'pending',
                 (int) $actor['id'],
-                250 * 1024 * 1024,
+                2048 * 1024 * 1024, // 2 GB limit (effectively unlimited for practical purposes)
                 FileStorage::ORIENTATION_MEDIA,
             );
         } catch (RuntimeException $exception) {

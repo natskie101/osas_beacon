@@ -821,18 +821,20 @@
       }, 5000);
     }
 
-    /* Client-side File Upload Size Pre-check (Max 10 MB) */
+    /* Client-side File Upload Size Pre-check (default 10 MB; override per input with data-max-size-mb) */
     document.querySelectorAll('input[type="file"]').forEach(function (input) {
       input.addEventListener("change", function () {
         var file = input.files && input.files.length ? input.files[0] : null;
         if (!file) return;
 
-        var maxBytes = 10 * 1024 * 1024; // 10MB
+        var maxMb = parseFloat(input.getAttribute("data-max-size-mb") || "10");
+        var maxBytes = maxMb * 1024 * 1024;
         if (file.size > maxBytes) {
           var sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+          var limitLabel = maxMb >= 1024 ? (maxMb / 1024) + " GB" : maxMb + " MB";
           input.value = "";
           updateUploadLabel(input);
-          showToast("File is too large (" + sizeMb + " MB). Maximum allowed size is 10 MB.", true);
+          showToast("File is too large (" + sizeMb + " MB). Maximum allowed size is " + limitLabel + ".", true);
         }
       });
     });

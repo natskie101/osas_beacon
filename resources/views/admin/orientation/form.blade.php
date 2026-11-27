@@ -85,10 +85,10 @@ $moduleCode = $isEdit ? (string) ($module['public_id'] ?? '') : 'Auto-generated'
             <label class="upload-drop" for="media">
                 <span class="upload-drop__icon">{!! App\Support\Icons::render('upload', 24) !!}</span>
                 <span data-upload-prompt><strong>Click to upload document or local media</strong> or drag and drop</span>
-                <small data-upload-prompt>MP4, MOV, PDF or DOCX &middot; up to 250 MB</small>
+                <small data-upload-prompt>MP4, MOV, PDF or DOCX • No file size limit</small>
                 <span class="upload-drop__filename" data-upload-filename aria-live="polite" hidden></span>
             </label>
-            <input class="upload-drop__input" id="media" name="media" type="file" accept=".mp4,.mov,.pdf,.docx,video/mp4,video/quicktime,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <input class="upload-drop__input" id="media" name="media" type="file" data-max-size-mb="2048" accept=".mp4,.mov,.pdf,.docx,video/mp4,video/quicktime,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
             <?php if ($errorFor('media')): ?><div class="form-error">{{ $errorFor('media') }}</div><?php endif; ?>
 
             <?php if ($mediaFile !== null): ?>
