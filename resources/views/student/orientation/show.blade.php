@@ -34,54 +34,68 @@ $contentLabel = match ($contentType) {
     </div>
 </div>
 
-<article class="card panel-card content-article" style="max-width: 1200px;">
-    <?php if (!empty($module['description'])): ?>
-        <p class="content-lede" style="font-size: 16px;">{{ $module['description'] }}</p>
-    <?php endif; ?>
+<article class="card panel-card content-article or-detail-sections" style="max-width: 1200px;">
+    <div class="or-detail-row">
+        <section class="or-detail-section or-detail-section--overview">
+            <div class="or-section-label">Summary / Overview</div>
+            <?php if (!empty($module['description'])): ?>
+                <p class="content-lede" style="font-size: 16px;">{{ $module['description'] }}</p>
+            <?php else: ?>
+                <p class="content-lede or-detail-section__empty" style="font-size: 16px;">No summary has been provided for this module.</p>
+            <?php endif; ?>
+        </section>
 
-    <?php if ($objectives !== []): ?>
-        <div class="or-section-label">Learning Objectives</div>
-        <ul class="or-objectives">
-            <?php foreach ($objectives as $objective): ?><li>{!! App\Support\Icons::render('check', 13) !!} {{ $objective }}</li><?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
+        <section class="or-detail-section or-detail-section--objectives">
+            <div class="or-section-label">Learning Objectives</div>
+            <?php if ($objectives !== []): ?>
+                <ul class="or-objectives">
+                    <?php foreach ($objectives as $objective): ?><li>{!! App\Support\Icons::render('check', 13) !!} {{ $objective }}</li><?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="or-detail-section__empty">No learning objectives have been provided for this module.</p>
+            <?php endif; ?>
+        </section>
+    </div>
 
-    <?php if ($isFileContent && !$isVideo): ?>
-        <?php if ($mediaFile !== null): ?>
-            <div class="or-file-card">
-                <span class="or-file-card__icon">{!! App\Support\Icons::render('fileText', 22) !!}</span>
-                <div class="or-file-card__body">
-                    <div class="or-file-card__title">{{ $mediaFile['original_name'] ?? 'Module file' }}</div>
-                    <div class="or-file-card__meta">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} / {{ $mediaFile['mime_type'] ?? 'File' }}</div>
-                </div>
-                <a class="btn btn--primary" href="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}" download>{!! App\Support\Icons::render('download', 14) !!} Download File</a>
-            </div>
-        <?php else: ?>
-            <div class="tracking-empty">No file has been attached to this module yet.</div>
-        <?php endif; ?>
-    <?php else: ?>
-        <div class="or-player{!! $showsEmbed ? ' or-player--embed' : '' !!}{!! $showsVideo ? ' or-player--video' : '' !!}">
-            <?php if ($embedUrl !== null && !$isFileContent): ?>
-                <iframe src="{{ $embedUrl }}" title="{{ $module['title'] }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <?php elseif ($isVideo): ?>
-                <video id="moduleVideo" preload="metadata" playsinline tabindex="0" src="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}"></video>
-                <div class="or-player__controls">
-                    <button type="button" class="or-player__toggle" id="moduleVideoToggle" aria-label="Play video"><span class="or-player__glyph" aria-hidden="true"></span></button>
-                    <div class="or-player__track" aria-hidden="true"><span id="moduleVideoFill"></span></div>
-                    <span class="or-player__clock" id="moduleVideoTime">0:00 / {!! (int) $module['duration_minutes'] !!}:00</span>
+    <section class="or-detail-section or-detail-section--media">
+        <div class="or-section-label">Media Attachment</div>
+        <?php if ($isFileContent && !$isVideo): ?>
+            <?php if ($mediaFile !== null): ?>
+                <div class="or-file-card">
+                    <span class="or-file-card__icon">{!! App\Support\Icons::render('fileText', 22) !!}</span>
+                    <div class="or-file-card__body">
+                        <div class="or-file-card__title">{{ $mediaFile['original_name'] ?? 'Module file' }}</div>
+                        <div class="or-file-card__meta">{{ format_bytes((int) ($mediaFile['size_bytes'] ?? 0)) }} / {{ $mediaFile['mime_type'] ?? 'File' }}</div>
+                    </div>
+                    <a class="btn btn--primary" href="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}" download>{!! App\Support\Icons::render('download', 14) !!} Download File</a>
                 </div>
             <?php else: ?>
-                <div class="or-player__mock">
-                    <span class="or-player__play" aria-hidden="true"></span>
-                    <div class="or-player__bar"><span style="width: 0%"></span></div>
-                    <div class="or-player__time">0:00 / {!! (int) $module['duration_minutes'] !!}:00</div>
-                </div>
+                <div class="tracking-empty">No file has been attached to this module yet.</div>
             <?php endif; ?>
-        </div>
-        <?php if ($embedUrl !== null || $isVideo): ?>
-            <div class="or-player__note">{!! App\Support\Icons::render('info', 13) !!} Watch the full video before taking the assessment or acknowledging the module.</div>
+        <?php else: ?>
+            <div class="or-player{!! $showsEmbed ? ' or-player--embed' : '' !!}{!! $showsVideo ? ' or-player--video' : '' !!}">
+                <?php if ($embedUrl !== null && !$isFileContent): ?>
+                    <iframe src="{{ $embedUrl }}" title="{{ $module['title'] }}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <?php elseif ($isVideo): ?>
+                    <video id="moduleVideo" preload="metadata" playsinline tabindex="0" src="{!! url('/student/orientation/' . $module['public_id'] . '/media') !!}"></video>
+                    <div class="or-player__controls">
+                        <button type="button" class="or-player__toggle" id="moduleVideoToggle" aria-label="Play video"><span class="or-player__glyph" aria-hidden="true"></span></button>
+                        <div class="or-player__track" aria-hidden="true"><span id="moduleVideoFill"></span></div>
+                        <span class="or-player__clock" id="moduleVideoTime">0:00 / {!! (int) $module['duration_minutes'] !!}:00</span>
+                    </div>
+                <?php else: ?>
+                    <div class="or-player__mock">
+                        <span class="or-player__play" aria-hidden="true"></span>
+                        <div class="or-player__bar"><span style="width: 0%"></span></div>
+                        <div class="or-player__time">0:00 / {!! (int) $module['duration_minutes'] !!}:00</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php if ($embedUrl !== null || $isVideo): ?>
+                <div class="or-player__note">{!! App\Support\Icons::render('info', 13) !!} Watch the full video before taking the assessment or acknowledging the module.</div>
+            <?php endif; ?>
         <?php endif; ?>
-    <?php endif; ?>
+    </section>
 </article>
 
 <div class="or-section-label" style="max-width: 1200px;">Completion Requirement</div>

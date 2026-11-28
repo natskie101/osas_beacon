@@ -4227,6 +4227,53 @@ body[data-portal="admin"] table.data td .identity-cell > .avatar {
   color: var(--brand);
   margin: 22px 0 8px;
 }
+.or-detail-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Summary and Learning Objectives share a row, each as its own box; the media
+   attachment stays a direct child of .or-detail-sections so it keeps a
+   full-width box of its own underneath. The low flex-basis lets the pair
+   wrap to stacked boxes when the viewport is too narrow for two columns. */
+.or-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: stretch;
+}
+.or-detail-row > .or-detail-section {
+  flex: 1 1 300px;
+}
+.or-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.or-detail-section .or-section-label {
+  margin: 0;
+}
+.or-detail-section .content-lede {
+  margin: 0;
+  /* No maroon rule line here: .content-lede draws a 3px var(--brand)
+     border-left, which reads as a heavy vertical bar once the summary sits in
+     its own bordered box. */
+  border-left: 0;
+  padding-left: 0;
+}
+.or-detail-section__empty {
+  color: var(--muted);
+}
+.or-detail-section--objectives .or-detail-section__empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
 .or-objectives {
   list-style: none;
   margin: 0;
@@ -8007,6 +8054,12 @@ body .sr-badge svg {
    6. Orientation detail: player, file card and requirement block.
    -------------------------------------------------------------------------- */
 @media (max-width: 720px) {
+  body[data-page="orientation"] .or-detail-row {
+    flex-direction: column;
+  }
+  body[data-page="orientation"] .or-detail-row > .or-detail-section {
+    flex: 1 1 auto;
+  }
   body[data-page="orientation"] .or-objectives li {
     font-size: 13.5px;
   }
@@ -8222,4 +8275,3 @@ body .sr-badge svg {
     font-size: 11px;
   }
 }
-
