@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Psr7\Utils;
 use RuntimeException;
 
@@ -29,6 +30,11 @@ final class R2Storage
 
     /** Long enough to finish watching a module in one sitting. */
     private const PRESIGN_TTL = 86400;
+
+    /** Transient network failures are retried; a 4xx is not worth retrying. */
+    private const PUT_ATTEMPTS = 3;
+
+    private const RETRY_BACKOFF_US = 500000;
 
     /** The bucket object key is stored in files.stored_name after this prefix. */
     public const PREFIX = 'r2:';
@@ -74,35 +80,65 @@ final class R2Storage
             self::secretAccessKey(),
         );
 
-        $stream = fopen($localPath, 'rb');
+        $url = $endpoint . self::canonicalUri($key);
+        $lastError = '';
 
-        if ($stream === false) {
-            throw new RuntimeException('The file could not be read for upload.');
-        }
+        // A fresh stream per attempt: Guzzle consumes the body, so a retry
+        // cannot reuse it. 4xx responses (bad signature, denied permission) are
+        // not retried because they are deterministic.
+        for ($attempt = 1; $attempt <= self::PUT_ATTEMPTS; $attempt++) {
+            $response = null;
+            $stream = fopen($localPath, 'rb');
 
-        try {
-            $response = self::client()->request('PUT', $endpoint . self::canonicalUri($key), [
-                'headers' => [
-                    'Authorization' => $authorization,
-                    'Content-Type' => $mime,
-                    'x-amz-content-sha256' => $payloadHash,
-                    'x-amz-date' => $timestamp,
-                ],
-                'body' => Utils::streamFor($stream),
-            ]);
-        } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
+            if ($stream === false) {
+                throw new RuntimeException('The file could not be read for upload.');
+            }
+
+            try {
+                $response = self::client()->request('PUT', $url, [
+                    'headers' => [
+                        'Authorization' => $authorization,
+                        'Content-Type' => $mime,
+                        'x-amz-content-sha256' => $payloadHash,
+                        'x-amz-date' => $timestamp,
+                    ],
+                    'body' => Utils::streamFor($stream),
+                ]);
+            } catch (TransferException $exception) {
+                // ConnectException / RequestException extend RuntimeException, so
+                // without this they would surface as if R2 had rejected the
+                // object. Retry them like the network blips they usually are.
+                $lastError = 'R2 could not be reached: ' . $exception->getMessage();
+            } finally {
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+            }
+
+            if ($response !== null) {
+                $status = $response->getStatusCode();
+
+                if ($status >= 200 && $status < 300) {
+                    return;
+                }
+
+                $lastError = sprintf(
+                    'R2 rejected the upload (HTTP %d): %s',
+                    $status,
+                    mb_substr((string) $response->getBody(), 0, 300),
+                );
+
+                if ($status < 500) {
+                    break;
+                }
+            }
+
+            if ($attempt < self::PUT_ATTEMPTS) {
+                usleep(self::RETRY_BACKOFF_US * $attempt);
             }
         }
 
-        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
-            throw new RuntimeException(sprintf(
-                'R2 rejected the upload (HTTP %d): %s',
-                $response->getStatusCode(),
-                mb_substr((string) $response->getBody(), 0, 300),
-            ));
-        }
+        throw new RuntimeException($lastError !== '' ? $lastError : 'The upload to R2 failed.');
     }
 
     /**

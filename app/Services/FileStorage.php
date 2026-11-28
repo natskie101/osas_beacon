@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Support\Exceptions\NotFoundHttpException;
 use App\Support\Response;
 use App\Support\Str;
@@ -108,8 +109,18 @@ final class FileStorage
                 $storedOnR2 = true;
                 $storedName = R2Storage::PREFIX . $relativePath;
                 @unlink($absolutePath);
-            } catch (RuntimeException) {
-                // Keep the local copy below instead.
+            } catch (RuntimeException $exception) {
+                // Keep the local copy below instead. This is deliberately
+                // non-fatal, but it must be visible: swallowing it silently is
+                // what let uploads fall back to a base64 blob in a text column
+                // with no trace. TransferException extends RuntimeException, so
+                // plain network failures land here too.
+                Log::error('R2 upload failed; falling back to local file_data', [
+                    'key' => $relativePath,
+                    'mime' => $mime,
+                    'bytes' => $size,
+                    'error' => $exception->getMessage(),
+                ]);
             }
         }
 
@@ -183,9 +194,13 @@ final class FileStorage
         if (str_starts_with($stored, R2Storage::PREFIX)) {
             try {
                 R2Storage::delete(substr($stored, strlen(R2Storage::PREFIX)));
-            } catch (RuntimeException) {
+            } catch (RuntimeException $exception) {
                 // The row must go even when the bucket is unreachable: a
                 // leftover object is cheap, an orphan row is a real bug.
+                Log::warning('R2 delete failed; leaving orphaned object behind', [
+                    'key' => substr($stored, strlen(R2Storage::PREFIX)),
+                    'error' => $exception->getMessage(),
+                ]);
             }
         }
 
